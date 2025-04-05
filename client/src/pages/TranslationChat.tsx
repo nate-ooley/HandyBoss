@@ -7,9 +7,12 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
-import { Mic, MicOff, Send, RefreshCw, BatteryCharging, Phone } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Mic, MicOff, Send, RefreshCw, BatteryCharging, Phone, MapPin, Building, Calendar } from 'lucide-react';
 import { useMobile } from '@/hooks/use-mobile';
 import { useToast } from '@/hooks/use-toast';
+import { useQuery } from '@tanstack/react-query';
+import type { Jobsite } from '@/types';
 
 // Types for our messages
 interface ChatMessage {
@@ -20,6 +23,13 @@ interface ChatMessage {
   role: 'boss' | 'worker' | 'system';
   language: 'en' | 'es';
   timestamp: string;
+  jobsiteId?: number;
+  jobsiteName?: string;
+  location?: {
+    lat: number;
+    lng: number;
+    address?: string;
+  };
 }
 
 export default function TranslationChat() {
@@ -29,7 +39,20 @@ export default function TranslationChat() {
   const { isConnected, lastMessage, sendMessage } = useWebSocket();
   const { isListening, startListening, stopListening, synthesizeSpeech } = useVoice();
   
+  // Fetch jobsites
+  const { data: jobsites = [] } = useQuery<Jobsite[]>({
+    queryKey: ['/api/jobsites'],
+    staleTime: 30000,
+  });
+  
   const [role, setRole] = useState<'boss' | 'worker'>('boss');
+  const [selectedJobsiteId, setSelectedJobsiteId] = useState<string | null>(null);
+  // Mock user location - in a real app, this would use the Geolocation API
+  const [userLocation, setUserLocation] = useState<{lat: number, lng: number}>({
+    lat: 34.0522, // Los Angeles coordinates as example
+    lng: -118.2437
+  });
+  
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: '1',
@@ -43,6 +66,9 @@ export default function TranslationChat() {
   const [inputText, setInputText] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  
+  // Get selected jobsite details
+  const selectedJobsite = jobsites.find((job: Jobsite) => job.id.toString() === selectedJobsiteId);
   
   // Listen for WebSocket messages
   useEffect(() => {
@@ -104,23 +130,25 @@ export default function TranslationChat() {
       setInputText('');
       startListening((transcript) => {
         setInputText(transcript);
-      });
-      
-      // Auto-detect language and switch role if needed
-      setTimeout(() => {
-        if (inputText) {
-          const detectedLang = detectLanguage(inputText);
+        
+        // Auto-detect language and switch role as soon as we have enough text
+        if (transcript && transcript.length > 5) {
+          const detectedLang = detectLanguage(transcript);
+          
           if ((detectedLang === 'es' && role === 'boss') || (detectedLang === 'en' && role === 'worker')) {
             const newRole = detectedLang === 'es' ? 'worker' : 'boss';
             handleRoleChange(newRole);
+            
             toast({
-              title: 'Language detected',
-              description: `Switched to ${newRole === 'boss' ? 'Boss' : 'Worker'} mode based on your speech`,
+              title: detectedLang === 'es' ? '¡Español detectado!' : 'English detected!',
+              description: detectedLang === 'es' 
+                ? 'Cambiado a modo Trabajador' 
+                : 'Switched to Boss mode',
               duration: 3000,
             });
           }
         }
-      }, 1500);
+      });
     }
   };
   
@@ -138,6 +166,16 @@ export default function TranslationChat() {
       role,
       language,
       timestamp: new Date().toISOString(),
+      // Include jobsite information if selected
+      ...(selectedJobsite && {
+        jobsiteId: selectedJobsite.id,
+        jobsiteName: selectedJobsite.name,
+      }),
+      // Include user location
+      location: {
+        ...userLocation,
+        address: role === 'boss' ? 'Central Office' : selectedJobsite?.address || 'On-site'
+      }
     };
     
     setMessages(prev => [...prev, userMessage]);
@@ -150,6 +188,9 @@ export default function TranslationChat() {
       role,
       language,
       timestamp: new Date().toISOString(),
+      jobsiteId: selectedJobsite?.id,
+      jobsiteName: selectedJobsite?.name,
+      location: userMessage.location,
     });
     
     // Clear input
@@ -190,11 +231,17 @@ export default function TranslationChat() {
       {/* Header with role selector */}
       <header className="bg-primary text-primary-foreground py-3 px-4 flex items-center justify-between border-b">
         <div className="flex items-center">
-          <BossManImage 
-            mood={role === 'boss' ? "phoneRaging" : "phoneAngry"} 
-            size="sm"
-            className="-ml-1 -mb-1 transform -translate-y-1" 
-          />
+          {role === 'boss' ? (
+            <BossManImage 
+              mood="phoneRaging" 
+              size="sm"
+              className="-ml-1 -mb-1 transform -translate-y-1" 
+            />
+          ) : (
+            <div className="w-12 h-12 flex items-center justify-center text-4xl">
+              👷
+            </div>
+          )}
           <h1 className="text-xl font-bold ml-2">
             {role === 'boss' ? 'Boss Mode' : 'Modo Trabajador'}
           </h1>
@@ -203,14 +250,38 @@ export default function TranslationChat() {
         <Tabs value={role} onValueChange={(value) => handleRoleChange(value as 'boss' | 'worker')} className="w-auto">
           <TabsList>
             <TabsTrigger value="boss" className="text-sm">
-              Boss (English)
+              👨‍💼 Boss (English)
             </TabsTrigger>
             <TabsTrigger value="worker" className="text-sm">
-              Trabajador (Español)
+              👷 Trabajador (Español)
             </TabsTrigger>
           </TabsList>
         </Tabs>
       </header>
+      
+      {/* Project/Jobsite selector */}
+      <div className="bg-muted/50 px-4 py-2 flex items-center justify-between border-b">
+        <div className="flex items-center text-sm">
+          <Building className="h-4 w-4 mr-2 text-muted-foreground" />
+          {role === 'boss' ? 'Project:' : 'Proyecto:'}
+        </div>
+        
+        <Select value={selectedJobsiteId || ''} onValueChange={setSelectedJobsiteId}>
+          <SelectTrigger className="w-[210px] h-8 text-sm">
+            <SelectValue placeholder={role === 'boss' ? "Select project..." : "Seleccionar proyecto..."} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">
+              {role === 'boss' ? "General communication" : "Comunicación general"}
+            </SelectItem>
+            {jobsites.map((job) => (
+              <SelectItem key={job.id} value={job.id.toString()}>
+                {job.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
       
       {/* Connection status */}
       {!isConnected && (
@@ -240,8 +311,16 @@ export default function TranslationChat() {
             >
               {/* Message role indicator */}
               {message.role !== 'system' && (
-                <div className="text-xs opacity-70 mb-1">
-                  {message.role === 'boss' ? 'Boss' : 'Trabajador'}:
+                <div className="text-xs opacity-70 mb-1 flex items-center">
+                  {message.role === 'boss' ? '👨‍💼 Boss:' : '👷 Trabajador:'}
+                </div>
+              )}
+              
+              {/* Jobsite info - if available */}
+              {message.jobsiteName && (
+                <div className="text-[10px] mb-1 flex items-center text-muted-foreground">
+                  <Building className="h-3 w-3 mr-1 inline" />
+                  {message.jobsiteName}
                 </div>
               )}
               
@@ -257,6 +336,15 @@ export default function TranslationChat() {
                     {role === 'boss' ? 'Translated to Spanish:' : 'Traducido al inglés:'}
                   </span>
                   <div>{message.translatedText}</div>
+                </div>
+              )}
+              
+              {/* Location - if available */}
+              {message.location && (
+                <div className="text-[10px] mt-1 opacity-70 flex items-center">
+                  <MapPin className="h-3 w-3 mr-1 inline" />
+                  {message.location.address || 
+                    `${message.location.lat.toFixed(4)}, ${message.location.lng.toFixed(4)}`}
                 </div>
               )}
               
@@ -335,12 +423,23 @@ export default function TranslationChat() {
           </Button>
         </div>
         
-        {/* Translation service indicator */}
-        <div className="text-xs text-muted-foreground mt-2 flex items-center">
-          <BatteryCharging className="h-3 w-3 mr-1" />
-          {role === 'boss' 
-            ? 'Using OpenAI API for translation (will use Gemma LLM on-device in future)' 
-            : 'Usando API de OpenAI para traducción (usará Gemma LLM en el dispositivo en el futuro)'}
+        {/* Service indicators */}
+        <div className="text-xs text-muted-foreground mt-2 flex items-center justify-between">
+          <div className="flex items-center">
+            <BatteryCharging className="h-3 w-3 mr-1" />
+            {role === 'boss' 
+              ? 'Using OpenAI API for translation (will use Gemma LLM on-device in future)' 
+              : 'Usando API de OpenAI para traducción (usará Gemma LLM en el dispositivo en el futuro)'}
+          </div>
+          
+          <div className="flex items-center">
+            <MapPin className="h-3 w-3 mr-1" />
+            {role === 'boss' 
+              ? 'Central Office' 
+              : selectedJobsite?.name 
+                ? `${selectedJobsite.name} - ${selectedJobsite.address}` 
+                : 'On-site'}
+          </div>
         </div>
       </div>
     </div>
