@@ -65,6 +65,28 @@ const Dashboard: React.FC = () => {
         </SideNavigation>
         
         <div className="flex-1 p-6">
+          {/* Featured translation app banner */}
+          <div className="bg-gradient-to-r from-primary/20 to-primary/5 p-4 mb-6 rounded-lg border border-primary/20 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-bold mb-2 flex items-center">
+                  <span role="img" aria-label="Globe">🌎</span>
+                  <span className="ml-2">English-Spanish Voice Translation</span>
+                </h2>
+                <p className="text-sm text-muted-foreground max-w-2xl">
+                  Break language barriers on your jobsites! Speak in English and your workers hear Spanish. 
+                  They reply in Spanish and you hear English. Try our new voice-first translation tool.
+                </p>
+              </div>
+              <a 
+                href="/translate" 
+                className="bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-lg flex items-center gap-2 font-medium whitespace-nowrap"
+              >
+                Open Translator <span role="img" aria-label="Microphone">🎤</span>
+              </a>
+            </div>
+          </div>
+          
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {weatherAlerts && (
               <WeatherAlerts 

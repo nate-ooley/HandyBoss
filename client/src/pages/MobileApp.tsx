@@ -70,6 +70,24 @@ const MobileApp: React.FC = () => {
         mood={currentCommand.toLowerCase().includes('late') ? 'worried' : 'normal'}
       />
       
+      {/* Featured app section */}
+      <div className="bg-primary/10 p-4 mb-4 rounded-lg mx-4 mt-4">
+        <h2 className="text-xl font-bold mb-2 flex items-center">
+          <span role="img" aria-label="Translator">🌐</span> 
+          <span className="ml-2">Voice Translation</span>
+        </h2>
+        <p className="text-sm text-muted-foreground mb-3">
+          Communicate with your workers in real-time. You speak English, they hear Spanish; they speak Spanish, you hear English.
+        </p>
+        <a 
+          href="/translate" 
+          className="bg-primary text-primary-foreground px-4 py-2 rounded-lg flex items-center justify-center font-medium"
+        >
+          <span className="mr-2">Open Translator</span> 
+          <span role="img" aria-label="Microphone">🎤</span>
+        </a>
+      </div>
+      
       {jobsites && <JobsitesList jobsites={jobsites} />}
       
       <QuickCommands />

@@ -315,7 +315,7 @@ export default function TranslationChat() {
             <SelectValue placeholder={role === 'boss' ? "Select project..." : "Seleccionar proyecto..."} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">
+            <SelectItem value="general">
               {role === 'boss' ? "General communication" : "Comunicación general"}
             </SelectItem>
             {jobsites.map((job) => (
@@ -475,6 +475,131 @@ export default function TranslationChat() {
         )}
       </div>
       
+      {/* Quick message buttons */}
+      <div className="px-4 py-2 bg-muted/30 border-t overflow-x-auto">
+        <div className="flex space-x-2">
+          {role === 'boss' ? (
+            // English quick messages for boss
+            <>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="whitespace-nowrap"
+                onClick={() => {
+                  setInputText("I'll be late today");
+                  setTimeout(() => handleSendMessage(), 100);
+                }}
+              >
+                I'll be late today
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="whitespace-nowrap"
+                onClick={() => {
+                  setInputText("Need more materials");
+                  setTimeout(() => handleSendMessage(), 100);
+                }}
+              >
+                Need more materials
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="whitespace-nowrap"
+                onClick={() => {
+                  setInputText("When will the job be done?");
+                  setTimeout(() => handleSendMessage(), 100);
+                }}
+              >
+                When will job be done?
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="whitespace-nowrap"
+                onClick={() => {
+                  setInputText("Send more workers");
+                  setTimeout(() => handleSendMessage(), 100);
+                }}
+              >
+                Send more workers
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="whitespace-nowrap"
+                onClick={() => {
+                  setInputText("I'll be at the jobsite at 2pm");
+                  setTimeout(() => handleSendMessage(), 100);
+                }}
+              >
+                I'll be at jobsite at 2pm
+              </Button>
+            </>
+          ) : (
+            // Spanish quick messages for worker
+            <>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="whitespace-nowrap"
+                onClick={() => {
+                  setInputText("Llegaré tarde hoy");
+                  setTimeout(() => handleSendMessage(), 100);
+                }}
+              >
+                Llegaré tarde hoy
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="whitespace-nowrap"
+                onClick={() => {
+                  setInputText("Necesitamos más materiales");
+                  setTimeout(() => handleSendMessage(), 100);
+                }}
+              >
+                Necesitamos materiales
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="whitespace-nowrap"
+                onClick={() => {
+                  setInputText("¿Cuándo estará terminado?");
+                  setTimeout(() => handleSendMessage(), 100);
+                }}
+              >
+                ¿Cuándo terminará?
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="whitespace-nowrap"
+                onClick={() => {
+                  setInputText("Necesitamos más trabajadores");
+                  setTimeout(() => handleSendMessage(), 100);
+                }}
+              >
+                Más trabajadores
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="whitespace-nowrap"
+                onClick={() => {
+                  setInputText("Hay un problema con la electricidad");
+                  setTimeout(() => handleSendMessage(), 100);
+                }}
+              >
+                Problema con electricidad
+              </Button>
+            </>
+          )}
+        </div>
+      </div>
+      
       {/* Input area */}
       <div className="p-4 border-t bg-background">
         <div className="flex">
@@ -484,6 +609,7 @@ export default function TranslationChat() {
             variant={isListening ? "destructive" : "outline"}
             className="mr-2"
             onClick={handleVoiceInput}
+            title={role === 'boss' ? "Speak in English" : "Habla en español"}
           >
             {isListening ? <MicOff /> : <Mic />}
           </Button>
@@ -508,9 +634,27 @@ export default function TranslationChat() {
             className="ml-2"
             disabled={!inputText.trim() || isProcessing}
             onClick={handleSendMessage}
+            title={role === 'boss' ? "Send message" : "Enviar mensaje"}
           >
             <Send />
           </Button>
+        </div>
+        
+        {/* Voice instructions */}
+        <div className="mt-2 mb-3 text-sm text-center">
+          {isListening ? (
+            <div className="text-destructive font-medium animate-pulse">
+              {role === 'boss' 
+                ? '🎤 Listening... Speak clearly in English' 
+                : '🎤 Escuchando... Habla claramente en español'}
+            </div>
+          ) : (
+            <div className="text-muted-foreground">
+              {role === 'boss' 
+                ? 'Press the microphone button and speak in English' 
+                : 'Presiona el botón del micrófono y habla en español'}
+            </div>
+          )}
         </div>
         
         {/* Service indicators */}

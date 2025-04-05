@@ -1,11 +1,12 @@
 import React from 'react';
 import { Link, useLocation } from 'wouter';
-import { LayoutDashboard, Building, HardHat, Package, Drill, Calendar } from 'lucide-react';
+import { LayoutDashboard, Building, HardHat, Package, Drill, Calendar, Mic, Globe, Languages } from 'lucide-react';
 
 interface NavItem {
   href: string;
   icon: React.ReactNode;
   label: string;
+  featured?: boolean;
 }
 
 export const SideNavigation: React.FC<React.PropsWithChildren> = ({ children }) => {
@@ -16,6 +17,12 @@ export const SideNavigation: React.FC<React.PropsWithChildren> = ({ children }) 
       href: '/dashboard',
       icon: <LayoutDashboard className="h-5 w-5" />,
       label: 'Dashboard'
+    },
+    {
+      href: '/translate',
+      icon: <Languages className="h-5 w-5" />,
+      label: 'Translator',
+      featured: true
     },
     {
       href: '/calendar',
@@ -50,13 +57,26 @@ export const SideNavigation: React.FC<React.PropsWithChildren> = ({ children }) 
         <ul className="space-y-2">
           {navItems.map((item) => (
             <li key={item.href}>
-              <Link href={item.href}>
-                <a className={`flex items-center space-x-3 p-3 rounded-xl ${
-                  location === item.href ? 'bg-primary text-white' : 'text-dark hover:bg-gray-100'
-                }`}>
+              <Link href={item.href} 
+                className={`
+                  flex items-center space-x-3 p-3 rounded-xl 
+                  ${location === item.href ? 'bg-primary text-white' : item.featured ? 'bg-primary/10 text-primary border border-primary/20' : 'text-dark hover:bg-gray-100'}
+                  ${item.featured ? 'relative overflow-hidden' : ''}
+                `}>
                   {item.icon}
                   <span>{item.label}</span>
-                </a>
+                  
+                  {item.featured && (
+                    <span className="ml-2 text-xs px-1.5 py-0.5 bg-primary text-white rounded-full font-bold uppercase">
+                      New
+                    </span>
+                  )}
+                  
+                  {item.featured && (
+                    <span className="absolute -right-6 -bottom-6 opacity-10">
+                      <Globe className="h-12 w-12" />
+                    </span>
+                  )}
               </Link>
             </li>
           ))}
