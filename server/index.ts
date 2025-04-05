@@ -2,6 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 // Use debug routes temporarily
 import { registerRoutes } from "./routes-debug";
 import { setupVite, serveStatic, log } from "./vite";
+import { initializeStorage } from './db/config';
 
 const app = express();
 app.use(express.json());
@@ -38,6 +39,10 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Initialize the storage system
+  const storage = initializeStorage();
+  log('Storage system initialized', 'storage');
+  
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
