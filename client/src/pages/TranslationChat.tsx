@@ -602,13 +602,16 @@ export default function TranslationChat() {
         <div className="flex">
           <Button
             type="button"
-            size="icon"
-            variant={isListening ? "destructive" : "outline"}
-            className="mr-2"
+            size="lg"
+            variant={isListening ? "destructive" : "default"}
+            className={`mr-2 h-14 w-14 rounded-full shadow-md flex items-center justify-center relative ${!isListening ? "hover:ring-4 hover:ring-primary/50" : ""}`}
             onClick={handleVoiceInput}
             title={role === 'boss' ? "Speak in English" : "Habla en español"}
           >
-            {isListening ? <MicOff /> : <Mic />}
+            {!isListening && (
+              <span className="absolute inset-0 rounded-full bg-primary/20 animate-ping"></span>
+            )}
+            {isListening ? <MicOff className="h-6 w-6" /> : <Mic className="h-6 w-6" />}
           </Button>
           
           <Textarea
@@ -620,36 +623,47 @@ export default function TranslationChat() {
                 ? 'Type or speak your message in English...' 
                 : 'Escribe o habla tu mensaje en español...'
             }
-            className="flex-1 resize-none"
+            className="flex-1 resize-none min-h-[56px] text-lg"
             rows={1}
           />
           
           <Button
             type="button"
-            size="icon"
+            size="lg"
             variant="default"
-            className="ml-2"
+            className="ml-2 h-14 w-14 rounded-full shadow-md flex items-center justify-center"
             disabled={!inputText.trim() || isProcessing}
             onClick={handleSendMessage}
             title={role === 'boss' ? "Send message" : "Enviar mensaje"}
           >
-            <Send />
+            <Send className="h-6 w-6" />
           </Button>
         </div>
         
         {/* Voice instructions */}
-        <div className="mt-2 mb-3 text-sm text-center">
+        <div className="mt-3 mb-3 text-center">
           {isListening ? (
-            <div className="text-destructive font-medium animate-pulse">
+            <div className="text-destructive font-medium text-base animate-pulse flex items-center justify-center">
+              <span className="inline-block w-3 h-3 bg-destructive rounded-full mr-2 animate-pulse"></span>
               {role === 'boss' 
                 ? '🎤 Listening... Speak clearly in English' 
                 : '🎤 Escuchando... Habla claramente en español'}
             </div>
           ) : (
-            <div className="text-muted-foreground">
-              {role === 'boss' 
-                ? 'Press the microphone button and speak in English' 
-                : 'Presiona el botón del micrófono y habla en español'}
+            <div className="text-accent-foreground font-medium flex flex-col items-center">
+              <div className="flex items-center mb-1">
+                <Mic className="h-4 w-4 mr-2 text-primary" />
+                <span className="text-primary">
+                  {role === 'boss' 
+                    ? 'Press the voice button' 
+                    : 'Presiona el botón de voz'}
+                </span>
+              </div>
+              <span className="text-sm text-muted-foreground">
+                {role === 'boss' 
+                  ? 'Speak in English and we\'ll translate to Spanish' 
+                  : 'Habla en español y traduciremos al inglés'}
+              </span>
             </div>
           )}
         </div>
