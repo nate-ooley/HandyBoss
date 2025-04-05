@@ -604,14 +604,19 @@ export default function TranslationChat() {
             type="button"
             size="lg"
             variant={isListening ? "destructive" : "default"}
-            className={`mr-2 h-14 w-14 rounded-full shadow-md flex items-center justify-center relative ${!isListening ? "hover:ring-4 hover:ring-primary/50" : ""}`}
+            className={`mr-2 h-14 w-14 rounded-full shadow-md flex flex-col items-center justify-center relative ${!isListening ? "hover:ring-4 hover:ring-primary/50" : ""}`}
             onClick={handleVoiceInput}
             title={role === 'boss' ? "Speak in English" : "Habla en español"}
           >
             {!isListening && (
               <span className="absolute inset-0 rounded-full bg-primary/20 animate-ping"></span>
             )}
-            {isListening ? <MicOff className="h-6 w-6" /> : <Mic className="h-6 w-6" />}
+            <div className="flex flex-col items-center">
+              {isListening ? <MicOff className="h-6 w-6" /> : <Mic className="h-6 w-6" />}
+              <span className="text-[8px] font-medium mt-1">
+                {role === 'boss' ? 'VOICE' : 'VOZ'}
+              </span>
+            </div>
           </Button>
           
           <Textarea
@@ -631,12 +636,17 @@ export default function TranslationChat() {
             type="button"
             size="lg"
             variant="default"
-            className="ml-2 h-14 w-14 rounded-full shadow-md flex items-center justify-center"
+            className="ml-2 h-14 w-14 rounded-full shadow-md flex flex-col items-center justify-center"
             disabled={!inputText.trim() || isProcessing}
             onClick={handleSendMessage}
             title={role === 'boss' ? "Send message" : "Enviar mensaje"}
           >
-            <Send className="h-6 w-6" />
+            <div className="flex flex-col items-center">
+              <Send className="h-6 w-6" />
+              <span className="text-[8px] font-medium mt-1">
+                {role === 'boss' ? 'SEND' : 'ENVIAR'}
+              </span>
+            </div>
           </Button>
         </div>
         
