@@ -10,158 +10,198 @@ interface BossManCharacterProps {
 }
 
 export const BossManCharacter: React.FC<BossManCharacterProps> = ({ 
-  mood = 'normal',
-  size = 'md',
+  mood = 'normal', 
+  size = 'md', 
   className = ''
 }) => {
-  const sizeClasses = {
-    xs: 'w-6 h-6',
-    sm: 'w-10 h-10',
-    md: 'w-14 h-14', // Increased size for better visibility
-    lg: 'w-20 h-20'  // Increased size for better visibility
-  };
-
-  const colors = {
-    normal: {
-      hat: '#E39932',
-      face: '#FFD8B9',
-      outline: '#2E3A59',
-      hatStroke: '#C48428'
-    },
-    happy: {
-      hat: '#E39932',
-      face: '#FFD8B9',
-      outline: '#2D8A30',
-      hatStroke: '#C48428'
-    },
-    angry: {
-      hat: '#D32F2F',
-      face: '#FFCDD2',
-      outline: '#B71C1C',
-      hatStroke: '#A82222'
-    },
-    worried: {
-      hat: '#E39932',
-      face: '#FFD8B9',
-      outline: '#E65100',
-      hatStroke: '#C48428'
-    },
-    busy: {
-      hat: '#1E88E5',
-      face: '#FFD8B9',
-      outline: '#2E3A59',
-      hatStroke: '#1565C0'
+  // Size classes
+  const getSizeClass = (characterSize: CharacterSize): string => {
+    switch (characterSize) {
+      case 'xs': return 'w-16 h-16';
+      case 'sm': return 'w-24 h-24';
+      case 'md': return 'w-32 h-32';
+      case 'lg': return 'w-48 h-48';
+      default: return 'w-32 h-32';
     }
   };
 
+  // Character color based on mood
+  const getMoodColor = (characterMood: CharacterMood): string => {
+    switch (characterMood) {
+      case 'normal': return '#E57373'; // Light red
+      case 'happy': return '#81C784';  // Green
+      case 'angry': return '#D32F2F';  // Dark red
+      case 'worried': return '#FFD54F'; // Yellow
+      case 'busy': return '#7986CB';   // Blue
+      default: return '#E57373';       // Default light red
+    }
+  };
+
+  // Get facial expression path based on mood
   const getExpressionPath = (characterMood: CharacterMood) => {
     switch (characterMood) {
+      case 'normal':
+        return (
+          <path 
+            d="M18,18 C20,22 28,22 30,18" 
+            stroke="black" 
+            strokeWidth="1.5" 
+            fill="none" 
+            strokeLinecap="round"
+          />
+        );
       case 'happy':
-        return "M 10,18 C 15,23 25,23 30,18"; // More pronounced smile
+        return (
+          <path 
+            d="M18,17 C20,21 28,21 30,17" 
+            stroke="black" 
+            strokeWidth="1.5" 
+            fill="none" 
+            strokeLinecap="round"
+          />
+        );
       case 'angry':
-        return "M 10,20 C 15,15 25,15 30,20"; // More pronounced frown
+        return (
+          <path 
+            d="M18,20 C20,18 28,18 30,20" 
+            stroke="black" 
+            strokeWidth="1.5" 
+            fill="none" 
+            strokeLinecap="round"
+          />
+        );
       case 'worried':
-        return "M 10,20 C 15,17.5 25,17.5 30,20"; // Clearer worried expression
+        return (
+          <path 
+            d="M18,21 C20,19 28,19 30,21" 
+            stroke="black" 
+            strokeWidth="1.5" 
+            fill="none" 
+            strokeLinecap="round"
+          />
+        );
       case 'busy':
-        return "M 10,19 L 30,19"; // Straight line
+        return (
+          <line 
+            x1="18" 
+            y1="19" 
+            x2="30" 
+            y2="19" 
+            stroke="black" 
+            strokeWidth="1.5" 
+            strokeLinecap="round"
+          />
+        );
       default:
-        return "M 10,19 C 15,20.5 25,20.5 30,19"; // Slight smile
+        return (
+          <path 
+            d="M18,18 C20,22 28,22 30,18" 
+            stroke="black" 
+            strokeWidth="1.5" 
+            fill="none" 
+            strokeLinecap="round"
+          />
+        );
     }
   };
 
+  // Get eyes based on mood
   const getEyesPath = (characterMood: CharacterMood) => {
-    if (characterMood === 'angry') {
-      return (
-        <>
-          <path d="M 11,12 L 18,16" stroke={colors[characterMood].outline} strokeWidth="2.5" strokeLinecap="round" />
-          <path d="M 29,12 L 22,16" stroke={colors[characterMood].outline} strokeWidth="2.5" strokeLinecap="round" />
-          <circle cx="15" cy="16" r="1.5" fill={colors[characterMood].outline} />
-          <circle cx="25" cy="16" r="1.5" fill={colors[characterMood].outline} />
-        </>
-      );
-    } else if (characterMood === 'worried') {
-      return (
-        <>
-          <circle cx="15" cy="15" r="3" fill={colors[characterMood].outline} />
-          <circle cx="25" cy="15" r="3" fill={colors[characterMood].outline} />
-          <circle cx="15" cy="15" r="1" fill="#fff" />
-          <circle cx="25" cy="15" r="1" fill="#fff" />
-          <path d="M 11,12 Q 15,10 19,12" stroke={colors[characterMood].outline} strokeWidth="1.5" fill="none" />
-          <path d="M 21,12 Q 25,10 29,12" stroke={colors[characterMood].outline} strokeWidth="1.5" fill="none" />
-        </>
-      );
-    } else if (characterMood === 'busy') {
-      return (
-        <>
-          <rect x="12" y="14" width="6" height="2.5" rx="1" fill={colors[characterMood].outline} />
-          <rect x="22" y="14" width="6" height="2.5" rx="1" fill={colors[characterMood].outline} />
-        </>
-      );
-    } else if (characterMood === 'happy') {
-      return (
-        <>
-          <circle cx="15" cy="15" r="3" fill={colors[characterMood].outline} />
-          <circle cx="25" cy="15" r="3" fill={colors[characterMood].outline} />
-          <circle cx="16" cy="14" r="1" fill="#fff" />
-          <circle cx="26" cy="14" r="1" fill="#fff" />
-        </>
-      );
-    } else {
-      return (
-        <>
-          <circle cx="15" cy="15" r="3" fill={colors[characterMood].outline} />
-          <circle cx="25" cy="15" r="3" fill={colors[characterMood].outline} />
-          <circle cx="15.5" cy="14.5" r="1" fill="#fff" />
-          <circle cx="25.5" cy="14.5" r="1" fill="#fff" />
-        </>
-      );
+    switch (characterMood) {
+      case 'normal':
+        return (
+          <>
+            <circle cx="15" cy="15" r="2" fill="black" />
+            <circle cx="33" cy="15" r="2" fill="black" />
+          </>
+        );
+      case 'happy':
+        return (
+          <>
+            <path 
+              d="M13,15 C13,13 17,13 17,15" 
+              stroke="black" 
+              strokeWidth="1.5" 
+              fill="none"
+            />
+            <path 
+              d="M31,15 C31,13 35,13 35,15" 
+              stroke="black" 
+              strokeWidth="1.5" 
+              fill="none"
+            />
+          </>
+        );
+      case 'angry':
+        return (
+          <>
+            <circle cx="15" cy="15" r="2" fill="black" />
+            <circle cx="33" cy="15" r="2" fill="black" />
+            <line x1="12" y1="12" x2="18" y2="14" stroke="black" strokeWidth="1.5" />
+            <line x1="30" y1="14" x2="36" y2="12" stroke="black" strokeWidth="1.5" />
+          </>
+        );
+      case 'worried':
+        return (
+          <>
+            <circle cx="15" cy="15" r="2" fill="black" />
+            <circle cx="33" cy="15" r="2" fill="black" />
+            <line x1="12" y1="14" x2="18" y2="12" stroke="black" strokeWidth="1.5" />
+            <line x1="30" y1="12" x2="36" y2="14" stroke="black" strokeWidth="1.5" />
+          </>
+        );
+      case 'busy':
+        return (
+          <>
+            <line x1="13" y1="15" x2="17" y2="15" stroke="black" strokeWidth="2" />
+            <line x1="31" y1="15" x2="35" y2="15" stroke="black" strokeWidth="2" />
+          </>
+        );
+      default:
+        return (
+          <>
+            <circle cx="15" cy="15" r="2" fill="black" />
+            <circle cx="33" cy="15" r="2" fill="black" />
+          </>
+        );
     }
   };
 
   return (
-    <div className={`rounded-full overflow-hidden ${sizeClasses[size]} ${className} shadow-md`}>
-      <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
-        {/* Hard Hat with outline for definition */}
-        <path d="M 5,15 A 15,10 0 0,1 35,15 L 35,20 A 15,10 0 0,1 5,20 Z" 
-          fill={colors[mood].hat} 
-          stroke={colors[mood].hatStroke} 
-          strokeWidth="1" />
-        <ellipse 
-          cx="20" cy="15" rx="15" ry="10" 
-          fill={colors[mood].hat} 
-          stroke={colors[mood].hatStroke} 
-          strokeWidth="1" />
+    <div className={`${getSizeClass(size)} ${className}`}>
+      <svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+        {/* Head */}
+        <circle cx="24" cy="24" r="20" fill={getMoodColor(mood)} />
         
-        {/* Hat brim highlight */}
-        <path d="M 6,15 A 14,9 0 0,1 34,15" 
-          stroke="#ffffff" 
-          strokeWidth="0.8" 
-          fill="none" 
-          opacity="0.5" />
+        {/* Face */}
+        <circle cx="24" cy="24" r="18" fill="#FFCCBC" />
         
-        {/* Face with subtle shading */}
-        <circle 
-          cx="20" cy="22" r="12" 
-          fill={colors[mood].face} 
-          stroke={colors[mood].outline} 
-          strokeWidth="0.5" />
-        
-        {/* Subtle face highlight */}
-        <ellipse 
-          cx="17" cy="18" rx="8" ry="6" 
-          fill="#ffffff" 
-          opacity="0.2" />
+        {/* Hard hat */}
+        <path 
+          d="M8,16 C8,10 16,4 24,4 C32,4 40,10 40,16" 
+          fill="#FFB74D" 
+          stroke="#F57C00" 
+          strokeWidth="1"
+        />
+        <path 
+          d="M5,16 L43,16" 
+          stroke="#F57C00" 
+          strokeWidth="2"
+        />
         
         {/* Eyes */}
         {getEyesPath(mood)}
         
-        {/* Mouth with enhanced stroke */}
+        {/* Mouth */}
+        {getExpressionPath(mood)}
+
+        {/* Nose */}
         <path 
-          d={getExpressionPath(mood)} 
-          stroke={colors[mood].outline} 
-          strokeWidth="2.5" 
+          d="M24,17 L26,24" 
+          stroke="black" 
+          strokeWidth="1.5" 
           fill="none" 
-          strokeLinecap="round" />
+        />
       </svg>
     </div>
   );

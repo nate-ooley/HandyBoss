@@ -1,7 +1,6 @@
 import React from 'react';
-import bossManExpressions from '../assets/boss-man-expressions.jpg';
+import bossManImage from '@assets/openart-image_wY2h6muP_1743615518231_raw.jpg';
 
-// Focusing more on the phone expressions as requested
 type CharacterMood = 'phoneAngry' | 'phoneRaging' | 'angry' | 'shouting' | 'raging' | 'yelling';
 type CharacterSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 
@@ -14,68 +13,59 @@ interface BossManImageProps {
 }
 
 export const BossManImage: React.FC<BossManImageProps> = ({ 
-  mood = 'phoneAngry', // Default to phone expression
-  size = 'md',
+  mood = 'angry', 
+  size = 'md', 
   className = '',
   withSpeechBubble = false,
   speechText = ''
 }) => {
-  const sizeClasses = {
-    xs: 'w-12 h-12',
-    sm: 'w-16 h-16',
-    md: 'w-24 h-24',
-    lg: 'w-32 h-32',
-    xl: 'w-40 h-40',
-    '2xl': 'w-48 h-48'
+  const getSizeClass = (characterSize: CharacterSize): string => {
+    switch (characterSize) {
+      case 'xs': return 'w-16 h-16';
+      case 'sm': return 'w-24 h-24';
+      case 'md': return 'w-32 h-32';
+      case 'lg': return 'w-48 h-48';
+      case 'xl': return 'w-64 h-64';
+      case '2xl': return 'w-96 h-96';
+      default: return 'w-32 h-32';
+    }
   };
 
-  // Precise coordinates for better centering for the new 3x2 grid image
-  // Format: [column, row, offsetX%, offsetY%, scale]
-  const moodDetails: Record<CharacterMood, [number, number, number, number, number]> = {
-    // Bottom row - phone expressions (prioritized)
-    phoneAngry: [1, 1, 0, 0, 1.1],  // Center column, bottom row - angry with phone
-    phoneRaging: [2, 1, 0, 0, 1.1], // Right column, bottom row - raging with phone
+  // Select the appropriate part of the image based on mood
+  // For now we're using the whole image, but in a real implementation
+  // you might use object-position to show different expressions from a sprite sheet
+  const getMoodClass = (characterMood: CharacterMood): string => {
+    const baseClass = 'rounded-full object-cover';
     
-    // Top row expressions
-    angry: [0, 0, 0, 0, 1.1],      // Left column, top row
-    shouting: [1, 0, 0, 0, 1.1],    // Center column, top row
-    raging: [2, 0, 0, 0, 1.1],     // Right column, top row
-    
-    // Bottom row - non-phone expression
-    yelling: [0, 1, 0, 0, 1.1]      // Left column, bottom row
+    switch (characterMood) {
+      case 'phoneAngry': return `${baseClass} object-left-top`;
+      case 'phoneRaging': return `${baseClass} object-right-top`;
+      case 'angry': return `${baseClass} object-left-bottom`;
+      case 'shouting': return `${baseClass} object-center`;
+      case 'raging': return `${baseClass} object-right-bottom`;
+      case 'yelling': return `${baseClass} object-bottom`;
+      default: return `${baseClass} object-center`;
+    }
   };
 
-  const [col, row, offsetX, offsetY, scale] = moodDetails[mood];
-  
   return (
-    <div className={`relative ${withSpeechBubble ? 'mb-6' : ''} ${className}`}>
-      {/* Speech bubble if needed */}
+    <div className={`relative ${className}`}>
       {withSpeechBubble && speechText && (
-        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 
-          bg-white text-primary font-bold rounded-2xl p-3 text-sm max-w-xs
-          border-2 border-primary shadow-lg z-10 speech-bubble">
+        <div className="absolute -top-16 right-0 bg-white rounded-lg p-3 shadow-md text-sm max-w-[200px] z-10 relative">
           {speechText}
+          <div className="absolute bottom-[-10px] right-[20px] w-0 h-0 border-l-[10px] border-r-[10px] border-t-[10px] border-l-transparent border-r-transparent border-t-white"></div>
         </div>
       )}
       
-      {/* Character image container */}
-      <div 
-        className={`${sizeClasses[size]} relative overflow-hidden rounded-full`}
-        style={{
-          boxShadow: '0 10px 25px rgba(0, 0, 0, 0.2)'
-        }}
-      >
-        {/* Actual character image with precise cropping based on mood */}
-        <div 
-          className="absolute inset-0 bg-no-repeat"
-          style={{
-            backgroundImage: `url(${bossManExpressions})`,
-            backgroundPosition: `${col * 33.33 + offsetX}% ${row * 50 + offsetY}%`,
-            backgroundSize: '300% 200%', // 3 columns, 2 rows
-            transform: `scale(${scale})`, // Adjusted scale factor per expression
-          }}
+      <div className={`${getSizeClass(size)} overflow-hidden relative`}>
+        <img 
+          src={bossManImage} 
+          alt="Boss Man Character" 
+          className={`${getMoodClass(mood)}`}
         />
       </div>
+
+      {/* Speech bubble styles applied via className */}
     </div>
   );
 };

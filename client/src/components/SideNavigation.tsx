@@ -30,6 +30,11 @@ export const SideNavigation: React.FC<React.PropsWithChildren> = ({ children }) 
       label: 'Calendar'
     },
     {
+      href: '/boss-demo',
+      icon: <Mic className="h-5 w-5" />,
+      label: 'BossMan Demo'
+    },
+    {
       href: '/jobsites',
       icon: <Building className="h-5 w-5" />,
       label: 'Jobsites'
