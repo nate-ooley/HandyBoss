@@ -1,9 +1,6 @@
 import React from 'react';
-import { BossManCharacter } from './BossManCharacter';
-import { Toggle } from '@/components/ui/toggle';
-import { Badge } from '@/components/ui/badge';
-import { Mic } from 'lucide-react';
-import { useVoice } from '../contexts/VoiceContext';
+import { Mic, Volume2, VolumeX } from 'lucide-react';
+import { BossManImage } from './BossManImage';
 
 interface BossManHeaderProps {
   title: string;
@@ -16,39 +13,62 @@ interface BossManHeaderProps {
 export const BossManHeader: React.FC<BossManHeaderProps> = ({
   title,
   onMicClick,
-  isBossMode = false,
+  isBossMode = true,
   toggleBossMode,
   isMobileView = false
 }) => {
-  const { isListening } = useVoice();
-
   return (
-    <div className={`bg-primary text-white p-4 ${isMobileView ? '' : 'p-6'} flex justify-between items-center`}>
-      <div className="flex items-center space-x-2">
-        <h1 className={`${isMobileView ? 'text-xl' : 'text-2xl'} font-bold`}>{title}</h1>
-        <BossManCharacter size={isMobileView ? 'sm' : 'md'} mood="happy" />
+    <div 
+      className={`
+        relative w-full bg-primary text-white 
+        py-3 px-4 
+        flex items-center justify-between
+        rounded-t-xl shadow-md z-10
+      `}
+    >
+      {/* Left side - Title and BossMan */}
+      <div className="flex items-center">
+        <div className="relative">
+          <BossManImage 
+            mood={isBossMode ? "shouting" : "angry"} 
+            size="sm"
+            className="-ml-1 -mb-1 transform -translate-y-1" 
+          />
+        </div>
+        <h1 className="text-xl font-bold ml-2 tracking-tight">{title}</h1>
       </div>
+      
+      {/* Right side - Controls */}
       <div className="flex items-center space-x-2">
-        {onMicClick && (
+        {/* Boss mode toggle */}
+        {toggleBossMode && (
           <button 
-            className={`p-2 rounded-full bg-white bg-opacity-20 ${isListening ? 'microphone-pulse' : ''}`}
-            onClick={onMicClick}
+            onClick={toggleBossMode}
+            className="p-2 rounded-full hover:bg-primary-foreground/10 transition-colors"
+            aria-label={isBossMode ? "Disable voice" : "Enable voice"}
           >
-            <Mic className="text-white h-5 w-5" />
+            {isBossMode ? (
+              <Volume2 className="w-5 h-5" />
+            ) : (
+              <VolumeX className="w-5 h-5" />
+            )}
           </button>
         )}
-        {toggleBossMode && (
-          <Toggle 
-            pressed={isBossMode} 
-            onPressedChange={toggleBossMode}
-            aria-label="Toggle boss mode"
+        
+        {/* Mic button */}
+        {onMicClick && (
+          <button 
+            onClick={onMicClick}
+            className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+            aria-label="Voice command"
           >
-            <Badge variant="warning" className="px-2 py-1 rounded-full text-xs">
-              {isBossMode ? 'Boss Mode' : 'Normal Mode'}
-            </Badge>
-          </Toggle>
+            <Mic className="w-5 h-5" />
+          </button>
         )}
       </div>
+      
+      {/* Bottom edge highlight */}
+      <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-primary-foreground/30 via-white/30 to-primary-foreground/30"></div>
     </div>
   );
 };

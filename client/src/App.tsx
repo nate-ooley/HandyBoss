@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/Dashboard";
 import MobileApp from "@/pages/MobileApp";
+import BossManDemo from "@/pages/BossManDemo";
 import { useMobile } from "@/hooks/use-mobile";
 import { useEffect } from "react";
 
@@ -23,6 +24,7 @@ function AppRoutes() {
     <Switch>
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/mobile" component={MobileApp} />
+      <Route path="/boss-demo" component={BossManDemo} />
       <Route component={NotFound} />
     </Switch>
   );
