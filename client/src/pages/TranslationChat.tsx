@@ -356,7 +356,9 @@ export default function TranslationChat() {
               {/* Message role indicator */}
               {message.role !== 'system' && (
                 <div className="text-xs opacity-70 mb-1 flex items-center">
-                  {message.role === 'boss' ? '👨‍💼 Boss:' : '👷 Trabajador:'}
+                  {message.role === 'boss' 
+                    ? role === 'boss' ? '👨‍💼 You:' : '👨‍💼 Boss:' 
+                    : role === 'worker' ? '👷 You:' : '👷 Worker:'}
                 </div>
               )}
               
@@ -368,20 +370,10 @@ export default function TranslationChat() {
                 </div>
               )}
               
-              {/* Message content */}
+              {/* Message content - show translated version for opposite role user */}
               <div className="text-sm">
-                {message.text}
+                {message.role !== role && message.translatedText ? message.translatedText : message.text}
               </div>
-              
-              {/* Translation (shown if available and user requested) */}
-              {message.translatedText && message.isUser && (
-                <div className="text-xs mt-1 opacity-80 border-t border-t-white/20 pt-1">
-                  <span className="font-semibold">
-                    {role === 'boss' ? 'Translated to Spanish:' : 'Traducido al inglés:'}
-                  </span>
-                  <div>{message.translatedText}</div>
-                </div>
-              )}
               
               {/* Location - if available */}
               {message.location && (
@@ -451,7 +443,12 @@ export default function TranslationChat() {
                   size="sm" 
                   variant="ghost" 
                   className="h-6 w-6 rounded-full p-0"
-                  onClick={() => speakMessage(message.text, message.language)}
+                  onClick={() => {
+                    const textToSpeak = message.role !== role && message.translatedText 
+                      ? message.translatedText 
+                      : message.text;
+                    speakMessage(textToSpeak, message.role !== role ? (role === 'boss' ? 'en' : 'es') : message.language);
+                  }}
                   disabled={isSpeaking}
                 >
                   <Phone className="h-3 w-3" />
@@ -662,8 +659,8 @@ export default function TranslationChat() {
           <div className="flex items-center">
             <BatteryCharging className="h-3 w-3 mr-1" />
             {role === 'boss' 
-              ? 'Using OpenAI API for translation (will use Gemma LLM on-device in future)' 
-              : 'Usando API de OpenAI para traducción (usará Gemma LLM en el dispositivo en el futuro)'}
+              ? 'Using pattern-matching fallback translation (will use Gemma LLM on-device in future)' 
+              : 'Usando traducción de respaldo por patrones (usará Gemma LLM en el dispositivo en el futuro)'}
           </div>
           
           <div className="flex items-center">
