@@ -51,6 +51,15 @@ export const chatMessages = pgTable("chat_messages", {
   location: json("location").$type<{ lat: number; lng: number; address?: string }>(),
   calendarEvent: boolean("calendar_event").default(false),
   eventTitle: text("event_title"),
+  reactions: json("reactions").$type<Record<string, string[]>>(),
+});
+
+export const messageReactions = pgTable("message_reactions", {
+  id: serial("id").primaryKey(),
+  messageId: integer("message_id").references(() => chatMessages.id).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  emoji: text("emoji").notNull(),
+  timestamp: timestamp("timestamp").notNull(),
 });
 
 // Insert schemas
@@ -69,6 +78,7 @@ export const insertWeatherAlertSchema = createInsertSchema(weatherAlerts);
 export const insertCommandSchema = createInsertSchema(commands);
 
 export const insertChatMessageSchema = createInsertSchema(chatMessages);
+export const insertMessageReactionSchema = createInsertSchema(messageReactions);
 
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -85,3 +95,6 @@ export type Command = typeof commands.$inferSelect;
 
 export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
 export type ChatMessage = typeof chatMessages.$inferSelect;
+
+export type InsertMessageReaction = z.infer<typeof insertMessageReactionSchema>;
+export type MessageReaction = typeof messageReactions.$inferSelect;

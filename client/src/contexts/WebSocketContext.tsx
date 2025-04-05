@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { createWebSocket, WebSocketMessage } from '../lib/webSocket';
 import { isClient } from '../lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
 interface WebSocketContextType {
   isConnected: boolean;
@@ -17,6 +18,7 @@ const WebSocketContext = createContext<WebSocketContextType>({
 export const useWebSocket = () => useContext(WebSocketContext);
 
 export const WebSocketProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
+  const { toast } = useToast();
   const [isConnected, setIsConnected] = useState(false);
   const [lastMessage, setLastMessage] = useState<WebSocketMessage | null>(null);
   const [wsInstance, setWsInstance] = useState<ReturnType<typeof createWebSocket> | null>(null);
@@ -32,6 +34,20 @@ export const WebSocketProvider: React.FC<React.PropsWithChildren> = ({ children 
     const socket = ws.connect();
     
     const unsubscribe = ws.onMessage((message) => {
+      // Handle different message types
+      if (message.type === 'message-reaction-update') {
+        // Show a toast notification for reactions
+        const { action, emoji, messageId } = message;
+        if (action === 'add') {
+          toast({
+            title: `Reaction added: ${emoji}`,
+            description: "Team reaction has been shared with all users",
+            duration: 2000,
+          });
+        }
+      }
+      
+      // Save the last message for other components to use
       setLastMessage(message);
     });
     
@@ -61,7 +77,7 @@ export const WebSocketProvider: React.FC<React.PropsWithChildren> = ({ children 
       ws.disconnect();
       window.removeEventListener('focus', handleFocus);
     };
-  }, []);
+  }, [toast]);
 
   // Send message function
   const sendMessage = useCallback((message: WebSocketMessage) => {

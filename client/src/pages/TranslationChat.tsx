@@ -8,7 +8,8 @@ import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Mic, MicOff, Send, RefreshCw, BatteryCharging, Phone, MapPin, Building, Calendar } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Mic, MicOff, Send, RefreshCw, BatteryCharging, Phone, MapPin, Building, Calendar, Smile } from 'lucide-react';
 import { useMobile } from '@/hooks/use-mobile';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
@@ -30,6 +31,7 @@ interface ChatMessage {
     lng: number;
     address?: string;
   };
+  reactions?: Record<string, string[]>; // emoji -> array of user IDs
 }
 
 export default function TranslationChat() {
@@ -72,28 +74,40 @@ export default function TranslationChat() {
   
   // Listen for WebSocket messages
   useEffect(() => {
-    if (lastMessage && lastMessage.type === 'chat-response') {
-      const { text, originalText, translatedText, translatedResponse, messageId, timestamp } = lastMessage;
-      
-      // Determine which text to display based on role
-      const displayText = role === 'boss' ? text : translatedResponse || translatedText || text;
-      
-      const newMessage: ChatMessage = {
-        id: messageId || Date.now().toString(),
-        text: displayText,
-        translatedText: translatedText,
-        isUser: false,
-        role: 'system',
-        language: role === 'boss' ? 'en' : 'es',
-        timestamp: timestamp || new Date().toISOString(),
-      };
-      
-      setMessages(prev => [...prev, newMessage]);
-      setIsProcessing(false);
-      
-      // Optional: Speak the response if in mobile mode
-      if (isMobile && !isSpeaking) {
-        speakMessage(displayText, role === 'boss' ? 'en' : 'es');
+    if (lastMessage) {
+      if (lastMessage.type === 'chat-response') {
+        const { text, originalText, translatedText, translatedResponse, messageId, timestamp } = lastMessage;
+        
+        // Determine which text to display based on role
+        const displayText = role === 'boss' ? text : translatedResponse || translatedText || text;
+        
+        const newMessage: ChatMessage = {
+          id: messageId || Date.now().toString(),
+          text: displayText,
+          translatedText: translatedText,
+          isUser: false,
+          role: 'system',
+          language: role === 'boss' ? 'en' : 'es',
+          timestamp: timestamp || new Date().toISOString(),
+        };
+        
+        setMessages(prev => [...prev, newMessage]);
+        setIsProcessing(false);
+        
+        // Optional: Speak the response if in mobile mode
+        if (isMobile && !isSpeaking) {
+          speakMessage(displayText, role === 'boss' ? 'en' : 'es');
+        }
+      } 
+      else if (lastMessage.type === 'message-reaction-update' || lastMessage.type === 'reaction-response') {
+        const { messageId, reactions } = lastMessage;
+        
+        if (messageId && reactions) {
+          // Update the message with new reactions
+          setMessages(prev => prev.map(msg => 
+            msg.id === messageId ? { ...msg, reactions } : msg
+          ));
+        }
       }
     }
   }, [lastMessage]);
@@ -226,6 +240,36 @@ export default function TranslationChat() {
     }
   };
   
+  // Handle adding an emoji reaction
+  const handleEmojiReaction = (messageId: string, emoji: string) => {
+    if (!isConnected) return;
+    
+    // Send the reaction to the server
+    sendMessage({
+      type: 'message-reaction',
+      messageId,
+      userId: 1, // Default user ID
+      emoji,
+      action: 'add',
+      timestamp: new Date().toISOString(),
+    });
+  };
+  
+  // Handle removing an emoji reaction
+  const handleRemoveReaction = (messageId: string, emoji: string) => {
+    if (!isConnected) return;
+    
+    // Send the reaction removal to the server
+    sendMessage({
+      type: 'message-reaction',
+      messageId,
+      userId: 1, // Default user ID
+      emoji,
+      action: 'remove',
+      timestamp: new Date().toISOString(),
+    });
+  };
+  
   return (
     <div className="flex flex-col h-full max-h-screen">
       {/* Header with role selector */}
@@ -348,9 +392,55 @@ export default function TranslationChat() {
                 </div>
               )}
               
-              {/* Timestamp */}
-              <div className="text-[10px] mt-1 opacity-60 text-right">
-                {new Date(message.timestamp).toLocaleTimeString()}
+              {/* Message reactions if any */}
+              {message.reactions && Object.keys(message.reactions).length > 0 && (
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {Object.entries(message.reactions).map(([emoji, userIds]) => (
+                    <div 
+                      key={emoji} 
+                      className="bg-background text-foreground rounded-full px-1.5 py-0.5 flex items-center text-xs cursor-pointer hover:bg-muted"
+                      onClick={() => {
+                        // Check if current user reacted, if so, remove it
+                        if (userIds.includes('1')) {
+                          handleRemoveReaction(message.id, emoji);
+                        } else {
+                          handleEmojiReaction(message.id, emoji);
+                        }
+                      }}
+                    >
+                      <span className="mr-1">{emoji}</span>
+                      <span className="opacity-70">{userIds.length}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+              {/* Timestamp with reaction button */}
+              <div className="text-[10px] mt-1 opacity-60 flex justify-between items-center">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      className="h-6 w-6 rounded-full p-0 opacity-60 hover:opacity-100"
+                    >
+                      <Smile className="h-3 w-3" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-2" align="start">
+                    <div className="flex gap-2">
+                      {['👍', '👎', '❤️', '😀', '😢', '🔥', '🚧', '🛠️'].map(emoji => (
+                        <button
+                          key={emoji}
+                          className="text-lg hover:bg-muted p-1 rounded"
+                          onClick={() => handleEmojiReaction(message.id, emoji)}
+                        >
+                          {emoji}
+                        </button>
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+                <span>{new Date(message.timestamp).toLocaleTimeString()}</span>
               </div>
             </Card>
             

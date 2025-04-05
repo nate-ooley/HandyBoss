@@ -3,12 +3,43 @@ import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { z } from "zod";
+import { log } from "./vite";
 import { insertCommandSchema, insertChatMessageSchema } from "@shared/schema";
 import { translateWithOpenAI, detectLanguageWithOpenAI } from "./openai";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
   const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+  
+  // Add a translation endpoint
+  app.post('/api/translate', async (req, res) => {
+    try {
+      const { text, targetLanguage } = req.body;
+      
+      if (!text || !targetLanguage) {
+        return res.status(400).json({ 
+          message: 'Missing required fields: text and targetLanguage' 
+        });
+      }
+      
+      if (!['en', 'es'].includes(targetLanguage)) {
+        return res.status(400).json({ 
+          message: 'Invalid target language. Supported languages: en, es' 
+        });
+      }
+      
+      const translatedText = await translateWithOpenAI(text, targetLanguage as 'en' | 'es');
+      
+      res.json({
+        original: text,
+        translated: translatedText,
+        targetLanguage
+      });
+    } catch (error) {
+      console.error('Translation error:', error);
+      res.status(500).json({ message: 'Error processing translation' });
+    }
+  });
   
   // Calendar API Endpoints
   app.get('/api/calendar/events', async (req, res) => {
@@ -97,6 +128,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             break;
           case 'calendar-event':
             handleCalendarEvent(ws, data);
+            break;
+          case 'message-reaction':
+            // Temporarily comment out to debug
+            console.log('Message reaction received:', data);
             break;
           default:
             ws.send(JSON.stringify({ 
@@ -388,6 +423,91 @@ export async function registerRoutes(app: Express): Promise<Server> {
       ws.send(JSON.stringify({ 
         type: 'error', 
         message: 'Error processing chat message' 
+      }));
+    }
+  };
+  
+  // Handle message reactions
+  const handleMessageReaction = async (ws: WebSocket, data: any) => {
+    try {
+      console.log('Processing message reaction:', data);
+      
+      // Required data: messageId, userId, emoji, action ('add' or 'remove')
+      const { messageId, userId, emoji, action } = data;
+      
+      if (!messageId || !userId || !emoji || !action) {
+        ws.send(JSON.stringify({ 
+          type: 'error', 
+          message: 'Missing required fields for reaction',
+          requestId: data.requestId 
+        }));
+        return;
+      }
+      
+      if (!['add', 'remove'].includes(action)) {
+        ws.send(JSON.stringify({ 
+          type: 'error', 
+          message: 'Invalid reaction action (must be "add" or "remove")',
+          requestId: data.requestId 
+        }));
+        return;
+      }
+      
+      let updatedMessage;
+      if (action === 'add') {
+        updatedMessage = await storage.addReactionToMessage(
+          parseInt(messageId), 
+          parseInt(userId), 
+          emoji
+        );
+      } else {
+        updatedMessage = await storage.removeReactionFromMessage(
+          parseInt(messageId), 
+          parseInt(userId), 
+          emoji
+        );
+      }
+      
+      if (!updatedMessage) {
+        ws.send(JSON.stringify({ 
+          type: 'error', 
+          message: 'Message not found',
+          requestId: data.requestId 
+        }));
+        return;
+      }
+      
+      // Send confirmation to the requesting client
+      ws.send(JSON.stringify({
+        type: 'reaction-response',
+        messageId,
+        userId,
+        emoji,
+        action,
+        success: true,
+        reactions: updatedMessage.reactions || {},
+        timestamp: new Date().toISOString(),
+        requestId: data.requestId
+      }));
+      
+      // Broadcast to all clients
+      console.log('Broadcasting reaction update to all clients');
+      broadcast({
+        type: 'message-reaction-update',
+        messageId,
+        userId,
+        emoji,
+        action,
+        reactions: updatedMessage.reactions || {},
+        timestamp: new Date().toISOString()
+      });
+      
+    } catch (error) {
+      console.error('Error handling message reaction:', error);
+      ws.send(JSON.stringify({ 
+        type: 'error', 
+        message: 'Error processing message reaction',
+        requestId: data.requestId
       }));
     }
   };

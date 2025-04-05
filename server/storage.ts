@@ -3,7 +3,8 @@ import {
   Jobsite, InsertJobsite, jobsites,
   WeatherAlert, InsertWeatherAlert, weatherAlerts,
   Command, InsertCommand, commands,
-  ChatMessage, InsertChatMessage, chatMessages
+  ChatMessage, InsertChatMessage, chatMessages,
+  MessageReaction, InsertMessageReaction, messageReactions
 } from "@shared/schema";
 
 export interface IStorage {
@@ -35,6 +36,11 @@ export interface IStorage {
   
   // Calendar events
   getCalendarEvents(startDate?: Date, endDate?: Date): Promise<Array<Jobsite | ChatMessage>>;
+  
+  // Message reaction methods
+  addReactionToMessage(messageId: number, userId: number, emoji: string): Promise<ChatMessage | undefined>;
+  removeReactionFromMessage(messageId: number, userId: number, emoji: string): Promise<ChatMessage | undefined>;
+  getMessageReactions(messageId: number): Promise<Record<string, string[]>>;
 }
 
 export class MemStorage implements IStorage {
@@ -43,12 +49,14 @@ export class MemStorage implements IStorage {
   private weatherAlerts: Map<number, WeatherAlert>;
   private commands: Map<number, Command>;
   private chatMessages: Map<number, ChatMessage>;
+  private messageReactions: Map<number, MessageReaction>;
   
   private userCurrentId: number;
   private jobsiteCurrentId: number;
   private weatherAlertCurrentId: number;
   private commandCurrentId: number;
   private chatMessageCurrentId: number;
+  private messageReactionCurrentId: number;
 
   constructor() {
     this.users = new Map();
@@ -56,12 +64,14 @@ export class MemStorage implements IStorage {
     this.weatherAlerts = new Map();
     this.commands = new Map();
     this.chatMessages = new Map();
+    this.messageReactions = new Map();
     
     this.userCurrentId = 1;
     this.jobsiteCurrentId = 1;
     this.weatherAlertCurrentId = 1;
     this.commandCurrentId = 1;
     this.chatMessageCurrentId = 1;
+    this.messageReactionCurrentId = 1;
 
     // Initialize with sample data
     this.initSampleData();
@@ -218,6 +228,72 @@ export class MemStorage implements IStorage {
     return events;
   }
 
+  // Message reaction methods
+  async addReactionToMessage(messageId: number, userId: number, emoji: string): Promise<ChatMessage | undefined> {
+    const message = this.chatMessages.get(messageId);
+    if (!message) return undefined;
+    
+    // Create a reaction record
+    const reactionId = this.messageReactionCurrentId++;
+    const reaction: MessageReaction = {
+      id: reactionId,
+      messageId,
+      userId,
+      emoji,
+      timestamp: new Date()
+    };
+    this.messageReactions.set(reactionId, reaction);
+    
+    // Update the message's reactions
+    const reactions = message.reactions || {};
+    const userArray = reactions[emoji] || [];
+    
+    // Check if user already added this reaction
+    if (!userArray.includes(userId.toString())) {
+      reactions[emoji] = [...userArray, userId.toString()];
+    }
+    
+    const updatedMessage = { ...message, reactions };
+    this.chatMessages.set(messageId, updatedMessage);
+    
+    return updatedMessage;
+  }
+  
+  async removeReactionFromMessage(messageId: number, userId: number, emoji: string): Promise<ChatMessage | undefined> {
+    const message = this.chatMessages.get(messageId);
+    if (!message || !message.reactions) return undefined;
+    
+    const reactions = { ...message.reactions };
+    const userArray = reactions[emoji] || [];
+    
+    // Filter out this user's reaction for this emoji
+    const updatedUserArray = userArray.filter(id => id !== userId.toString());
+    
+    // If there are still users with this reaction, update the array, otherwise remove the emoji key
+    if (updatedUserArray.length > 0) {
+      reactions[emoji] = updatedUserArray;
+    } else {
+      delete reactions[emoji];
+    }
+    
+    // Remove reaction records
+    Array.from(this.messageReactions.values())
+      .filter(r => r.messageId === messageId && r.userId === userId && r.emoji === emoji)
+      .forEach(r => this.messageReactions.delete(r.id));
+    
+    const updatedMessage = { ...message, reactions };
+    this.chatMessages.set(messageId, updatedMessage);
+    
+    return updatedMessage;
+  }
+  
+  async getMessageReactions(messageId: number): Promise<Record<string, string[]>> {
+    const message = this.chatMessages.get(messageId);
+    if (!message) return {};
+    
+    return message.reactions || {};
+  }
+  
   // Initialize with sample data
   private initSampleData() {
     // Sample user

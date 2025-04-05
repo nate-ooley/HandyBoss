@@ -3,8 +3,164 @@ import OpenAI from "openai";
 // Initialize the OpenAI client
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
+// Simple translation mappings for fallback
+const simpleDictionary = {
+  'en': {
+    'hola': 'hello',
+    'adiós': 'goodbye',
+    'gracias': 'thank you',
+    'sí': 'yes',
+    'no': 'no',
+    'por favor': 'please',
+    'ayuda': 'help',
+    'necesito': 'I need',
+    'trabajo': 'work',
+    'herramientas': 'tools',
+    'materiales': 'materials',
+    'ahora': 'now',
+    'mañana': 'tomorrow',
+    'problema': 'problem',
+    'arreglar': 'fix',
+    'terminado': 'done',
+    'tarde': 'late',
+    'buenos días': 'good morning',
+    'buenas tardes': 'good afternoon',
+    'buenas noches': 'good evening',
+    'cómo estás': 'how are you',
+    'estoy bien': 'I am fine',
+    'necesitamos': 'we need',
+    'más': 'more',
+    'trabajadores': 'workers',
+    'cuándo': 'when',
+    'dónde': 'where',
+    'quién': 'who',
+    'cómo': 'how',
+    'cemento': 'cement',
+    'ladrillo': 'brick',
+    'pintura': 'paint',
+    'madera': 'wood',
+    'metal': 'metal',
+    'agua': 'water',
+    'electricidad': 'electricity',
+    'plomería': 'plumbing',
+    'seguridad': 'safety',
+    'peligro': 'danger',
+    'cuidado': 'caution',
+    'rápido': 'fast',
+    'lento': 'slow',
+    'bueno': 'good',
+    'malo': 'bad',
+    'temprano': 'early',
+    'hora': 'hour',
+    'día': 'day',
+    'semana': 'week',
+    'mes': 'month',
+    'año': 'year'
+  },
+  'es': {
+    'hello': 'hola',
+    'goodbye': 'adiós',
+    'thank you': 'gracias',
+    'yes': 'sí',
+    'no': 'no',
+    'please': 'por favor',
+    'help': 'ayuda',
+    'I need': 'necesito',
+    'work': 'trabajo',
+    'tools': 'herramientas',
+    'materials': 'materiales',
+    'now': 'ahora',
+    'tomorrow': 'mañana',
+    'problem': 'problema',
+    'fix': 'arreglar',
+    'done': 'terminado',
+    'late': 'tarde',
+    'good morning': 'buenos días',
+    'good afternoon': 'buenas tardes',
+    'good evening': 'buenas noches',
+    'how are you': 'cómo estás',
+    'I am fine': 'estoy bien',
+    'we need': 'necesitamos',
+    'more': 'más',
+    'workers': 'trabajadores',
+    'when': 'cuándo',
+    'where': 'dónde',
+    'who': 'quién',
+    'how': 'cómo',
+    'cement': 'cemento',
+    'brick': 'ladrillo',
+    'paint': 'pintura',
+    'wood': 'madera',
+    'metal': 'metal',
+    'water': 'agua',
+    'electricity': 'electricidad',
+    'plumbing': 'plomería',
+    'safety': 'seguridad',
+    'danger': 'peligro',
+    'caution': 'cuidado',
+    'fast': 'rápido',
+    'slow': 'lento',
+    'good': 'bueno',
+    'bad': 'malo',
+    'early': 'temprano',
+    'hour': 'hora',
+    'day': 'día',
+    'week': 'semana',
+    'month': 'mes',
+    'year': 'año'
+  }
+};
+
+// Fallback translation using simple dictionary
+function simpleFallbackTranslation(text: string, targetLanguage: 'en' | 'es'): string {
+  // Skip translation if text is empty
+  if (!text.trim()) return text;
+  
+  let translated = text;
+  const dictionary = simpleDictionary[targetLanguage];
+  
+  // Simple construction-related phrases
+  if (targetLanguage === 'es') {
+    if (text.match(/I('| a)m on (my|the) way/i)) return "Estoy en camino";
+    if (text.match(/I('| wi)ll be .* late/i)) return "Llegaré tarde";
+    if (text.match(/need more workers/i)) return "Necesito más trabajadores";
+    if (text.match(/there('| i)s a problem/i)) return "Hay un problema";
+    if (text.match(/job (is )?complete(d)?/i)) return "Trabajo completado";
+    if (text.match(/we need (more )?materials/i)) return "Necesitamos más materiales";
+    if (text.match(/when will (you|it) be (done|finished)/i)) return "¿Cuándo estará terminado?";
+    if (text.match(/send (more|another) workers?/i)) return "Envía más trabajadores";
+    if (text.match(/start tomorrow/i)) return "Empezar mañana";
+    if (text.match(/safety (first|concern|issue)/i)) return "La seguridad es primero";
+  } else {
+    if (text.match(/estoy en camino/i)) return "I'm on my way";
+    if (text.match(/llegar(é|e) tarde/i)) return "I'll be late";
+    if (text.match(/necesito más trabajadores/i)) return "I need more workers";
+    if (text.match(/hay un problema/i)) return "There is a problem";
+    if (text.match(/trabajo completado/i)) return "Job complete";
+    if (text.match(/necesitamos (más )?materiales/i)) return "We need more materials";
+    if (text.match(/¿cuándo estará terminado\??/i)) return "When will it be finished?";
+    if (text.match(/env[ií]a más trabajadores/i)) return "Send more workers";
+    if (text.match(/empezar mañana/i)) return "Start tomorrow";
+    if (text.match(/la seguridad es primero/i)) return "Safety first";
+  }
+  
+  // Word replacement
+  for (const [source, target] of Object.entries(dictionary)) {
+    const regex = new RegExp(`\\b${source}\\b`, 'gi');
+    translated = translated.replace(regex, target);
+  }
+  
+  // If no changes were made (translation failed), return original with note
+  if (translated.toLowerCase() === text.toLowerCase()) {
+    return `${text} [Translation unavailable - API limit reached]`;
+  }
+  
+  return translated;
+}
+
 /**
  * Translate text from one language to another using OpenAI's GPT-4o model
+ * with fallback to simple dictionary if OpenAI is unavailable
  * 
  * @param text The text to translate
  * @param targetLanguage The target language code ('en' or 'es')
@@ -43,13 +199,69 @@ export async function translateWithOpenAI(text: string, targetLanguage: 'en' | '
     return response.choices[0].message.content?.trim() || text;
   } catch (error) {
     console.error('OpenAI translation error:', error);
-    // If translation fails, return original text
-    return text;
+    console.log('Using fallback translation system');
+    
+    // Use fallback translation if OpenAI fails
+    return simpleFallbackTranslation(text, targetLanguage);
   }
 }
 
+// Simple rule-based language detection as fallback
+function detectLanguageLocally(text: string): 'en' | 'es' {
+  if (!text.trim()) return 'en';
+  
+  // Common Spanish words and patterns
+  const spanishIndicators = [
+    /\b(el|la|los|las|un|una|unos|unas)\b/i,
+    /\b(es|está|estoy|están|estamos)\b/i,
+    /\b(yo|tu|él|ella|nosotros|ustedes|ellos)\b/i,
+    /\b(hola|adiós|gracias|por favor)\b/i,
+    /\b(qué|cómo|dónde|cuándo|quién|por qué)\b/i,
+    /\b(necesito|quiero|puedo|tengo|voy|hacer)\b/i,
+    /[áéíóúñ¿¡]/i,
+    /\b(trabajo|trabajador|construir|edificio|casa)\b/i,
+    /\b(para|con|sin|porque|pero|aunque)\b/i,
+  ];
+  
+  // Common English words and patterns
+  const englishIndicators = [
+    /\b(the|a|an|this|that|these|those)\b/i,
+    /\b(is|am|are|was|were|be|been)\b/i,
+    /\b(i|you|he|she|we|they)\b/i,
+    /\b(hello|goodbye|thanks|thank you|please)\b/i,
+    /\b(what|how|where|when|who|why)\b/i,
+    /\b(need|want|can|have|go|do)\b/i,
+    /\b(work|worker|build|building|house)\b/i,
+    /\b(for|with|without|because|but|although)\b/i,
+  ];
+  
+  let spanishScore = 0;
+  let englishScore = 0;
+  
+  // Check for Spanish indicators
+  for (const pattern of spanishIndicators) {
+    if (pattern.test(text)) {
+      spanishScore++;
+    }
+  }
+  
+  // Check for English indicators
+  for (const pattern of englishIndicators) {
+    if (pattern.test(text)) {
+      englishScore++;
+    }
+  }
+  
+  // Additional check: if text has Spanish characters, give extra weight
+  if (/[áéíóúñ¿¡]/i.test(text)) {
+    spanishScore += 2;
+  }
+  
+  return spanishScore > englishScore ? 'es' : 'en';
+}
+
 /**
- * Detect language of input text
+ * Detect language of input text with fallback to local detection
  * 
  * @param text The text to analyze
  * @returns The detected language code ('en' or 'es')
@@ -82,7 +294,9 @@ export async function detectLanguageWithOpenAI(text: string): Promise<'en' | 'es
     return result.language === 'es' ? 'es' : 'en';
   } catch (error) {
     console.error('OpenAI language detection error:', error);
-    // Default to English if detection fails
-    return 'en';
+    console.log('Using fallback language detection');
+    
+    // Use local detection if OpenAI API fails
+    return detectLanguageLocally(text);
   }
 }
