@@ -44,6 +44,32 @@ export async function translateText(text: string, targetLanguage: 'es' | 'en'): 
   // For empty text, return as is
   if (!text.trim()) return text;
   
+  // First try using the HTTP API endpoint for reliability
+  try {
+    const response = await fetch('/api/translate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        text,
+        targetLanguage,
+      }),
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      if (data.translated) {
+        console.log(`HTTP API Translation: "${text}" => "${data.translated}"`);
+        return data.translated;
+      }
+    }
+  } catch (httpError) {
+    console.warn('HTTP translation API error:', httpError);
+    // Fall through to WebSocket method if HTTP fails
+  }
+  
+  // Fallback to WebSocket method
   const socket = getTranslationSocket();
   if (!socket) {
     // Fallback for server-side or if WebSocket isn't available
@@ -81,7 +107,7 @@ export async function translateText(text: string, targetLanguage: 'es' | 'en'): 
     // Wait for the response
     return await translationPromise;
   } catch (error) {
-    console.error('Translation error:', error);
+    console.error('WebSocket translation error:', error);
     return text; // Return original text if translation fails
   }
 }
