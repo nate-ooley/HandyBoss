@@ -30,7 +30,7 @@ export const BossManHeader: React.FC<BossManHeaderProps> = ({
       <div className="flex items-center">
         <div className="relative">
           <BossManImage 
-            mood={isBossMode ? "shouting" : "angry"} 
+            mood={isBossMode ? "phoneRaging" : "phoneAngry"} 
             size="sm"
             className="-ml-1 -mb-1 transform -translate-y-1" 
           />

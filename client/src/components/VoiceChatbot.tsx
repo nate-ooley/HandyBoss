@@ -77,18 +77,18 @@ export const VoiceChatbot: React.FC = () => {
 
   // Function to get the appropriate mood for the boss character
   const getBossMoodForMessage = (messageText: string, isUser: boolean): any => {
-    if (isUser) return 'angry'; // Default for user messages
+    if (isUser) return 'phoneAngry'; // Default for user messages
     
     // For boss responses, determine mood based on message content
     const lowerText = messageText.toLowerCase();
     if (lowerText.includes('error') || lowerText.includes('cannot') || lowerText.includes('failed')) {
-      return 'raging';
+      return 'phoneRaging';
     } else if (lowerText.includes('urgent') || lowerText.includes('important')) {
-      return 'shouting';
-    } else if (lowerText.includes('call') || lowerText.includes('phone')) {
       return 'phoneAngry';
+    } else if (lowerText.includes('call') || lowerText.includes('contact') || lowerText.includes('message')) {
+      return 'phoneRaging';
     } else {
-      return 'yelling'; // Default response mood
+      return 'phoneAngry'; // Default response mood - emphasizing phone expressions
     }
   };
 
