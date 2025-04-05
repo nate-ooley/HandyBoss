@@ -29,20 +29,20 @@ export const BossManImage: React.FC<BossManImageProps> = ({
     '2xl': 'w-48 h-48'
   };
 
-  // Precise coordinates for better centering
+  // Precise coordinates for better centering for the new 3x2 grid image
   // Format: [column, row, offsetX%, offsetY%, scale]
   const moodDetails: Record<CharacterMood, [number, number, number, number, number]> = {
     // Bottom row - phone expressions (prioritized)
-    phoneAngry: [1, 1, 0, -5, 1.2],  // Center column, bottom row - angry with phone
-    phoneRaging: [2, 1, 0, -5, 1.2], // Right column, bottom row - raging with phone
+    phoneAngry: [1, 1, 0, 0, 1.1],  // Center column, bottom row - angry with phone
+    phoneRaging: [2, 1, 0, 0, 1.1], // Right column, bottom row - raging with phone
     
     // Top row expressions
-    angry: [0, 0, 0, -2, 1.15],      // Left column, top row
-    shouting: [1, 0, 0, 0, 1.15],    // Center column, top row
-    raging: [2, 0, 0, -2, 1.15],     // Right column, top row
+    angry: [0, 0, 0, 0, 1.1],      // Left column, top row
+    shouting: [1, 0, 0, 0, 1.1],    // Center column, top row
+    raging: [2, 0, 0, 0, 1.1],     // Right column, top row
     
     // Bottom row - non-phone expression
-    yelling: [0, 1, 0, -5, 1.2]      // Left column, bottom row
+    yelling: [0, 1, 0, 0, 1.1]      // Left column, bottom row
   };
 
   const [col, row, offsetX, offsetY, scale] = moodDetails[mood];
