@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'wouter';
-import { LayoutDashboard, Building, HardHat, Package, Drill, Calendar, Mic, Globe, Languages } from 'lucide-react';
+import { LayoutDashboard, Building, HardHat, Package, Drill, Calendar, Mic, Globe, Languages, Trophy, Award } from 'lucide-react';
 
 interface NavItem {
   href: string;
@@ -22,6 +22,12 @@ export const SideNavigation: React.FC<React.PropsWithChildren> = ({ children }) 
       href: '/translate',
       icon: <Languages className="h-5 w-5" />,
       label: 'Translator',
+      featured: true
+    },
+    {
+      href: '/team-progress',
+      icon: <Trophy className="h-5 w-5" />,
+      label: 'Team Progress',
       featured: true
     },
     {
