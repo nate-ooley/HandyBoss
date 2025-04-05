@@ -10,6 +10,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
   const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
   
+  // Calendar API Endpoints
+  app.get('/api/calendar/events', async (req, res) => {
+    try {
+      const startDate = req.query.startDate ? new Date(req.query.startDate as string) : undefined;
+      const endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined;
+      
+      const events = await storage.getCalendarEvents(startDate, endDate);
+      res.json(events);
+    } catch (error) {
+      console.error('Error fetching calendar events:', error);
+      res.status(500).json({ error: 'Failed to fetch calendar events' });
+    }
+  });
+  
+  app.post('/api/calendar/jobsite/:id/dates', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { startDate, endDate } = req.body;
+      
+      if (!startDate) {
+        return res.status(400).json({ error: 'Start date is required' });
+      }
+      
+      const updatedJobsite = await storage.updateJobsiteDates(
+        id, 
+        new Date(startDate), 
+        endDate ? new Date(endDate) : undefined
+      );
+      
+      if (!updatedJobsite) {
+        return res.status(404).json({ error: 'Jobsite not found' });
+      }
+      
+      res.json(updatedJobsite);
+    } catch (error) {
+      console.error('Error updating jobsite dates:', error);
+      res.status(500).json({ error: 'Failed to update jobsite dates' });
+    }
+  });
+  
+  app.post('/api/calendar/message/:id/event', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { title } = req.body;
+      
+      if (!title) {
+        return res.status(400).json({ error: 'Event title is required' });
+      }
+      
+      const updatedMessage = await storage.markMessageAsCalendarEvent(id, title);
+      
+      if (!updatedMessage) {
+        return res.status(404).json({ error: 'Message not found' });
+      }
+      
+      res.json(updatedMessage);
+    } catch (error) {
+      console.error('Error marking message as calendar event:', error);
+      res.status(500).json({ error: 'Failed to mark message as calendar event' });
+    }
+  });
+  
   // WebSocket setup
   wss.on('connection', (ws) => {
     console.log('WebSocket client connected');
@@ -33,6 +95,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           case 'chat-message':
             handleChatMessage(ws, data);
             break;
+          case 'calendar-event':
+            handleCalendarEvent(ws, data);
+            break;
           default:
             ws.send(JSON.stringify({ 
               type: 'error', 
@@ -52,6 +117,109 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('WebSocket client disconnected');
     });
   });
+  
+  // Handle calendar event requests
+  const handleCalendarEvent = async (ws: WebSocket, data: any) => {
+    try {
+      console.log('Processing calendar event:', data);
+      
+      if (data.action === 'create' && data.messageId) {
+        // Create a calendar event from a message
+        const title = data.title || 'Calendar Event';
+        const updatedMessage = await storage.markMessageAsCalendarEvent(data.messageId, title);
+        
+        if (!updatedMessage) {
+          ws.send(JSON.stringify({ 
+            type: 'error', 
+            message: 'Message not found',
+            requestId: data.requestId 
+          }));
+          return;
+        }
+        
+        ws.send(JSON.stringify({
+          type: 'calendar-event-response',
+          event: updatedMessage,
+          action: 'create',
+          success: true,
+          timestamp: new Date().toISOString(),
+          requestId: data.requestId
+        }));
+        
+        // Broadcast to all clients
+        broadcast({
+          type: 'calendar-event-update',
+          event: updatedMessage,
+          action: 'create',
+          timestamp: new Date().toISOString()
+        });
+      } 
+      else if (data.action === 'update' && data.jobsiteId) {
+        // Update jobsite dates
+        const jobsiteId = parseInt(data.jobsiteId);
+        const startDate = data.startDate ? new Date(data.startDate) : new Date();
+        const endDate = data.endDate ? new Date(data.endDate) : undefined;
+        
+        const updatedJobsite = await storage.updateJobsiteDates(jobsiteId, startDate, endDate);
+        
+        if (!updatedJobsite) {
+          ws.send(JSON.stringify({ 
+            type: 'error', 
+            message: 'Jobsite not found',
+            requestId: data.requestId 
+          }));
+          return;
+        }
+        
+        ws.send(JSON.stringify({
+          type: 'calendar-event-response',
+          event: updatedJobsite,
+          action: 'update',
+          success: true,
+          timestamp: new Date().toISOString(),
+          requestId: data.requestId
+        }));
+        
+        // Broadcast to all clients
+        broadcast({
+          type: 'calendar-event-update',
+          event: updatedJobsite,
+          action: 'update',
+          timestamp: new Date().toISOString()
+        });
+      }
+      else if (data.action === 'fetch') {
+        // Fetch calendar events
+        const startDate = data.startDate ? new Date(data.startDate) : undefined;
+        const endDate = data.endDate ? new Date(data.endDate) : undefined;
+        
+        const events = await storage.getCalendarEvents(startDate, endDate);
+        
+        ws.send(JSON.stringify({
+          type: 'calendar-events-response',
+          events: events,
+          startDate: startDate?.toISOString(),
+          endDate: endDate?.toISOString(),
+          timestamp: new Date().toISOString(),
+          requestId: data.requestId
+        }));
+      }
+      else {
+        ws.send(JSON.stringify({ 
+          type: 'error', 
+          message: 'Invalid calendar event action',
+          requestId: data.requestId 
+        }));
+      }
+    } catch (error) {
+      console.error('Error handling calendar event:', error);
+      ws.send(JSON.stringify({ 
+        type: 'error', 
+        message: 'Error processing calendar event',
+        requestId: data.requestId
+      }));
+    }
+  };
   
   // Broadcast to all connected clients
   const broadcast = (message: any) => {

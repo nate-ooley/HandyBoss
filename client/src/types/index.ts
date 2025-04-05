@@ -11,6 +11,8 @@ export interface Jobsite {
   address: string;
   status: string;
   time: string;
+  startDate?: string;
+  endDate?: string;
   location?: {
     lat: number;
     lng: number;
@@ -35,8 +37,20 @@ export interface Command {
 export interface ChatMessage {
   id: string;
   text: string;
+  translatedText?: string;
   isUser: boolean;
+  role?: string;
+  language?: string;
   timestamp: string;
+  userId?: number;
+  jobsiteId?: number;
+  location?: {
+    lat: number;
+    lng: number;
+    address?: string;
+  };
+  calendarEvent?: boolean;
+  eventTitle?: string;
 }
 
 export interface Marker {

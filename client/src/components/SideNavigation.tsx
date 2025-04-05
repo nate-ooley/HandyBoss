@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'wouter';
-import { LayoutDashboard, Building, HardHat, Package, Drill } from 'lucide-react';
+import { LayoutDashboard, Building, HardHat, Package, Drill, Calendar } from 'lucide-react';
 
 interface NavItem {
   href: string;
@@ -16,6 +16,11 @@ export const SideNavigation: React.FC<React.PropsWithChildren> = ({ children }) 
       href: '/dashboard',
       icon: <LayoutDashboard className="h-5 w-5" />,
       label: 'Dashboard'
+    },
+    {
+      href: '/calendar',
+      icon: <Calendar className="h-5 w-5" />,
+      label: 'Calendar'
     },
     {
       href: '/jobsites',

@@ -7,6 +7,7 @@ import Dashboard from "@/pages/Dashboard";
 import MobileApp from "@/pages/MobileApp";
 import BossManDemo from "@/pages/BossManDemo";
 import TranslationChat from "@/pages/TranslationChat";
+import Calendar from "@/pages/Calendar-simple";
 import { VoiceProvider } from "@/contexts/VoiceContext";
 import { WebSocketProvider } from "@/contexts/WebSocketContext";
 import { useMobile } from "@/hooks/use-mobile";
@@ -29,6 +30,7 @@ function AppRoutes() {
       <Route path="/mobile" component={MobileApp} />
       <Route path="/boss-demo" component={BossManDemo} />
       <Route path="/translate" component={TranslationChat} />
+      <Route path="/calendar" component={Calendar} />
       <Route component={NotFound} />
     </Switch>
   );

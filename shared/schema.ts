@@ -17,6 +17,8 @@ export const jobsites = pgTable("jobsites", {
   address: text("address").notNull(),
   status: text("status").notNull(),
   time: text("time").notNull(),
+  startDate: timestamp("start_date"),
+  endDate: timestamp("end_date"),
   location: json("location").$type<{ lat: number; lng: number }>(),
 });
 
@@ -39,9 +41,16 @@ export const commands = pgTable("commands", {
 export const chatMessages = pgTable("chat_messages", {
   id: serial("id").primaryKey(),
   text: text("text").notNull(),
+  translatedText: text("translated_text"),
   isUser: boolean("is_user").notNull(),
+  role: text("role").notNull().default("worker"),
+  language: text("language").notNull().default("en"),
   timestamp: timestamp("timestamp").notNull(),
   userId: integer("user_id").references(() => users.id),
+  jobsiteId: integer("jobsite_id").references(() => jobsites.id),
+  location: json("location").$type<{ lat: number; lng: number; address?: string }>(),
+  calendarEvent: boolean("calendar_event").default(false),
+  eventTitle: text("event_title"),
 });
 
 // Insert schemas
