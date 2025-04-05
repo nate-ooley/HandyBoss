@@ -6,6 +6,7 @@ import { z } from "zod";
 import { log } from "./vite";
 import { insertCommandSchema, insertChatMessageSchema } from "@shared/schema";
 import { translateWithOpenAI, detectLanguageWithOpenAI } from "./openai";
+import { sendEmail, sendSMS, sendBulkNotifications } from "./services/sendgrid";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
@@ -103,6 +104,86 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Notification API Endpoints
+  app.post('/api/notifications/sms', async (req, res) => {
+    try {
+      const { to, from, message, jobsiteName } = req.body;
+      
+      if (!to || !from || !message) {
+        return res.status(400).json({ error: 'Missing required fields: to, from, message' });
+      }
+      
+      const success = await sendSMS({
+        to,
+        from,
+        message,
+        jobsiteName
+      });
+      
+      if (success) {
+        res.json({ success: true, message: 'SMS notification sent successfully' });
+      } else {
+        res.status(500).json({ success: false, error: 'Failed to send SMS notification' });
+      }
+    } catch (error) {
+      console.error('Error sending SMS notification:', error);
+      res.status(500).json({ success: false, error: 'Failed to send SMS notification' });
+    }
+  });
+  
+  app.post('/api/notifications/email', async (req, res) => {
+    try {
+      const { to, from, subject, text, html } = req.body;
+      
+      if (!to || !from || !subject) {
+        return res.status(400).json({ error: 'Missing required fields: to, from, subject' });
+      }
+      
+      const success = await sendEmail({
+        to,
+        from,
+        subject,
+        text,
+        html
+      });
+      
+      if (success) {
+        res.json({ success: true, message: 'Email notification sent successfully' });
+      } else {
+        res.status(500).json({ success: false, error: 'Failed to send email notification' });
+      }
+    } catch (error) {
+      console.error('Error sending email notification:', error);
+      res.status(500).json({ success: false, error: 'Failed to send email notification' });
+    }
+  });
+  
+  app.post('/api/notifications/bulk', async (req, res) => {
+    try {
+      const { recipients, message, jobsiteName } = req.body;
+      
+      if (!recipients || !Array.isArray(recipients) || !message) {
+        return res.status(400).json({ error: 'Missing required fields: recipients (array), message' });
+      }
+      
+      const result = await sendBulkNotifications(recipients, message, jobsiteName);
+      
+      res.json({
+        success: true,
+        message: 'Bulk notifications processed',
+        stats: {
+          smsCount: result.smsCount,
+          emailCount: result.emailCount,
+          totalSent: result.smsCount + result.emailCount,
+          totalRecipients: recipients.length
+        }
+      });
+    } catch (error) {
+      console.error('Error sending bulk notifications:', error);
+      res.status(500).json({ success: false, error: 'Failed to send bulk notifications' });
+    }
+  });
+  
   // WebSocket setup
   wss.on('connection', (ws) => {
     console.log('WebSocket client connected');
@@ -130,8 +211,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             handleCalendarEvent(ws, data);
             break;
           case 'message-reaction':
-            // Temporarily comment out to debug
-            console.log('Message reaction received:', data);
+            handleMessageReaction(ws, data);
             break;
           default:
             ws.send(JSON.stringify({ 
@@ -278,25 +358,100 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Process the command
       let response = '';
+      let shouldSendNotification = false;
+      let notificationMessage = '';
+      let jobsiteName = '';
+      
       if (data.command.toLowerCase().includes('late')) {
         response = `I've notified the team that you'll be late. Your ETA has been updated.`;
+        shouldSendNotification = true;
+        notificationMessage = `BOSS UPDATE: Running late to the jobsite. ETA is delayed.`;
         
         // Update jobsite status if it's mentioned
         const jobsites = await storage.getJobsites();
         for (const jobsite of jobsites) {
           if (data.command.toLowerCase().includes(jobsite.name.toLowerCase())) {
             await storage.updateJobsiteStatus(jobsite.id, `Delayed (from voice command)`);
+            jobsiteName = jobsite.name;
             break;
           }
         }
       } else if (data.command.toLowerCase().includes('weather')) {
         response = `Weather update received. I've updated the jobsite status and notified the client.`;
+        shouldSendNotification = true;
+        notificationMessage = `WEATHER ALERT: Weather conditions may affect today's work. Take precautions.`;
+        
+        // Check if a specific jobsite is mentioned
+        const jobsites = await storage.getJobsites();
+        for (const jobsite of jobsites) {
+          if (data.command.toLowerCase().includes(jobsite.name.toLowerCase())) {
+            jobsiteName = jobsite.name;
+            break;
+          }
+        }
       } else if (data.command.toLowerCase().includes('equipment') || data.command.toLowerCase().includes('material')) {
         response = `Supply request logged. The team has been notified about the needed resources.`;
+        shouldSendNotification = true;
+        notificationMessage = `SUPPLY REQUEST: New equipment or materials have been requested.`;
+        
+        // Check if a specific jobsite is mentioned
+        const jobsites = await storage.getJobsites();
+        for (const jobsite of jobsites) {
+          if (data.command.toLowerCase().includes(jobsite.name.toLowerCase())) {
+            jobsiteName = jobsite.name;
+            break;
+          }
+        }
       } else if (data.command.toLowerCase().includes('safety')) {
         response = `Safety issue reported. A supervisor has been notified to address this immediately.`;
+        shouldSendNotification = true;
+        notificationMessage = `SAFETY ALERT: A safety concern has been reported. Please check in.`;
+        
+        // Check if a specific jobsite is mentioned
+        const jobsites = await storage.getJobsites();
+        for (const jobsite of jobsites) {
+          if (data.command.toLowerCase().includes(jobsite.name.toLowerCase())) {
+            jobsiteName = jobsite.name;
+            break;
+          }
+        }
       } else {
         response = `Command received: ${data.command}`;
+      }
+      
+      // Send SMS notification if needed
+      if (shouldSendNotification) {
+        try {
+          // In a real app, we would get recipients from the database
+          // based on the jobsite and notification preferences
+          const recipients: Array<{ 
+            name: string; 
+            phone?: string; 
+            email?: string; 
+            preferredMethod: 'sms' | 'email' | 'both' 
+          }> = [
+            {
+              name: "Worker 1",
+              phone: "+15551234567", // Example phone number
+              email: "worker1@example.com",
+              preferredMethod: 'sms' as const
+            },
+            {
+              name: "Supervisor",
+              phone: "+15557654321", // Example phone number
+              email: "supervisor@example.com",
+              preferredMethod: 'email' as const
+            }
+          ];
+          
+          // Send bulk notifications
+          await sendBulkNotifications(recipients, notificationMessage, jobsiteName);
+          
+          console.log(`Sent notifications for command: ${data.command}`);
+        } catch (error) {
+          console.error('Error sending notifications:', error);
+          // Continue processing even if notification fails
+        }
       }
       
       // Send response back to the client
@@ -304,14 +459,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         type: 'command-response',
         text: response,
         commandId: command.id,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        notificationSent: shouldSendNotification
       }));
       
       // Broadcast update to all clients
       broadcast({
         type: 'command-update',
         command: command,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        notificationSent: shouldSendNotification
       });
       
     } catch (error) {
