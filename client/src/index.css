@@ -1,0 +1,120 @@
+@import url('https://fonts.googleapis.com/css2?family=Futura:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 6 76% 60%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 70% 60%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 36 85% 61%;
+    --accent-foreground: 0 0% 0%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 6 76% 60%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+    --success: 142 72% 29%;
+    --success-foreground: 210 40% 98%;
+    --light: 210 40% 98%;
+    --dark: 222.2 84% 4.9%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 222.2 84% 4.9%;
+    --sidebar-primary: 6 76% 60%;
+    --sidebar-primary-foreground: 210 40% 98%;
+    --sidebar-accent: 36 85% 61%;
+    --sidebar-accent-foreground: 0 0% 0%;
+    --sidebar-border: 214.3 31.8% 91.4%;
+    --sidebar-ring: 6 76% 60%;
+    --radius: 1rem;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 6 76% 60%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 70% 60%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 36 85% 61%;
+    --accent-foreground: 0 0% 0%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 6 76% 60%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+    --success: 142 72% 29%;
+    --success-foreground: 210 40% 98%;
+    --light: 217.2 32.6% 17.5%;
+    --dark: 210 40% 98%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans;
+    font-family: 'Inter', 'Futura', sans-serif;
+  }
+}
+
+@layer components {
+  .speech-bubble {
+    @apply relative bg-light p-3 rounded-xl;
+  }
+  
+  .speech-bubble:after {
+    content: '';
+    position: absolute;
+    left: -10px;
+    top: 15px;
+    border-width: 8px;
+    border-style: solid;
+    border-color: transparent hsl(var(--light)) transparent transparent;
+  }
+
+  .microphone-pulse {
+    animation: pulse 1.5s infinite;
+  }
+
+  @keyframes pulse {
+    0% {
+      transform: scale(1);
+      opacity: 1;
+    }
+    50% {
+      transform: scale(1.1);
+      opacity: 0.8;
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+
+  .weather-alert {
+    @apply bg-warning bg-opacity-20 p-3 flex items-center space-x-3 border-l-4 border-warning;
+  }
+}
