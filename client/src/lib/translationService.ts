@@ -88,18 +88,68 @@ export async function translateText(text: string, targetLanguage: 'es' | 'en'): 
 
 // Function to detect language (simple version - would be more sophisticated with Gemma)
 export function detectLanguage(text: string): 'en' | 'es' {
-  // Very simplified detection based on common Spanish words
-  const spanishIndicators = ['el', 'la', 'los', 'las', 'es', 'son', 'está', 'están', 'yo', 'tú', 'él', 'ella', 'nosotros', 'vosotros', 'ellos', 'gracias', 'hola', 'adiós', 'sí', 'no'];
+  if (!text || !text.trim()) return 'en';
   
-  const words = text.toLowerCase().split(/\s+/);
+  // Expanded list of Spanish indicators with high-frequency words
+  const spanishIndicators = [
+    // Articles and common determiners
+    'el', 'la', 'los', 'las', 'un', 'una', 'unos', 'unas', 'lo', 
+    // Pronouns
+    'yo', 'tú', 'él', 'ella', 'nosotros', 'vosotros', 'ellos', 'ellas',
+    'me', 'te', 'se', 'nos', 'os', 'le', 'les', 'lo', 'la', 'los', 'las', 
+    // Very common verbs
+    'es', 'son', 'está', 'están', 'tengo', 'tiene', 'hay', 'voy', 'va',
+    'hago', 'hace', 'puedo', 'puede', 'quiero', 'quiere', 'digo', 'dice',
+    // Prepositions
+    'de', 'en', 'a', 'para', 'por', 'con', 'sin', 'entre', 'sobre', 'hasta',
+    // Common adverbs and conjunctions
+    'y', 'o', 'pero', 'porque', 'cuando', 'como', 'si', 'no', 'muy', 'más', 'menos',
+    // Greetings and common phrases
+    'hola', 'adiós', 'gracias', 'por favor', 'buenos', 'buenas', 'sí', 'claro',
+    // Construction specific
+    'trabajo', 'herramientas', 'materiales', 'ahora', 'mañana', 'problema',
+    'arreglar', 'terminado', 'tarde', 'temprano', 'sitio', 'construcción'
+  ];
+  
+  // Clean the text and split into words
+  const words = text.toLowerCase()
+    .replace(/[.,!?;:"""''()]/g, '')
+    .split(/\s+/)
+    .filter(word => word.length > 1); // Filter out single characters
+  
+  if (words.length === 0) return 'en';
+  
   let spanishWordCount = 0;
   
+  // Count Spanish indicator words
   words.forEach(word => {
-    if (spanishIndicators.includes(word.replace(/[.,!?;:]/g, ''))) {
+    if (spanishIndicators.includes(word)) {
+      spanishWordCount++;
+    }
+    // Also check for Spanish character combinations
+    if (word.includes('ñ') || word.includes('¿') || word.includes('¡')) {
       spanishWordCount++;
     }
   });
   
-  // If more than 15% of words are recognized as Spanish, assume it's Spanish
-  return (spanishWordCount / words.length > 0.15) ? 'es' : 'en';
+  // Check for Spanish-specific patterns and endings
+  const spanishPatterns = [
+    /ción$/, /sión$/, /dad$/, /tad$/, /mente$/, /amos$/, /emos$/, /imos$/,
+    /ando$/, /endo$/, /ado$/, /ido$/, /aba$/, /ía$/, /aré$/, /eré$/, /iré$/
+  ];
+  
+  words.forEach(word => {
+    if (word.length > 3) {
+      for (const pattern of spanishPatterns) {
+        if (pattern.test(word)) {
+          spanishWordCount += 0.5; // Half point for pattern matches
+          break;
+        }
+      }
+    }
+  });
+  
+  // If more than 10% of words are recognized as Spanish, assume it's Spanish
+  // This threshold is lower because we're using a more comprehensive detection
+  return (spanishWordCount / words.length > 0.1) ? 'es' : 'en';
 }
