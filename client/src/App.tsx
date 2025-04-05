@@ -6,6 +6,9 @@ import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/Dashboard";
 import MobileApp from "@/pages/MobileApp";
 import BossManDemo from "@/pages/BossManDemo";
+import TranslationChat from "@/pages/TranslationChat";
+import { VoiceProvider } from "@/contexts/VoiceContext";
+import { WebSocketProvider } from "@/contexts/WebSocketContext";
 import { useMobile } from "@/hooks/use-mobile";
 import { useEffect } from "react";
 
@@ -25,6 +28,7 @@ function AppRoutes() {
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/mobile" component={MobileApp} />
       <Route path="/boss-demo" component={BossManDemo} />
+      <Route path="/translate" component={TranslationChat} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -33,10 +37,14 @@ function AppRoutes() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <Router>
-        <AppRoutes />
-      </Router>
-      <Toaster />
+      <WebSocketProvider>
+        <VoiceProvider>
+          <Router>
+            <AppRoutes />
+          </Router>
+          <Toaster />
+        </VoiceProvider>
+      </WebSocketProvider>
     </QueryClientProvider>
   );
 }

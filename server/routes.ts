@@ -4,6 +4,7 @@ import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { z } from "zod";
 import { insertCommandSchema, insertChatMessageSchema } from "@shared/schema";
+import { translateWithOpenAI, detectLanguageWithOpenAI } from "./openai";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
@@ -122,36 +123,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Handle chat messages
   const handleChatMessage = async (ws: WebSocket, data: any) => {
     try {
-      // Store the chat message
+      // Extract data from the message
+      const messageText = data.text || '';
+      const role = data.role || 'boss'; // 'boss' or 'worker'
+      const sourceLanguage = data.language || (role === 'boss' ? 'en' : 'es'); 
+      const targetLanguage = sourceLanguage === 'en' ? 'es' : 'en';
+      
+      console.log(`Processing message from ${role} in ${sourceLanguage}`);
+      
+      // Store the original chat message
       const chatMessage = await storage.createChatMessage({
-        text: data.text,
+        text: messageText,
         isUser: true,
-        timestamp: data.timestamp,
+        timestamp: data.timestamp ? new Date(data.timestamp) : new Date(),
         userId: 1 // Default user for now
       });
       
-      // Generate response based on the chat message
-      let responseText = '';
-      if (data.text.toLowerCase().includes('where') && data.text.toLowerCase().includes('mike')) {
-        responseText = `Mike is currently at the Downtown Renovation site. He arrived 30 minutes ago and reported heavy rain conditions.`;
-      } else if (data.text.toLowerCase().includes('weather')) {
-        const weatherAlerts = await storage.getWeatherAlerts();
-        if (weatherAlerts.length > 0) {
-          responseText = `There is a ${weatherAlerts[0].title} for the ${weatherAlerts[0].location}. ${weatherAlerts[0].impact}`;
-        } else {
-          responseText = `There are no current weather alerts.`;
-        }
-      } else if (data.text.toLowerCase().includes('status') || data.text.toLowerCase().includes('update')) {
-        responseText = `There are 3 active jobsites today. Westside Project is delayed by 20 minutes, Downtown Renovation has a weather alert, and Eastside Construction is on schedule.`;
+      // Translate the message if needed
+      let translatedText = '';
+      if (role === 'boss' && sourceLanguage === 'en') {
+        // Boss speaking English - translate to Spanish for worker
+        translatedText = await translateWithOpenAI(messageText, 'es');
+      } else if (role === 'worker' && sourceLanguage === 'es') {
+        // Worker speaking Spanish - translate to English for boss
+        translatedText = await translateWithOpenAI(messageText, 'en');
       } else {
-        responseText = `I'm sorry, I don't have information about that. Please try asking about jobsite status, weather conditions, or crew locations.`;
+        translatedText = messageText; // No translation needed
       }
       
-      // Store the response
+      // Generate response based on the chat message (using the translated text if appropriate)
+      const textToProcess = role === 'worker' ? translatedText : messageText;
+      let responseText = '';
+      
+      if (textToProcess.toLowerCase().includes('where') && textToProcess.toLowerCase().includes('mike')) {
+        responseText = role === 'boss' 
+          ? `Mike is currently at the Downtown Renovation site. He arrived 30 minutes ago and reported heavy rain conditions.`
+          : `Mike está actualmente en el sitio de Renovación del Centro. Llegó hace 30 minutos y reportó condiciones de lluvia intensa.`;
+      } else if (textToProcess.toLowerCase().includes('weather') || textToProcess.toLowerCase().includes('clima')) {
+        const weatherAlerts = await storage.getWeatherAlerts();
+        if (weatherAlerts.length > 0) {
+          responseText = role === 'boss'
+            ? `There is a ${weatherAlerts[0].title} for the ${weatherAlerts[0].location}. ${weatherAlerts[0].impact}`
+            : `Hay una alerta de ${await translateWithOpenAI(weatherAlerts[0].title, 'es')} para ${await translateWithOpenAI(weatherAlerts[0].location, 'es')}. ${await translateWithOpenAI(weatherAlerts[0].impact, 'es')}`;
+        } else {
+          responseText = role === 'boss' 
+            ? `There are no current weather alerts.`
+            : `No hay alertas meteorológicas actuales.`;
+        }
+      } else if (textToProcess.toLowerCase().includes('status') || textToProcess.toLowerCase().includes('update') || 
+                 textToProcess.toLowerCase().includes('estado') || textToProcess.toLowerCase().includes('actualización')) {
+        responseText = role === 'boss'
+          ? `There are 3 active jobsites today. Westside Project is delayed by 20 minutes, Downtown Renovation has a weather alert, and Eastside Construction is on schedule.`
+          : `Hay 3 sitios de trabajo activos hoy. El Proyecto Oeste está retrasado 20 minutos, la Renovación del Centro tiene una alerta meteorológica, y la Construcción Este está en horario.`;
+      } else {
+        responseText = role === 'boss'
+          ? `I'm sorry, I don't have information about that. Please try asking about jobsite status, weather conditions, or crew locations.`
+          : `Lo siento, no tengo información sobre eso. Por favor, intente preguntar sobre el estado del sitio de trabajo, las condiciones climáticas o las ubicaciones del equipo.`;
+      }
+      
+      // Translate the response if needed
+      let translatedResponse = '';
+      if (role === 'boss' && responseText) {
+        // Translate response to Spanish for the worker
+        translatedResponse = await translateWithOpenAI(responseText, 'es');
+      } else if (role === 'worker' && responseText) {
+        // Translate response to English for the boss
+        translatedResponse = await translateWithOpenAI(responseText, 'en');
+      }
+      
+      // Store the response in the original language
       const responseMessage = await storage.createChatMessage({
         text: responseText,
         isUser: false,
-        timestamp: new Date().toISOString(),
+        timestamp: new Date(),  // Use actual Date object for Postgres timestamp
         userId: 1 // Default user for now
       });
       
@@ -159,8 +203,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       ws.send(JSON.stringify({
         type: 'chat-response',
         text: responseText,
+        originalText: messageText,
+        translatedText: translatedText,
+        translatedResponse: translatedResponse || responseText,
         messageId: responseMessage.id,
-        timestamp: new Date().toISOString()
+        role: role,
+        sourceLanguage: sourceLanguage,
+        targetLanguage: targetLanguage,
+        timestamp: new Date().toISOString(),
+        // Include the requestId if it was provided in the original message
+        ...(data.requestId ? { requestId: data.requestId } : {})
       }));
       
     } catch (error) {
@@ -170,6 +222,163 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: 'Error processing chat message' 
       }));
     }
+  };
+  
+  // Simulated translation function - in a real app, this would connect to Gemma or another translation service
+  async function simulateTranslation(text: string, targetLanguage: 'en' | 'es'): Promise<string> {
+    // This is a very simplified translation simulation
+    // In a real app, this would use a proper translation API or Google's Gemma
+    
+    // Simple dictionary for common construction phrases
+    const translations: Record<string, Record<string, string>> = {
+      'en': { // English words
+        'hola': 'hello',
+        'adiós': 'goodbye',
+        'gracias': 'thank you',
+        'sí': 'yes',
+        'no': 'no',
+        'por favor': 'please',
+        'ayuda': 'help',
+        'necesito': 'I need',
+        'trabajo': 'work',
+        'herramientas': 'tools',
+        'materiales': 'materials',
+        'ahora': 'now',
+        'mañana': 'tomorrow',
+        'problema': 'problem',
+        'arreglar': 'fix',
+        'terminado': 'done',
+        'tarde': 'late',
+        'temprano': 'early',
+        'lo siento': 'sorry',
+        'bueno': 'good',
+        'malo': 'bad',
+        'sitio de trabajo': 'job site',
+        'construcción': 'construction',
+        'trabajador': 'worker',
+        'jefe': 'boss',
+        'más': 'more',
+        'menos': 'less',
+        'llamar': 'call',
+        'mensaje': 'message',
+        'entender': 'understand',
+        'emergencia': 'emergency',
+        'seguridad': 'safety',
+        'equipo': 'equipment',
+        'clima': 'weather',
+        'lluvia': 'rain',
+        'caliente': 'hot',
+        'frío': 'cold',
+        'listo': 'ready',
+        'esperar': 'wait',
+        'apurar': 'hurry',
+        'lento': 'slow',
+        'rápido': 'fast',
+        'comenzar': 'start',
+        'terminar': 'finish',
+        'descanso': 'break',
+        'almuerzo': 'lunch',
+        'tiempo': 'time',
+        'hora': 'hour',
+        'minuto': 'minute',
+        'día': 'day',
+        'semana': 'week',
+      },
+      'es': { // Spanish words
+        'hello': 'hola',
+        'goodbye': 'adiós',
+        'thank you': 'gracias',
+        'yes': 'sí',
+        'no': 'no',
+        'please': 'por favor',
+        'help': 'ayuda',
+        'I need': 'necesito',
+        'work': 'trabajo',
+        'tools': 'herramientas',
+        'materials': 'materiales',
+        'now': 'ahora',
+        'tomorrow': 'mañana',
+        'problem': 'problema',
+        'fix': 'arreglar',
+        'done': 'terminado',
+        'late': 'tarde',
+        'early': 'temprano',
+        'sorry': 'lo siento',
+        'good': 'bueno',
+        'bad': 'malo',
+        'job site': 'sitio de trabajo',
+        'construction': 'construcción',
+        'worker': 'trabajador',
+        'boss': 'jefe',
+        'more': 'más',
+        'less': 'menos',
+        'call': 'llamar',
+        'message': 'mensaje',
+        'understand': 'entender',
+        'emergency': 'emergencia',
+        'safety': 'seguridad',
+        'equipment': 'equipo',
+        'weather': 'clima',
+        'rain': 'lluvia',
+        'hot': 'caliente',
+        'cold': 'frío',
+        'ready': 'listo',
+        'wait': 'esperar',
+        'hurry': 'apurar',
+        'slow': 'lento',
+        'fast': 'rápido',
+        'start': 'comenzar',
+        'finish': 'terminar',
+        'break': 'descanso',
+        'lunch': 'almuerzo',
+        'time': 'tiempo',
+        'hour': 'hora',
+        'minute': 'minuto',
+        'day': 'día',
+        'week': 'semana',
+      }
+    };
+    
+    // Artificial delay to simulate processing time (would be faster with on-device Gemma)
+    await new Promise(resolve => setTimeout(resolve, 200));
+    
+    // Get the translation dictionary for the target language
+    const dictionary = translations[targetLanguage];
+    
+    // Simple word replacement (very naive translation)
+    let translated = text.toLowerCase();
+    
+    // Special case for common construction phrases
+    if (targetLanguage === 'es') {
+      if (text.match(/I('| a)m on (my|the) way/i)) return "Estoy en camino";
+      if (text.match(/I('| wi)ll be .* late/i)) return "Llegaré tarde";
+      if (text.match(/need more workers/i)) return "Necesito más trabajadores";
+      if (text.match(/need more materials/i)) return "Necesito más materiales";
+      if (text.match(/there('| i)s a problem/i)) return "Hay un problema";
+      if (text.match(/job (is )?complete(d)?/i)) return "Trabajo completado";
+      if (text.match(/I don('|')t understand/i)) return "No entiendo";
+      if (text.match(/call me/i)) return "Llámame";
+      if (text.match(/send (the )?photos/i)) return "Envía las fotos";
+    } else {
+      if (text.match(/estoy en camino/i)) return "I'm on my way";
+      if (text.match(/llegar(é|e) tarde/i)) return "I'll be late";
+      if (text.match(/necesito más trabajadores/i)) return "I need more workers";
+      if (text.match(/necesito más materiales/i)) return "I need more materials";
+      if (text.match(/hay un problema/i)) return "There is a problem";
+      if (text.match(/trabajo completado/i)) return "Job complete";
+      if (text.match(/no entiendo/i)) return "I don't understand";
+      if (text.match(/lláma(me|r)/i)) return "Call me";
+      if (text.match(/env(í|i)a (las )?fotos/i)) return "Send photos";
+    }
+    
+    // Word-by-word translation (very simplified)
+    for (const [source, target] of Object.entries(dictionary)) {
+      // Using case-insensitive global replacement with word boundaries
+      const regex = new RegExp(`\\b${source}\\b`, 'gi');
+      translated = translated.replace(regex, target);
+    }
+    
+    return translated.charAt(0).toUpperCase() + translated.slice(1);
   };
 
   // API Routes
