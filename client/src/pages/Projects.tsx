@@ -463,12 +463,12 @@ export default function Projects() {
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold tracking-tight">Projects</h1>
             <div className="flex items-center gap-4">
-              <DialogTrigger asChild>
-                <Button className="gap-1">
-                  <span>New Project</span>
-                </Button>
-              </DialogTrigger>
               <Dialog>
+                <DialogTrigger asChild>
+                  <Button className="gap-1">
+                    <span>New Project</span>
+                  </Button>
+                </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
                     <DialogTitle>Create New Project</DialogTitle>
