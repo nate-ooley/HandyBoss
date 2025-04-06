@@ -210,9 +210,14 @@ export const CrewPage = () => {
   });
 
   const deleteCrewMutation = useMutation({
-    mutationFn: (id: number) => 
-      apiRequest("DELETE", `/api/crew/${id}`)
-        .then((res) => res.json()),
+    mutationFn: async (id: number) => {
+      const res = await apiRequest("DELETE", `/api/crew/${id}`);
+      // 204 No Content status doesn't have a response body to parse
+      if (res.status === 204) {
+        return { success: true };
+      }
+      return res.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/crew'] });
       
@@ -298,13 +303,22 @@ export const CrewPage = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (isEditDialogOpen && selectedCrewMember) {
-      updateCrewMutation.mutate({
-        id: selectedCrewMember.id,
-        crewMember: formData
+    try {
+      if (isEditDialogOpen && selectedCrewMember) {
+        updateCrewMutation.mutate({
+          id: selectedCrewMember.id,
+          crewMember: formData
+        });
+      } else {
+        addCrewMutation.mutate(formData);
+      }
+    } catch (error) {
+      console.error("Error submitting form:", error);
+      toast({
+        title: "Error",
+        description: "Failed to process your request. Please try again.",
+        variant: "destructive",
       });
-    } else {
-      addCrewMutation.mutate(formData);
     }
   };
 
@@ -330,7 +344,16 @@ export const CrewPage = () => {
 
   const handleDeleteClick = (crewMember: CrewMember) => {
     if (window.confirm(`Are you sure you want to delete ${crewMember.name}?`)) {
-      deleteCrewMutation.mutate(crewMember.id);
+      try {
+        deleteCrewMutation.mutate(crewMember.id);
+      } catch (error) {
+        console.error("Error deleting crew member:", error);
+        toast({
+          title: "Error",
+          description: "Failed to delete crew member. Please try again.",
+          variant: "destructive",
+        });
+      }
     }
   };
 

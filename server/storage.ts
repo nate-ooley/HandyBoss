@@ -369,6 +369,9 @@ export class MemStorage implements IStorage {
   }
   
   async deleteCrewMember(id: number): Promise<boolean> {
+    if (!this.crewMembers.has(id)) {
+      return false;
+    }
     return this.crewMembers.delete(id);
   }
   
