@@ -156,6 +156,18 @@ export const CrewPage = () => {
       return data;
     }
   });
+  
+  // Get projects assigned to this crew member
+  const { data: assignedProjects = [], isLoading: isLoadingAssignedProjects } = useQuery({
+    queryKey: ['/api/crew', selectedCrewMember?.id, 'projects'],
+    queryFn: async () => {
+      if (!selectedCrewMember?.id) return [];
+      const response = await apiRequest("GET", `/api/crew/${selectedCrewMember.id}/projects`);
+      const data = await response.json();
+      return data;
+    },
+    enabled: !!selectedCrewMember?.id // Only run this query if we have a selected crew member
+  });
 
   // Mutations for CRUD operations
   const addCrewMutation = useMutation({
@@ -590,7 +602,7 @@ export const CrewPage = () => {
                   </Card>
                   
                   {selectedCrewMember.notes && (
-                    <Card>
+                    <Card className="mb-6">
                       <CardHeader>
                         <CardTitle>Notes</CardTitle>
                       </CardHeader>
@@ -599,6 +611,79 @@ export const CrewPage = () => {
                       </CardContent>
                     </Card>
                   )}
+                  
+                  {/* Assigned Projects */}
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between">
+                      <CardTitle>Assigned Projects</CardTitle>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => setLocation(`/crew/${selectedCrewMember.id}/assign-projects`)}
+                        className="h-8"
+                      >
+                        Manage Assignments
+                      </Button>
+                    </CardHeader>
+                    <CardContent>
+                      {isLoadingAssignedProjects ? (
+                        <div className="flex justify-center py-4">
+                          <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full"></div>
+                        </div>
+                      ) : assignedProjects.length > 0 ? (
+                        <div className="space-y-3">
+                          {assignedProjects.map((project: Jobsite) => (
+                            <div 
+                              key={project.id} 
+                              className="p-3 border rounded-md hover:bg-gray-50 transition-colors"
+                              onClick={() => setLocation(`/projects/${project.id}`)}
+                              style={{ cursor: 'pointer' }}
+                            >
+                              <div className="flex justify-between items-start">
+                                <div>
+                                  <h4 className="font-medium">{project.name}</h4>
+                                  <p className="text-sm text-gray-500">{project.address}</p>
+                                </div>
+                                <Badge className={
+                                  project.status === 'active' ? 'bg-green-100 text-green-800' :
+                                  project.status === 'completed' ? 'bg-blue-100 text-blue-800' :
+                                  project.status === 'scheduled' ? 'bg-amber-100 text-amber-800' :
+                                  'bg-red-100 text-red-800'
+                                }>
+                                  {project.status.charAt(0).toUpperCase() + project.status.slice(1)}
+                                </Badge>
+                              </div>
+                              {typeof project.progress === 'number' && (
+                                <div className="mt-2">
+                                  <div className="flex justify-between text-xs mb-1">
+                                    <span>Progress</span>
+                                    <span>{project.progress}%</span>
+                                  </div>
+                                  <div className="w-full bg-gray-200 rounded-full h-1.5">
+                                    <div 
+                                      className="bg-primary h-1.5 rounded-full" 
+                                      style={{ width: `${project.progress}%` }}
+                                    ></div>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="py-8 text-center">
+                          <p className="text-gray-500 mb-4">No assigned projects found</p>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => setLocation(`/crew/${selectedCrewMember.id}/assign-projects`)}
+                          >
+                            Assign to Project
+                          </Button>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
                 </div>
               </div>
             </>
