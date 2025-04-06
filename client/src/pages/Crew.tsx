@@ -94,6 +94,7 @@ export const CrewPage = () => {
   const [isProfileView, setIsProfileView] = useState(false);
   const [isAssignProjectsMode, setIsAssignProjectsMode] = useState(false);
   const [selectedCrewMember, setSelectedCrewMember] = useState<CrewMember | null>(null);
+  const [tempAssignedProjectIds, setTempAssignedProjectIds] = useState<number[]>([]);
   
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -169,6 +170,13 @@ export const CrewPage = () => {
     },
     enabled: !!selectedCrewMember?.id // Only run this query if we have a selected crew member
   });
+  
+  // Update our temporary state when assigned projects change
+  useEffect(() => {
+    if (assignedProjects && assignedProjects.length > 0) {
+      setTempAssignedProjectIds(assignedProjects.map((p: any) => p.id));
+    }
+  }, [assignedProjects]);
 
   // Mutations for CRUD operations
   const addCrewMutation = useMutation({
@@ -250,6 +258,53 @@ export const CrewPage = () => {
       toast({
         title: "Error",
         description: "Failed to delete crew member: " + error,
+        variant: "destructive",
+      });
+    }
+  });
+  
+  // Add crew member to project mutation
+  const addToProjectMutation = useMutation({
+    mutationFn: async (data: { crewMemberId: number, projectId: number }) => {
+      const response = await apiRequest(
+        "POST", 
+        `/api/crew/${data.crewMemberId}/assign-project`,
+        { projectId: data.projectId }
+      );
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/crew', selectedCrewMember?.id, 'projects'] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to add crew member to project: " + error,
+        variant: "destructive",
+      });
+    }
+  });
+  
+  // Remove crew member from project mutation
+  const removeFromProjectMutation = useMutation({
+    mutationFn: async (data: { crewMemberId: number, projectId: number }) => {
+      const response = await apiRequest(
+        "DELETE", 
+        `/api/crew/${data.crewMemberId}/projects/${data.projectId}`
+      );
+      // If successful with 204 No Content
+      if (response.status === 204) {
+        return { success: true };
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/crew', selectedCrewMember?.id, 'projects'] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to remove crew member from project: " + error,
         variant: "destructive",
       });
     }
@@ -477,7 +532,8 @@ export const CrewPage = () => {
                       <div className="space-y-4">
                         {jobsites.map((project: Jobsite) => {
                           // Check if crew member is already assigned to this project
-                          const isAssigned = assignedProjects.some((p: any) => p.id === project.id);
+                          // Use tempAssignedProjectIds for the UI state
+                          const isAssigned = tempAssignedProjectIds.includes(project.id);
                           
                           return (
                             <div 
@@ -498,11 +554,14 @@ export const CrewPage = () => {
                                     onClick={() => {
                                       // Here you would call the API to remove the assignment
                                       if (confirm(`Remove ${selectedCrewMember.name} from ${project.name}?`)) {
-                                        // API call would go here
-                                        toast({
-                                          title: "Removed from project",
-                                          description: `${selectedCrewMember.name} removed from ${project.name}`,
+                                        // Call the API to remove the assignment
+                                        removeFromProjectMutation.mutate({
+                                          crewMemberId: selectedCrewMember.id,
+                                          projectId: project.id
                                         });
+                                        
+                                        // Update UI immediately without waiting for the API response
+                                        setTempAssignedProjectIds(tempAssignedProjectIds.filter(id => id !== project.id));
                                       }
                                     }}
                                   >
@@ -514,11 +573,14 @@ export const CrewPage = () => {
                                     variant="outline" 
                                     size="sm"
                                     onClick={() => {
-                                      // Here you would call the API to add the assignment
-                                      toast({
-                                        title: "Added to project",
-                                        description: `${selectedCrewMember.name} added to ${project.name}`,
+                                      // Call the API to add the assignment
+                                      addToProjectMutation.mutate({
+                                        crewMemberId: selectedCrewMember.id,
+                                        projectId: project.id
                                       });
+
+                                      // Update UI immediately without waiting for the API response
+                                      setTempAssignedProjectIds([...tempAssignedProjectIds, project.id]);
                                     }}
                                   >
                                     Add to Project
