@@ -47,6 +47,24 @@ export const WebSocketProvider: React.FC<React.PropsWithChildren> = ({ children 
         }
       }
       
+      // Handle calendar event updates
+      if (message.type === 'calendar-event-update') {
+        const { action, event } = message;
+        if (action === 'create') {
+          toast({
+            title: 'Calendar Event Added',
+            description: `${event.eventTitle || event.name || 'Event'} has been added to the calendar`,
+            duration: 3000,
+          });
+        } else if (action === 'update') {
+          toast({
+            title: 'Calendar Event Updated',
+            description: `${event.name || 'Project'} schedule has been updated`,
+            duration: 3000,
+          });
+        }
+      }
+      
       // Save the last message for other components to use
       setLastMessage(message);
     });

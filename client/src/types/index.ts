@@ -13,6 +13,8 @@ export interface Jobsite {
   time: string;
   startDate?: string;
   endDate?: string;
+  description?: string;
+  progress?: number;
   location?: {
     lat: number;
     lng: number;
