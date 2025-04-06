@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, json } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, json, real } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -101,3 +101,36 @@ export type ChatMessage = typeof chatMessages.$inferSelect;
 
 export type InsertMessageReaction = z.infer<typeof insertMessageReactionSchema>;
 export type MessageReaction = typeof messageReactions.$inferSelect;
+
+// Crew members schema
+export const crewMembers = pgTable("crew_members", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  role: text("role").notNull(),
+  phone: text("phone"),
+  email: text("email"),
+  jobsiteId: integer("jobsite_id").references(() => jobsites.id),
+  specialization: text("specialization"), // e.g., "Electrician", "Plumber", "Carpenter"
+  experienceYears: integer("experience_years"),
+  status: text("status").default("active"), // "active", "on-leave", "terminated"
+  latitude: real("latitude"),
+  longitude: real("longitude"),
+  locationName: text("location_name"),
+  lastCheckIn: timestamp("last_check_in"),
+  profileImage: text("profile_image"), // URL to profile image
+  certifications: text("certifications").array(),
+  languages: text("languages").array(),
+  emergencyContact: text("emergency_contact"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertCrewMemberSchema = createInsertSchema(crewMembers).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertCrewMember = z.infer<typeof insertCrewMemberSchema>;
+export type CrewMember = typeof crewMembers.$inferSelect;

@@ -4,7 +4,8 @@ import {
   WeatherAlert, InsertWeatherAlert, weatherAlerts,
   Command, InsertCommand, commands,
   ChatMessage, InsertChatMessage, chatMessages,
-  MessageReaction, InsertMessageReaction, messageReactions
+  MessageReaction, InsertMessageReaction, messageReactions,
+  CrewMember, InsertCrewMember, crewMembers
 } from "@shared/schema";
 
 export interface IStorage {
@@ -41,6 +42,15 @@ export interface IStorage {
   addReactionToMessage(messageId: number, userId: number, emoji: string): Promise<ChatMessage | undefined>;
   removeReactionFromMessage(messageId: number, userId: number, emoji: string): Promise<ChatMessage | undefined>;
   getMessageReactions(messageId: number): Promise<Record<string, string[]>>;
+  
+  // Crew member methods
+  getCrewMembers(): Promise<CrewMember[]>;
+  getCrewMembersByJobsite(jobsiteId: number): Promise<CrewMember[]>;
+  getCrewMember(id: number): Promise<CrewMember | undefined>;
+  createCrewMember(crewMember: InsertCrewMember): Promise<CrewMember>;
+  updateCrewMember(id: number, data: Partial<InsertCrewMember>): Promise<CrewMember | undefined>;
+  updateCrewMemberLocation(id: number, latitude: number, longitude: number, locationName?: string): Promise<CrewMember | undefined>;
+  deleteCrewMember(id: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -50,6 +60,7 @@ export class MemStorage implements IStorage {
   private commands: Map<number, Command>;
   private chatMessages: Map<number, ChatMessage>;
   private messageReactions: Map<number, MessageReaction>;
+  private crewMembers: Map<number, CrewMember>;
   
   private userCurrentId: number;
   private jobsiteCurrentId: number;
@@ -57,6 +68,7 @@ export class MemStorage implements IStorage {
   private commandCurrentId: number;
   private chatMessageCurrentId: number;
   private messageReactionCurrentId: number;
+  private crewMemberCurrentId: number;
 
   constructor() {
     this.users = new Map();
@@ -65,6 +77,7 @@ export class MemStorage implements IStorage {
     this.commands = new Map();
     this.chatMessages = new Map();
     this.messageReactions = new Map();
+    this.crewMembers = new Map();
     
     this.userCurrentId = 1;
     this.jobsiteCurrentId = 1;
@@ -72,6 +85,7 @@ export class MemStorage implements IStorage {
     this.commandCurrentId = 1;
     this.chatMessageCurrentId = 1;
     this.messageReactionCurrentId = 1;
+    this.crewMemberCurrentId = 1;
 
     // Initialize with sample data
     this.initSampleData();
@@ -294,6 +308,70 @@ export class MemStorage implements IStorage {
     return message.reactions || {};
   }
   
+  // Crew member methods
+  async getCrewMembers(): Promise<CrewMember[]> {
+    return Array.from(this.crewMembers.values());
+  }
+  
+  async getCrewMembersByJobsite(jobsiteId: number): Promise<CrewMember[]> {
+    return Array.from(this.crewMembers.values())
+      .filter(member => member.jobsiteId === jobsiteId);
+  }
+  
+  async getCrewMember(id: number): Promise<CrewMember | undefined> {
+    return this.crewMembers.get(id);
+  }
+  
+  async createCrewMember(insertCrewMember: InsertCrewMember): Promise<CrewMember> {
+    const id = this.crewMemberCurrentId++;
+    const crewMember: CrewMember = { 
+      ...insertCrewMember, 
+      id, 
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    this.crewMembers.set(id, crewMember);
+    return crewMember;
+  }
+  
+  async updateCrewMember(id: number, data: Partial<InsertCrewMember>): Promise<CrewMember | undefined> {
+    const crewMember = this.crewMembers.get(id);
+    if (!crewMember) return undefined;
+    
+    const updatedCrewMember = { 
+      ...crewMember, 
+      ...data,
+      updatedAt: new Date()
+    };
+    this.crewMembers.set(id, updatedCrewMember);
+    return updatedCrewMember;
+  }
+  
+  async updateCrewMemberLocation(
+    id: number, 
+    latitude: number, 
+    longitude: number, 
+    locationName?: string
+  ): Promise<CrewMember | undefined> {
+    const crewMember = this.crewMembers.get(id);
+    if (!crewMember) return undefined;
+    
+    const updatedCrewMember = { 
+      ...crewMember, 
+      latitude,
+      longitude,
+      locationName: locationName || crewMember.locationName,
+      lastCheckIn: new Date(),
+      updatedAt: new Date()
+    };
+    this.crewMembers.set(id, updatedCrewMember);
+    return updatedCrewMember;
+  }
+  
+  async deleteCrewMember(id: number): Promise<boolean> {
+    return this.crewMembers.delete(id);
+  }
+  
   // Initialize with sample data
   private initSampleData() {
     // Sample user
@@ -433,6 +511,122 @@ export class MemStorage implements IStorage {
     ];
     
     chatMessages.forEach(msg => this.chatMessages.set(msg.id, msg));
+    
+    // Sample crew members
+    const crewMembers = [
+      {
+        id: this.crewMemberCurrentId++,
+        name: 'Carlos Rodriguez',
+        role: 'Lead Electrician',
+        phone: '555-1234',
+        email: 'carlos@construction.com',
+        jobsiteId: jobsite1.id,
+        specialization: 'Electrical',
+        experienceYears: 8,
+        status: 'active',
+        latitude: 34.052235,
+        longitude: -118.243683,
+        locationName: 'Westside Project - Building A',
+        lastCheckIn: new Date(),
+        profileImage: '/assets/crew1.png',
+        certifications: ['Master Electrician', 'Safety Certified'],
+        languages: ['en', 'es'],
+        emergencyContact: 'Maria Rodriguez: 555-9876',
+        notes: 'Specializes in commercial wiring systems',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      },
+      {
+        id: this.crewMemberCurrentId++,
+        name: 'Sarah Johnson',
+        role: 'Project Manager',
+        phone: '555-5678',
+        email: 'sarah@construction.com',
+        jobsiteId: jobsite2.id,
+        specialization: 'Project Management',
+        experienceYears: 12,
+        status: 'active',
+        latitude: 34.045124,
+        longitude: -118.267294,
+        locationName: 'Downtown Renovation - Floor 3',
+        lastCheckIn: new Date(),
+        profileImage: '/assets/crew2.png',
+        certifications: ['PMP Certified', 'OSHA Certified'],
+        languages: ['en'],
+        emergencyContact: 'Michael Johnson: 555-4567',
+        notes: 'Manages all downtown projects',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      },
+      {
+        id: this.crewMemberCurrentId++,
+        name: 'Miguel Sanchez',
+        role: 'Concrete Specialist',
+        phone: '555-3434',
+        email: 'miguel@construction.com',
+        jobsiteId: jobsite3.id,
+        specialization: 'Concrete/Foundation',
+        experienceYears: 15,
+        status: 'active',
+        latitude: 34.074442,
+        longitude: -118.243459,
+        locationName: 'Eastside Construction - Foundation Area',
+        lastCheckIn: new Date(),
+        profileImage: '/assets/crew3.png',
+        certifications: ['Concrete Specialist', 'Heavy Equipment Operator'],
+        languages: ['es', 'en'],
+        emergencyContact: 'Ana Sanchez: 555-7878',
+        notes: 'Expert in complex foundation work',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      },
+      {
+        id: this.crewMemberCurrentId++,
+        name: 'James Williams',
+        role: 'Plumber',
+        phone: '555-8989',
+        email: 'james@construction.com',
+        jobsiteId: jobsite1.id,
+        specialization: 'Plumbing',
+        experienceYears: 7,
+        status: 'active',
+        latitude: 34.052789,
+        longitude: -118.242912,
+        locationName: 'Westside Project - Building A, Floor 2',
+        lastCheckIn: new Date(),
+        profileImage: '/assets/crew4.png',
+        certifications: ['Master Plumber', 'Gas Line Certified'],
+        languages: ['en'],
+        emergencyContact: 'Lisa Williams: 555-1111',
+        notes: 'Specializes in commercial plumbing systems',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      },
+      {
+        id: this.crewMemberCurrentId++,
+        name: 'Elena Martinez',
+        role: 'HVAC Technician',
+        phone: '555-2222',
+        email: 'elena@construction.com',
+        jobsiteId: jobsite2.id,
+        specialization: 'HVAC',
+        experienceYears: 6,
+        status: 'active',
+        latitude: 34.046134,
+        longitude: -118.265912,
+        locationName: 'Downtown Renovation - Mechanical Room',
+        lastCheckIn: new Date(),
+        profileImage: '/assets/crew5.png',
+        certifications: ['HVAC Certified', 'Energy Efficiency Specialist'],
+        languages: ['en', 'es'],
+        emergencyContact: 'Roberto Martinez: 555-3333',
+        notes: 'Expert in energy-efficient HVAC systems',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }
+    ];
+    
+    crewMembers.forEach(member => this.crewMembers.set(member.id, member));
   }
 }
 

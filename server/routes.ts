@@ -1129,6 +1129,146 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(messages);
   });
   
+  // Crew API Endpoints
+  app.get('/api/crew', async (req, res) => {
+    try {
+      const crewMembers = await storage.getCrewMembers();
+      res.json(crewMembers);
+    } catch (error) {
+      console.error('Error fetching crew members:', error);
+      res.status(500).json({ error: 'Failed to fetch crew members' });
+    }
+  });
+  
+  app.get('/api/crew/jobsite/:jobsiteId', async (req, res) => {
+    try {
+      const jobsiteId = parseInt(req.params.jobsiteId);
+      
+      if (isNaN(jobsiteId)) {
+        return res.status(400).json({ error: 'Invalid jobsite ID' });
+      }
+      
+      const crewMembers = await storage.getCrewMembersByJobsite(jobsiteId);
+      res.json(crewMembers);
+    } catch (error) {
+      console.error('Error fetching crew members by jobsite:', error);
+      res.status(500).json({ error: 'Failed to fetch crew members' });
+    }
+  });
+  
+  app.get('/api/crew/:id', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      if (isNaN(id)) {
+        return res.status(400).json({ error: 'Invalid crew member ID' });
+      }
+      
+      const crewMember = await storage.getCrewMember(id);
+      
+      if (!crewMember) {
+        return res.status(404).json({ error: 'Crew member not found' });
+      }
+      
+      res.json(crewMember);
+    } catch (error) {
+      console.error('Error fetching crew member:', error);
+      res.status(500).json({ error: 'Failed to fetch crew member' });
+    }
+  });
+  
+  app.post('/api/crew', async (req, res) => {
+    try {
+      const crewMemberData = req.body;
+      
+      // Validate required fields
+      if (!crewMemberData.name || !crewMemberData.role) {
+        return res.status(400).json({ error: 'Name and role are required fields' });
+      }
+      
+      const newCrewMember = await storage.createCrewMember(crewMemberData);
+      res.status(201).json(newCrewMember);
+    } catch (error) {
+      console.error('Error creating crew member:', error);
+      res.status(500).json({ error: 'Failed to create crew member' });
+    }
+  });
+  
+  app.patch('/api/crew/:id', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      if (isNaN(id)) {
+        return res.status(400).json({ error: 'Invalid crew member ID' });
+      }
+      
+      const crewMemberData = req.body;
+      const updatedCrewMember = await storage.updateCrewMember(id, crewMemberData);
+      
+      if (!updatedCrewMember) {
+        return res.status(404).json({ error: 'Crew member not found' });
+      }
+      
+      res.json(updatedCrewMember);
+    } catch (error) {
+      console.error('Error updating crew member:', error);
+      res.status(500).json({ error: 'Failed to update crew member' });
+    }
+  });
+  
+  app.patch('/api/crew/:id/location', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      if (isNaN(id)) {
+        return res.status(400).json({ error: 'Invalid crew member ID' });
+      }
+      
+      const { latitude, longitude, locationName } = req.body;
+      
+      if (typeof latitude !== 'number' || typeof longitude !== 'number') {
+        return res.status(400).json({ error: 'Valid latitude and longitude are required' });
+      }
+      
+      const updatedCrewMember = await storage.updateCrewMemberLocation(
+        id, 
+        latitude, 
+        longitude, 
+        locationName
+      );
+      
+      if (!updatedCrewMember) {
+        return res.status(404).json({ error: 'Crew member not found' });
+      }
+      
+      res.json(updatedCrewMember);
+    } catch (error) {
+      console.error('Error updating crew member location:', error);
+      res.status(500).json({ error: 'Failed to update crew member location' });
+    }
+  });
+  
+  app.delete('/api/crew/:id', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      if (isNaN(id)) {
+        return res.status(400).json({ error: 'Invalid crew member ID' });
+      }
+      
+      const success = await storage.deleteCrewMember(id);
+      
+      if (!success) {
+        return res.status(404).json({ error: 'Crew member not found' });
+      }
+      
+      res.status(204).send();
+    } catch (error) {
+      console.error('Error deleting crew member:', error);
+      res.status(500).json({ error: 'Failed to delete crew member' });
+    }
+  });
+  
   // Add a dedicated translation API endpoint
   app.post('/api/translate', async (req, res) => {
     try {
