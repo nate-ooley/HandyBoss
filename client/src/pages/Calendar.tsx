@@ -578,13 +578,20 @@ export default function Calendar() {
                                   ${dayViewIndex === i ? 'shadow-md' : ''}
                                 `}>
                                   <CardHeader className="p-4 pb-2">
-                                    <CardTitle className="text-xl">
-                                      {format(day, 'EEEE')}
-                                    </CardTitle>
-                                    <CardDescription className="text-sm flex items-center">
-                                      <CalendarIcon className="h-3.5 w-3.5 mr-1" />
-                                      {format(day, 'MMMM do, yyyy')}
-                                    </CardDescription>
+                                    <div className="flex flex-col items-center text-center mb-1">
+                                      <div className="bg-primary/10 rounded-full w-16 h-16 flex items-center justify-center mb-2">
+                                        <span className="text-primary text-2xl font-bold">
+                                          {format(day, 'd')}
+                                        </span>
+                                      </div>
+                                      <CardTitle className="text-lg">
+                                        {format(day, 'EEEE')}
+                                      </CardTitle>
+                                      <CardDescription className="flex items-center mt-1 text-xs">
+                                        <CalendarIcon className="h-3 w-3 mr-1" />
+                                        {format(day, 'MMMM yyyy')}
+                                      </CardDescription>
+                                    </div>
                                   </CardHeader>
                                   <CardContent className="p-4 pt-2 pb-12 max-h-[50vh] overflow-y-auto">
                                     <div className="space-y-3">
@@ -623,9 +630,21 @@ export default function Calendar() {
                                           </div>
                                         ))
                                       ) : (
-                                        <div className="py-6 pb-8 text-center">
-                                          <MessageSquare className="h-8 w-8 mx-auto text-gray-400" />
-                                          <p className="mt-2 text-gray-500">No events for this day</p>
+                                        <div className="py-6 pb-12 text-center">
+                                          <div className="relative mx-auto w-16 h-16 mb-2">
+                                            <div className="absolute inset-0 bg-gray-100 rounded-full animate-ping opacity-25"></div>
+                                            <div className="relative flex items-center justify-center h-full w-full bg-white rounded-full shadow-sm border">
+                                              <CalendarIcon className="h-8 w-8 text-primary" />
+                                            </div>
+                                          </div>
+                                          <p className="mt-2 text-gray-600 font-medium">No events for this day</p>
+                                          <Button 
+                                            variant="link" 
+                                            className="mt-1 px-0 h-auto text-xs text-primary"
+                                            onClick={goToToday}
+                                          >
+                                            Jump to today
+                                          </Button>
                                         </div>
                                       )}
                                     </div>
@@ -637,10 +656,33 @@ export default function Calendar() {
                         </div>
                         
                         {/* Mobile carousel controls - Fixed position buttons that stay in view */}
-                        <div className="fixed bottom-24 left-0 right-0 z-50 flex justify-between px-4 md:hidden">
+                        <div className="fixed bottom-24 left-0 right-0 z-50 flex justify-between items-center px-4 md:hidden">
                           <Button variant="outline" size="sm" onClick={goToPreviousDay} className="bg-white shadow-md h-10 w-10 rounded-full p-0">
                             <MoveLeft className="h-5 w-5" />
                           </Button>
+                          
+                          {/* Center action button */}
+                          <Button 
+                            className="bg-primary text-white shadow-lg h-12 w-12 rounded-full p-0 flex items-center justify-center animate-pulse hover:animate-none transition-all hover:scale-105"
+                            onClick={() => {
+                              // Check if there are events for this day
+                              const dayEvents = getEventsForDate(days[dayViewIndex]);
+                              if (dayEvents.length > 0) {
+                                // If there are events, select the first one
+                                handleSelectEvent(dayEvents[0]);
+                              } else {
+                                // Show today's date
+                                goToToday();
+                                toast({
+                                  title: "Jumped to today",
+                                  description: "You're now viewing today's events",
+                                });
+                              }
+                            }}
+                          >
+                            <CalendarIcon className="h-5 w-5" />
+                          </Button>
+                          
                           <Button variant="outline" size="sm" onClick={goToNextDay} className="bg-white shadow-md h-10 w-10 rounded-full p-0">
                             <MoveRight className="h-5 w-5" />
                           </Button>
