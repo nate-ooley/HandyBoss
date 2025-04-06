@@ -95,8 +95,16 @@ export default function Projects() {
   // Add crew member to project mutation
   const addCrewToProjectMutation = useMutation({
     mutationFn: async (data: { projectId: number, crewMemberId: number, role: string }) => {
-      const response = await apiRequest("POST", `/api/projects/${data.projectId}/crew`, data);
-      return response.json();
+      try {
+        const response = await apiRequest("POST", `/api/projects/${data.projectId}/crew`, data);
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Failed to add crew member');
+        }
+        return response.json();
+      } catch (error: any) {
+        throw new Error(error.message || 'Failed to add crew member to project');
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/projects', projectId, 'crew'] });
@@ -107,10 +115,10 @@ export default function Projects() {
         description: "Crew member added to project successfully",
       });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast({
         title: "Error",
-        description: "Failed to add crew member to project: " + error,
+        description: error.message || "Failed to add crew member to project",
         variant: "destructive",
       });
     }
@@ -289,12 +297,6 @@ export default function Projects() {
                         <UserPlus className="h-12 w-12 mx-auto text-gray-400 mb-3" />
                         <h3 className="text-lg font-medium mb-2">No crew members assigned</h3>
                         <p className="text-gray-500 mb-4">Assign crew members to this project to get started.</p>
-                        <Button 
-                          variant="outline"
-                          onClick={() => setIsAddCrewDialogOpen(true)}
-                        >
-                          Add Crew Member
-                        </Button>
                       </div>
                     ) : (
                       <div className="space-y-4">
@@ -491,9 +493,14 @@ export default function Projects() {
                         
                         const newProject = await response.json();
                         
-                        // Close dialog and reset form
-                        (document.getElementById('closeNewProjectDialog') as HTMLButtonElement)?.click();
+                        // Reset form and close the dialog
                         (e.target as HTMLFormElement).reset();
+                        
+                        // Use the Radix UI way to close the dialog
+                        const closeButton = document.querySelector('[data-radix-collection-item]');
+                        if (closeButton instanceof HTMLElement) {
+                          closeButton.click();
+                        }
                         
                         // Invalidate queries to refresh data
                         queryClient.invalidateQueries({ queryKey: ['/api/jobsites'] });
@@ -599,7 +606,7 @@ export default function Projects() {
                         id="closeNewProjectDialog" 
                         type="button" 
                         variant="outline"
-                        onClick={() => document.querySelector('dialog')?.close()}
+                        onClick={() => setLocation("/projects")}
                       >
                         Cancel
                       </Button>
