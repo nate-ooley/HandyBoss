@@ -17,13 +17,35 @@ interface Plan {
   id: string;
   name: string;
   description: string;
-  price: number;
-  interval: 'month' | 'year';
+  price: number | 'Free';
+  interval: 'month' | 'year' | null;
   features: string[];
-  priceId: string; // Stripe Price ID
+  limitations?: string[];
+  recommended?: boolean;
+  priceId: string; // Stripe Price ID (empty for free plan)
 }
 
 const plans: Plan[] = [
+  {
+    id: 'free',
+    name: 'Free Plan',
+    description: 'Try out basic features with limitations',
+    price: 'Free',
+    interval: null,
+    features: [
+      'Up to 3 team members',
+      'Basic job scheduling',
+      'Simple voice commands',
+      'Limited English-Spanish translations'
+    ],
+    limitations: [
+      'Limited to 50 messages per month',
+      'Only 1 jobsite at a time',
+      'No weather alerts',
+      'No premium features'
+    ],
+    priceId: '' // No price ID for free plan
+  },
   {
     id: 'basic',
     name: 'Basic Plan',
@@ -32,26 +54,50 @@ const plans: Plan[] = [
     interval: 'month',
     features: [
       'Up to 5 team members',
+      'Unlimited messages',
       'Basic job scheduling',
       'Voice commands',
       'English-Spanish translations',
-      'Standard customer support'
+      'Standard customer support',
+      'Up to 3 jobsites'
     ],
     priceId: 'price_1Og8f8JMYTj8PK3rQKfYhLW2' // Replace with your actual Stripe Price ID
   },
   {
-    id: 'premium',
-    name: 'Premium Plan',
-    description: 'For growing businesses with multiple teams',
+    id: 'pro',
+    name: 'Pro Plan',
+    description: 'For established contractors with growing teams',
+    price: 49.99,
+    interval: 'month',
+    recommended: true,
+    features: [
+      'Up to 15 team members',
+      'Unlimited messages',
+      'Advanced scheduling and reporting',
+      'Enhanced voice translation',
+      'Multiple job sites management (up to 10)',
+      'Weather alerts and notifications',
+      'Priority customer support',
+      'Team progress analytics'
+    ],
+    priceId: 'price_1Og8f8JMYTj8PK3rQKfYhLW2' // Replace with your actual Stripe Price ID
+  },
+  {
+    id: 'mega',
+    name: 'Mega Plan',
+    description: 'For large construction businesses with multiple teams',
     price: 99.99,
     interval: 'month',
     features: [
-      'Up to 25 team members',
-      'Advanced scheduling and reporting',
+      'Unlimited team members',
+      'Unlimited messages',
+      'Enterprise scheduling and reporting',
       'Priority voice translation',
-      'Multiple job sites management',
-      'Weather alerts and notifications',
-      'Priority customer support'
+      'Unlimited job sites management',
+      'Advanced weather alerts and notifications',
+      'Dedicated customer support',
+      'Advanced analytics and reporting',
+      'Custom integrations available'
     ],
     priceId: 'price_1Og8f8JMYTj8PK3rQKfYhLW2' // Replace with your actual Stripe Price ID
   }
@@ -104,7 +150,17 @@ const SubscriptionForm = ({
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="rounded-lg border p-4 bg-muted/20">
-        <h3 className="font-medium text-lg">{plan.name} - ${plan.price}/{plan.interval}</h3>
+        <h3 className="font-medium text-lg flex items-center">
+          {plan.name}
+          {plan.price !== 'Free' ? (
+            <span> - ${plan.price}/{plan.interval}</span>
+          ) : (
+            <span className="ml-2 text-green-600 font-bold"> FREE</span>
+          )}
+          {plan.recommended && (
+            <span className="ml-2 bg-primary text-white text-xs px-2 py-1 rounded-full">RECOMMENDED</span>
+          )}
+        </h3>
         <p className="text-sm text-muted-foreground mb-4">{plan.description}</p>
         <Separator className="my-2" />
         <ul className="space-y-2 text-sm">
@@ -115,6 +171,20 @@ const SubscriptionForm = ({
             </li>
           ))}
         </ul>
+        
+        {plan.limitations && (
+          <div className="mt-3 pt-3 border-t border-gray-200">
+            <p className="font-medium text-amber-600 mb-1">Limitations:</p>
+            <ul className="space-y-1">
+              {plan.limitations.map((limitation, index) => (
+                <li key={index} className="flex items-center">
+                  <span className="mr-2 text-amber-600">⚠</span>
+                  {limitation}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
 
       <div className="mt-6">
@@ -132,7 +202,7 @@ const SubscriptionForm = ({
         className="w-full"
         disabled={!stripe || isLoading}
       >
-        {isLoading ? 'Processing...' : `Subscribe for $${plan.price}/${plan.interval}`}
+        {isLoading ? 'Processing...' : (plan.price === 'Free' ? 'Activate Free Plan' : `Subscribe for $${plan.price}/${plan.interval}`)}
       </Button>
     </form>
   );
@@ -154,6 +224,13 @@ const Subscribe = () => {
   // Create customer and initiate subscription
   const createSubscription = async () => {
     try {
+      // Handle free plan differently
+      if (selectedPlan.id === 'free') {
+        // For free plan, just simulate success
+        setSubscriptionComplete(true);
+        return;
+      }
+      
       setIsCreatingCustomer(true);
       setError(null);
       
@@ -255,8 +332,16 @@ const Subscribe = () => {
                   <div key={plan.id} className="flex items-start space-x-3">
                     <RadioGroupItem value={plan.id} id={plan.id} className="mt-1" />
                     <div className="w-full">
-                      <Label htmlFor={plan.id} className="text-base font-medium block">
-                        {plan.name} - ${plan.price}/{plan.interval}
+                      <Label htmlFor={plan.id} className="text-base font-medium flex items-center">
+                        {plan.name} 
+                        {plan.price !== 'Free' ? (
+                          <span> - ${plan.price}/{plan.interval}</span>
+                        ) : (
+                          <span className="ml-2 text-green-600 font-bold"> FREE</span>
+                        )}
+                        {plan.recommended && (
+                          <span className="ml-2 bg-primary text-white text-xs px-2 py-1 rounded-full">RECOMMENDED</span>
+                        )}
                       </Label>
                       <p className="text-sm text-muted-foreground">{plan.description}</p>
                       <div className="mt-2 text-sm">
@@ -268,6 +353,20 @@ const Subscribe = () => {
                             </li>
                           ))}
                         </ul>
+                        
+                        {plan.limitations && (
+                          <div className="mt-3 pt-3 border-t border-gray-200">
+                            <p className="font-medium text-amber-600 mb-1">Limitations:</p>
+                            <ul className="space-y-1">
+                              {plan.limitations.map((limitation, index) => (
+                                <li key={index} className="flex items-center">
+                                  <span className="mr-2 text-amber-600">⚠</span>
+                                  {limitation}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -285,7 +384,7 @@ const Subscribe = () => {
                     Processing...
                   </span>
                 ) : (
-                  'Continue to Payment'
+                  selectedPlan.id === 'free' ? 'Start Free Plan' : 'Continue to Payment'
                 )}
               </Button>
               
