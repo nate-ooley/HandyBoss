@@ -7,7 +7,8 @@ import { SideNavigation } from '@/components/SideNavigation';
 import { Badge } from '@/components/ui/badge';
 import { 
   Calendar, Clock, MapPin, Users, Package, Wrench, ChevronRight, 
-  ArrowLeft, Trash2, UserPlus, CheckCircle, AlertCircle 
+  ArrowLeft, Trash2, UserPlus, CheckCircle, AlertCircle,
+  MessageSquare, Send, MessageCircle, Globe
 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -295,6 +296,16 @@ export default function Projects() {
                         </div>
                       </div>
                     </div>
+                  </CardContent>
+                </Card>
+                
+                <Card className="shadow-sm">
+                  <CardHeader className="pb-2 p-4 sm:p-6">
+                    <CardTitle className="text-base sm:text-lg">Project Messages</CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0">
+                    {/* Project communications section */}
+                    <ProjectMessages projectId={projectId} />
                   </CardContent>
                 </Card>
                 
@@ -746,6 +757,186 @@ export default function Projects() {
           </Tabs>
         </main>
       </div>
+    </div>
+  );
+}
+
+interface ProjectCommunication {
+  id: number;
+  projectId: number;
+  senderId: number;
+  content: string;
+  translatedContent?: string;
+  language: string; // 'en' or 'es'
+  timestamp: string;
+  attachmentUrl?: string;
+  attachmentType?: string;
+  isAnnouncement?: boolean;
+  readBy?: number[];
+  reactions?: Record<string, string[]>;
+}
+
+interface ProjectMessagesProps {
+  projectId: number | null;
+}
+
+function ProjectMessages({ projectId }: ProjectMessagesProps) {
+  const [newMessage, setNewMessage] = useState('');
+  const queryClient = useQueryClient();
+  const { data: messages = [], isLoading } = useQuery<ProjectCommunication[]>({
+    queryKey: ['/api/projects', projectId, 'communications'],
+    queryFn: async () => {
+      if (!projectId) return [];
+      const response = await apiRequest("GET", `/api/projects/${projectId}/communications`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch project messages");
+      }
+      return response.json();
+    },
+    enabled: !!projectId,
+  });
+
+  const sendMessageMutation = useMutation({
+    mutationFn: async (content: string) => {
+      if (!projectId) throw new Error("No project selected");
+      const response = await apiRequest("POST", `/api/projects/${projectId}/communications`, {
+        content,
+        language: 'en', // Default to English for now
+      });
+      if (!response.ok) {
+        throw new Error("Failed to send message");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      setNewMessage('');
+      queryClient.invalidateQueries({ queryKey: ['/api/projects', projectId, 'communications'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send message",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const handleSendMessage = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newMessage.trim()) return;
+    sendMessageMutation.mutate(newMessage);
+  };
+
+  const formatMessageTime = (timestamp: string) => {
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString('en-US', { 
+      hour: 'numeric', 
+      minute: '2-digit',
+      hour12: true
+    });
+  };
+
+  const formatMessageDate = (timestamp: string) => {
+    const date = new Date(timestamp);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    if (date.toDateString() === today.toDateString()) {
+      return 'Today';
+    } else if (date.toDateString() === yesterday.toDateString()) {
+      return 'Yesterday';
+    } else {
+      return date.toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric',
+        year: date.getFullYear() !== today.getFullYear() ? 'numeric' : undefined 
+      });
+    }
+  };
+
+  // Group messages by date
+  const groupedMessages: Record<string, ProjectCommunication[]> = {};
+  messages.forEach(message => {
+    const date = formatMessageDate(message.timestamp);
+    if (!groupedMessages[date]) {
+      groupedMessages[date] = [];
+    }
+    groupedMessages[date].push(message);
+  });
+
+  return (
+    <div className="flex flex-col h-full">
+      {isLoading ? (
+        <div className="flex justify-center py-8">
+          <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full"></div>
+        </div>
+      ) : messages.length === 0 ? (
+        <div className="text-center py-8">
+          <MessageCircle className="h-12 w-12 mx-auto text-gray-400 mb-3" />
+          <h3 className="text-lg font-medium mb-2">No messages yet</h3>
+          <p className="text-sm text-gray-500 mb-4">Start a conversation about this project.</p>
+        </div>
+      ) : (
+        <div className="space-y-4 mb-4 overflow-y-auto max-h-[400px]">
+          {Object.entries(groupedMessages).map(([date, dateMessages]) => (
+            <div key={date} className="space-y-2">
+              <div className="relative py-1">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-200"></div>
+                </div>
+                <div className="relative flex justify-center">
+                  <span className="bg-background px-2 text-xs text-gray-500">{date}</span>
+                </div>
+              </div>
+              
+              {dateMessages.map(message => (
+                <div key={message.id} className="flex items-start group">
+                  <div className="flex-1 bg-gray-50 rounded-lg p-3">
+                    <div className="flex justify-between items-start mb-1">
+                      <span className="font-medium text-sm">{message.language === 'es' ? 'Spanish Message' : 'English Message'}</span>
+                      <span className="text-xs text-gray-500">{formatMessageTime(message.timestamp)}</span>
+                    </div>
+                    <p className="text-sm mb-1">{message.content}</p>
+                    {message.translatedContent && (
+                      <div className="mt-2 pt-2 border-t border-gray-200">
+                        <div className="flex items-center text-xs text-gray-500 mb-1">
+                          <Globe className="h-3 w-3 mr-1" />
+                          <span>Translated from {message.language === 'es' ? 'Spanish' : 'English'}</span>
+                        </div>
+                        <p className="text-sm text-gray-700">{message.translatedContent}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
+      
+      <form onSubmit={handleSendMessage} className="mt-auto">
+        <div className="relative flex items-center">
+          <input
+            type="text"
+            placeholder="Type your message..."
+            className="flex-1 h-10 rounded-md border border-input bg-background px-3 py-2 text-sm pr-10"
+            value={newMessage}
+            onChange={(e) => setNewMessage(e.target.value)}
+          />
+          <button
+            type="submit"
+            disabled={!newMessage.trim() || sendMessageMutation.isPending}
+            className="absolute right-2 top-1/2 transform -translate-y-1/2 text-primary hover:text-primary/80 disabled:text-gray-300"
+          >
+            {sendMessageMutation.isPending ? (
+              <div className="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full"></div>
+            ) : (
+              <Send className="h-5 w-5" />
+            )}
+          </button>
+        </div>
+      </form>
     </div>
   );
 }
