@@ -742,29 +742,29 @@ export default function Calendar() {
                           <div className="max-h-[60vh] overflow-y-auto pr-1 pb-4">
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
                               {filteredEvents.map(event => (
-                                <Card 
+                                <div 
                                   key={`${event.type}-${event.id}`} 
-                                  className="cursor-pointer hover:shadow-md transition-shadow"
+                                  className={`fancy-card ${event.type === 'jobsite' ? 'border-l-4 border-l-secondary' : 'border-l-4 border-l-accent'}`}
                                   onClick={() => handleSelectEvent(event)}
                                 >
-                                  <CardHeader className="p-3 sm:p-4">
+                                  <div className="p-3 sm:p-4">
                                     <div className="flex items-start justify-between">
-                                      <CardTitle className="text-sm sm:text-base">
+                                      <h3 className="text-sm sm:text-base font-medium text-card-foreground">
                                         {event.title}
-                                      </CardTitle>
+                                      </h3>
                                       <Badge 
                                         variant={event.type === 'jobsite' ? 'default' : 'outline'}
-                                        className={`text-xs ${event.type === 'jobsite' ? 'bg-indigo-500' : 'bg-green-500 text-white'}`}
+                                        className={`text-xs ${event.type === 'jobsite' ? 'bg-secondary text-white' : 'bg-accent text-white'}`}
                                       >
                                         {event.type === 'jobsite' ? 'Project' : 'Message'}
                                       </Badge>
                                     </div>
-                                    <CardDescription className="flex items-center mt-1 text-xs sm:text-sm">
-                                      <Clock className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1" />
+                                    <div className="flex items-center mt-2 text-xs sm:text-sm text-card-foreground/80">
+                                      <Clock className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1 text-card-foreground/70" />
                                       {format(event.date, 'MMM do, h:mm a')}
-                                    </CardDescription>
-                                  </CardHeader>
-                                </Card>
+                                    </div>
+                                  </div>
+                                </div>
                               ))}
                               
                               {filteredEvents.length === 0 && !isLoading && (
@@ -794,30 +794,30 @@ export default function Calendar() {
                               filteredEvents
                                 .sort((a, b) => a.date.getTime() - b.date.getTime())
                                 .map(event => (
-                                  <Card 
+                                  <div 
                                     key={`${event.type}-${event.id}`} 
-                                    className="cursor-pointer hover:shadow-md transition-shadow"
+                                    className={`fancy-card ${event.type === 'jobsite' ? 'border-l-4 border-l-secondary' : 'border-l-4 border-l-accent'}`}
                                     onClick={() => handleSelectEvent(event)}
                                   >
-                                    <CardHeader className="py-2 px-3 sm:py-3 sm:px-4">
+                                    <div className="py-2 px-3 sm:py-3 sm:px-4">
                                       <div className="flex items-center justify-between">
                                         <div>
-                                          <CardTitle className="text-sm sm:text-base font-medium">
+                                          <h3 className="text-sm sm:text-base font-medium text-card-foreground">
                                             {event.title}
-                                          </CardTitle>
-                                          <CardDescription className="text-xs sm:text-sm mt-0.5">
+                                          </h3>
+                                          <div className="text-xs sm:text-sm mt-0.5 text-card-foreground/80">
                                             {format(event.date, 'EEE, MMM do')}
-                                          </CardDescription>
+                                          </div>
                                         </div>
                                         <Badge 
                                           variant={event.type === 'jobsite' ? 'default' : 'outline'}
-                                          className={`text-xs ${event.type === 'jobsite' ? 'bg-indigo-500' : 'bg-green-500 text-white'}`}
+                                          className={`text-xs ${event.type === 'jobsite' ? 'bg-secondary text-white' : 'bg-accent text-white'}`}
                                         >
                                           {event.type === 'jobsite' ? 'Project' : 'Message'}
                                         </Badge>
                                       </div>
-                                    </CardHeader>
-                                  </Card>
+                                    </div>
+                                  </div>
                                 ))
                             ) : (
                               <div className="flex flex-col items-center justify-center p-4 sm:p-8 text-center">
