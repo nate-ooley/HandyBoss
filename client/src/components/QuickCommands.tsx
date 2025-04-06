@@ -57,7 +57,7 @@ export const QuickCommands: React.FC = () => {
             onClick={() => handleCommand(cmd.text)}
           >
             {cmd.icon}
-            {cmd.text}
+            <span className="whitespace-nowrap">{cmd.text}</span>
           </Button>
         ))}
       </div>
