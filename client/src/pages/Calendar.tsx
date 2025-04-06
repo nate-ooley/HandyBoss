@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,7 +11,8 @@ import { useToast } from '@/hooks/use-toast';
 import { SideNavigation } from '@/components/SideNavigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
-import { format, parseISO, isToday, startOfMonth, endOfMonth, isSameDay, startOfDay, endOfDay } from 'date-fns';
+import { format, parseISO, isToday, startOfMonth, endOfMonth, isSameDay, startOfDay, endOfDay, addDays, subDays } from 'date-fns';
+import useEmblaCarousel from 'embla-carousel-react';
 import { 
   Calendar as CalendarIcon, 
   Clock, 
@@ -21,7 +22,9 @@ import {
   ChevronLeft, 
   ChevronRight, 
   MessageSquare, 
-  X 
+  X,
+  MoveRight,
+  MoveLeft 
 } from 'lucide-react';
 import { ChatMessage, Jobsite } from '@/types';
 import { useWebSocket } from '@/contexts/WebSocketContext';
@@ -52,6 +55,11 @@ export default function Calendar() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { sendMessage, lastMessage } = useWebSocket();
+  
+  // Embla carousel for day view
+  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: false });
+  const [dayViewIndex, setDayViewIndex] = useState(0);
+  const [days, setDays] = useState<Date[]>([]);
 
   // Get calendar events from API
   const { data: events = [], isLoading } = useQuery({
@@ -268,26 +276,64 @@ export default function Calendar() {
       }
     }
   }, [lastMessage, queryClient, toast]);
-
-  // WebSocket support for realtime calendar event updates
+  
+  // Optional: WebSocket support for notifying other users about views
+  // We've removed the WebSocket-based data fetching to prevent infinite loops
+  // Now we're only using React Query for data fetching
+  
+  // Generate days for carousel view
   useEffect(() => {
-    // This is the request ID to identify this request
-    const requestId = `calendar-events-${Date.now()}`;
+    if (view === 'day') {
+      // Generate 7 days, 3 before and 3 after the selected date
+      const daysArray = [];
+      for (let i = -3; i <= 3; i++) {
+        daysArray.push(addDays(date, i));
+      }
+      setDays(daysArray);
+      setDayViewIndex(3); // Middle day is the selected date
+      
+      // Reset the Embla carousel
+      if (emblaApi) {
+        emblaApi.scrollTo(3);
+      }
+    }
+  }, [date, view, emblaApi]);
+  
+  // Listen for carousel slide changes
+  useEffect(() => {
+    if (!emblaApi || view !== 'day') return;
     
-    // Send a WebSocket request to fetch calendar events
-    sendMessage({
-      type: 'calendar-event',
-      action: 'fetch',
-      startDate: startOfMonth(date).toISOString(),
-      endDate: endOfMonth(date).toISOString(),
-      requestId
-    });
-    
-    // Clean up effect
-    return () => {
-      // Any cleanup if needed
+    const onSelect = () => {
+      const index = emblaApi.selectedScrollSnap();
+      setDayViewIndex(index);
+      const newDate = days[index];
+      if (newDate) {
+        setDate(newDate);
+      }
     };
-  }, [date, sendMessage]);
+    
+    emblaApi.on('select', onSelect);
+    return () => {
+      emblaApi.off('select', onSelect);
+    };
+  }, [emblaApi, days, view]);
+  
+  // Navigation for day view
+  const goToPreviousDay = useCallback(() => {
+    if (emblaApi && emblaApi.canScrollPrev()) {
+      emblaApi.scrollPrev();
+    } else {
+      setDate(subDays(date, 1));
+    }
+  }, [emblaApi, date]);
+  
+  const goToNextDay = useCallback(() => {
+    if (emblaApi && emblaApi.canScrollNext()) {
+      emblaApi.scrollNext();
+    } else {
+      setDate(addDays(date, 1));
+    }
+  }, [emblaApi, date]);
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -445,56 +491,115 @@ export default function Calendar() {
                     </TabsContent>
 
                     <TabsContent value="day" className="space-y-4">
-                      <div className="space-y-4">
-                        {getEventsForDate(date).length > 0 ? (
-                          getEventsForDate(date).map(event => (
-                            <Card 
-                              key={`${event.type}-${event.id}`} 
-                              className="cursor-pointer hover:shadow-md transition-shadow"
-                              onClick={() => handleSelectEvent(event)}
-                            >
-                              <CardHeader className="py-3 px-4">
-                                <div className="flex items-start justify-between">
-                                  <CardTitle className="text-base">
-                                    {event.title}
-                                  </CardTitle>
-                                  <Badge 
-                                    variant={event.type === 'jobsite' ? 'default' : 'outline'}
-                                    className={event.type === 'jobsite' ? 'bg-indigo-500' : 'bg-green-500 text-white'}
-                                  >
-                                    {event.type === 'jobsite' ? 'Project' : 'Message'}
-                                  </Badge>
-                                </div>
-                              </CardHeader>
-                              <CardContent className="py-2 px-4">
-                                <div className="flex items-center text-sm text-muted-foreground">
-                                  <Clock className="h-3.5 w-3.5 mr-1" />
-                                  {format(event.date, 'h:mm a')}
-                                  {event.endDate && ` - ${format(event.endDate, 'h:mm a')}`}
-                                </div>
-                                {'address' in event && event.address && (
-                                  <div className="flex items-center mt-2 text-sm text-muted-foreground">
-                                    <MapPin className="h-3.5 w-3.5 mr-1" />
-                                    {event.address}
-                                  </div>
-                                )}
-                                {'text' in event && (
-                                  <div className="mt-2 text-sm">
-                                    <MessageSquare className="h-3.5 w-3.5 mr-1 inline-block" />
-                                    {event.text}
-                                  </div>
-                                )}
-                              </CardContent>
-                            </Card>
-                          ))
-                        ) : (
-                          <div className="flex flex-col items-center justify-center p-8 text-center">
-                            <BossManImage mood="angry" size="md" />
-                            <h3 className="mt-4 text-lg font-semibold">No events for this day</h3>
-                            <p className="text-muted-foreground">Select another day or create a new event.</p>
-                          </div>
-                        )}
+                      {/* Day navigation bar */}
+                      <div className="flex items-center justify-between mb-4">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={goToPreviousDay} 
+                          className="flex items-center space-x-1"
+                        >
+                          <MoveLeft className="h-4 w-4" />
+                          <span>Previous Day</span>
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={goToNextDay}
+                          className="flex items-center space-x-1"
+                        >
+                          <span>Next Day</span>
+                          <MoveRight className="h-4 w-4" />
+                        </Button>
                       </div>
+                      
+                      {/* Carousel view */}
+                      <div className="embla" ref={emblaRef}>
+                        <div className="embla__container">
+                          {days.map((day, index) => (
+                            <div 
+                              key={format(day, 'yyyy-MM-dd')} 
+                              className="embla__slide"
+                            >
+                              <Card className="border shadow-sm h-full">
+                                <CardHeader className="pb-2">
+                                  <CardTitle className="text-lg font-semibold text-center">
+                                    {format(day, 'EEEE')}
+                                    <span className="block text-sm font-normal text-muted-foreground">
+                                      {format(day, 'MMMM d, yyyy')}
+                                    </span>
+                                  </CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                  <div className="space-y-3">
+                                    {getEventsForDate(day).length > 0 ? (
+                                      getEventsForDate(day).map(event => (
+                                        <Card 
+                                          key={`${event.type}-${event.id}`} 
+                                          className="calendar-event-card cursor-pointer"
+                                          style={{ borderLeftColor: event.color }}
+                                          onClick={() => handleSelectEvent(event)}
+                                        >
+                                          <CardHeader className="py-2.5 px-3">
+                                            <div className="flex items-start justify-between">
+                                              <CardTitle className="text-base">
+                                                {event.title}
+                                              </CardTitle>
+                                              <Badge 
+                                                variant={event.type === 'jobsite' ? 'default' : 'outline'}
+                                                className={event.type === 'jobsite' ? 'bg-indigo-500' : 'bg-green-500 text-white'}
+                                              >
+                                                {event.type === 'jobsite' ? 'Project' : 'Message'}
+                                              </Badge>
+                                            </div>
+                                          </CardHeader>
+                                          <CardContent className="py-1.5 px-3 border-t">
+                                            <div className="flex items-center text-sm text-muted-foreground">
+                                              <Clock className="h-3.5 w-3.5 mr-1" />
+                                              {format(event.date, 'h:mm a')}
+                                              {event.endDate && ` - ${format(event.endDate, 'h:mm a')}`}
+                                            </div>
+                                            {'address' in event && event.address && (
+                                              <div className="flex items-center mt-1.5 text-sm text-muted-foreground">
+                                                <MapPin className="h-3.5 w-3.5 mr-1" />
+                                                {event.address}
+                                              </div>
+                                            )}
+                                            {'text' in event && (
+                                              <div className="mt-1.5 text-sm">
+                                                <MessageSquare className="h-3.5 w-3.5 mr-1 inline-block" />
+                                                <span className="line-clamp-2">{event.text}</span>
+                                              </div>
+                                            )}
+                                          </CardContent>
+                                        </Card>
+                                      ))
+                                    ) : (
+                                      <div className="flex flex-col items-center justify-center py-10 text-center">
+                                        <BossManImage mood="angry" size="sm" />
+                                        <h3 className="mt-3 text-base font-semibold">No events for this day</h3>
+                                        <p className="text-sm text-muted-foreground">Swipe to check other days</p>
+                                      </div>
+                                    )}
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      
+                      {/* Day indicators - circles at bottom showing which day we're viewing */}
+                      <div className="flex justify-center mt-4 space-x-1">
+                        {days.map((day, index) => (
+                          <div 
+                            key={`indicator-${index}`}
+                            className={`day-indicator h-2 w-2 rounded-full ${index === dayViewIndex ? 'active bg-primary' : 'bg-gray-300'}`}
+                            onClick={() => emblaApi?.scrollTo(index)}
+                          />
+                        ))}
+                      </div>
+                      
                     </TabsContent>
 
                     <TabsContent value="list" className="space-y-4">
