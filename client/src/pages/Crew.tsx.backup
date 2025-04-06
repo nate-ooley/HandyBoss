@@ -821,7 +821,7 @@ const CrewPage: React.FC = () => {
                 </div>
               ))}
             </div>
-          ) : viewMode === 'grid' ? (
+          )
             // Grid View
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredCrewMembers.map((crewMember: CrewMember) => (
@@ -875,7 +875,7 @@ const CrewPage: React.FC = () => {
                         </div>
                       )}
                       
-                      {crewMember.experienceYears && crewMember.experienceYears > 0 && (
+                      {crewMember.experienceYears > 0 && (
                         <div className="flex items-center text-sm">
                           <Clock className="h-4 w-4 text-gray-400 mr-2" />
                           <span>{crewMember.experienceYears} years experience</span>
@@ -988,7 +988,7 @@ const CrewPage: React.FC = () => {
                             </div>
                           )}
                           
-                          {crewMember.experienceYears && crewMember.experienceYears > 0 && (
+                          {crewMember.experienceYears > 0 && (
                             <div className="flex items-center text-sm text-gray-500">
                               <Star className="h-3 w-3 text-gray-400 mr-1" />
                               <span>{crewMember.experienceYears} years experience</span>
