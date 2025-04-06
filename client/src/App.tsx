@@ -21,11 +21,15 @@ import { WebSocketProvider } from "@/contexts/WebSocketContext";
 import { SettingsProvider } from "@/contexts/SettingsContext";
 import { MobileNavigation } from "@/components/MobileNavigation";
 import { useMobile } from "@/hooks/use-mobile";
+import { useScrollToTop } from "@/hooks/useScrollToTop";
 import { useEffect } from "react";
 
 function AppRoutes() {
   const isMobile = useMobile();
   const [location, setLocation] = useLocation();
+  
+  // Use the scroll-to-top hook to ensure the page always starts at the top
+  useScrollToTop();
   
   useEffect(() => {
     // Redirect to the appropriate view based on device
