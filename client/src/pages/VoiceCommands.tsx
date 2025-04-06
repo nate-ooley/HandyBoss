@@ -7,7 +7,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { BossManCharacter } from '@/components/BossManCharacter';
+import BossManCharacter from '../components/BossManCharacter';
 import { apiRequest } from '@/lib/queryClient';
 
 interface CommandResult {
@@ -108,7 +108,7 @@ export default function VoiceCommandsPage() {
   return (
     <div className="container mx-auto py-8">
       <div className="flex items-center gap-4 mb-8">
-        <BossManCharacter mood="normal" size="md" />
+        <BossManCharacter mood="neutral" size="md" />
         <div>
           <h1 className="text-3xl font-bold">Voice Command Center</h1>
           <p className="text-muted-foreground">

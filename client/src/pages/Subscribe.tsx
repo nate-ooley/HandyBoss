@@ -3,7 +3,7 @@ import { loadStripe } from '@stripe/stripe-js';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { apiRequest } from '@/lib/queryClient';
 import { Button } from '@/components/ui/button';
-import { BossManCharacter } from '@/components/BossManCharacter';
+import BossManCharacter from '../components/BossManCharacter';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
@@ -312,7 +312,7 @@ const Subscribe = () => {
       <Card>
         <CardHeader>
           <div className="flex justify-center mb-4">
-            <BossManCharacter mood="normal" size="md" />
+            <BossManCharacter mood="neutral" size="md" />
           </div>
           <CardTitle>BossMan Subscription</CardTitle>
           <CardDescription>

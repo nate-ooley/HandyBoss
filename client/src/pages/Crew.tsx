@@ -530,13 +530,14 @@ const CrewPage: React.FC = () => {
 
       {/* Add Crew Member Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Add New Crew Member</DialogTitle>
-            <DialogDescription>
-              Enter the details of the new crew member below.
-            </DialogDescription>
-          </DialogHeader>
+        {isAddDialogOpen && (
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Add New Crew Member</DialogTitle>
+              <DialogDescription>
+                Enter the details of the new crew member below.
+              </DialogDescription>
+            </DialogHeader>
 
           <form onSubmit={handleSubmit} className="space-y-6 py-4">
             <Tabs defaultValue="basic" className="w-full">
@@ -803,17 +804,19 @@ const CrewPage: React.FC = () => {
             </DialogFooter>
           </form>
         </DialogContent>
+        )}
       </Dialog>
 
       {/* Edit Crew Member Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Edit Crew Member</DialogTitle>
-            <DialogDescription>
-              Update the details of {selectedCrewMember?.name || 'this crew member'}.
-            </DialogDescription>
-          </DialogHeader>
+        {isEditDialogOpen && (
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Edit Crew Member</DialogTitle>
+              <DialogDescription>
+                Update the details of {selectedCrewMember?.name || 'this crew member'}.
+              </DialogDescription>
+            </DialogHeader>
 
           <form onSubmit={handleSubmit} className="space-y-6 py-4">
             <Tabs defaultValue="basic" className="w-full">
@@ -1104,17 +1107,19 @@ const CrewPage: React.FC = () => {
             </DialogFooter>
           </form>
         </DialogContent>
+        )}
       </Dialog>
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirm Deletion</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete {selectedCrewMember?.name}? This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
+        {isDeleteDialogOpen && (
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Confirm Deletion</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to delete {selectedCrewMember?.name}? This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
           <DialogFooter className="gap-2 sm:gap-0">
             <Button 
               type="button" 
@@ -1144,6 +1149,7 @@ const CrewPage: React.FC = () => {
             </Button>
           </DialogFooter>
         </DialogContent>
+        )}
       </Dialog>
     </div>
   );

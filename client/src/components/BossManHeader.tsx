@@ -1,6 +1,6 @@
 import React from 'react';
 import { Mic, MicOff, UserCircle, ChevronLeft } from 'lucide-react';
-import { BossManCharacter } from './BossManCharacter';
+import BossManCharacter from './BossManCharacter';
 import { Button } from './ui/button';
 import { Switch } from './ui/switch';
 import { Label } from './ui/label';
@@ -31,7 +31,7 @@ export const BossManHeader: React.FC<BossManHeaderProps> = ({
       <div className="flex items-center">
         <div className="mr-4">
           {isBossMode ? (
-            <BossManCharacter mood="normal" size="xs" />
+            <BossManCharacter mood="neutral" size="xs" />
           ) : (
             <div className="w-10 h-10 flex items-center justify-center text-2xl bg-amber-200 rounded-full">
               👷
