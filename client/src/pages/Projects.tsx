@@ -208,7 +208,7 @@ export default function Projects() {
                 <Button 
                   variant="outline" 
                   className="mr-4"
-                  onClick={() => setLocation("/projects")}
+                  onClick={() => setLocation("projects")}
                 >
                   <ArrowLeft className="h-4 w-4 mr-2" />
                   Back to Projects
@@ -328,7 +328,7 @@ export default function Projects() {
                                 <Button 
                                   variant="ghost" 
                                   size="sm"
-                                  onClick={() => setLocation(`/crew/${crewMember.id}`)}
+                                  onClick={() => setLocation(`crew/${crewMember.id}`)}
                                 >
                                   <ChevronRight className="h-4 w-4" />
                                 </Button>
@@ -511,7 +511,7 @@ export default function Projects() {
                         });
                         
                         // Navigate to the new project
-                        setLocation(`/projects/${newProject.id}`);
+                        setLocation(`projects/${newProject.id}`);
                       } catch (error: any) {
                         toast({
                           title: "Error",
@@ -606,7 +606,7 @@ export default function Projects() {
                         id="closeNewProjectDialog" 
                         type="button" 
                         variant="outline"
-                        onClick={() => setLocation("/projects")}
+                        onClick={() => setLocation("projects")}
                       >
                         Cancel
                       </Button>
@@ -699,7 +699,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, progress }) => {
   const [, setLocation] = useLocation();
   
   const navigateToProjectDetail = () => {
-    setLocation(`/projects/${project.id}`);
+    setLocation(`projects/${project.id}`);
   };
   
   const getStatusColor = (status: string): string => {

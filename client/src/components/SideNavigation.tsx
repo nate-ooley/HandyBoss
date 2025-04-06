@@ -22,7 +22,9 @@ export const SideNavigation = () => {
 
   // Handle navigation
   const navigate = (to: string) => {
-    setLocation(to);
+    // Ensure all paths are relative (remove leading slash if it exists)
+    const relativePath = to.startsWith('/') ? to.substring(1) : to;
+    setLocation(relativePath);
   };
 
   // Check if route is active

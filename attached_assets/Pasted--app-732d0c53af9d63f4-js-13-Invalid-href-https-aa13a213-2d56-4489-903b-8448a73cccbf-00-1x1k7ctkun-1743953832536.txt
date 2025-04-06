@@ -1,0 +1,36 @@
+_app-732d0c53af9d63f4.js:13 Invalid href 'https://aa13a213-2d56-4489-903b-8448a73cccbf-00-1x1k7ctkun7ag.riker.replit.dev//dashboard' passed to next/router in page: '/replEnvironmentDesktop'. Repeated forward-slashes (//) or backslashes \ are not valid in the href.
+(anonymous) @ _app-732d0c53af9d63f4.js:13
+a.JZ.<computed> @ _app-732d0c53af9d63f4.js:15
+d @ main-761539f03c2abb8e.js:1
+(anonymous) @ _app-732d0c53af9d63f4.js:29
+lU @ framework-ad82a733f67f8526.js:1
+t.useMemo @ framework-ad82a733f67f8526.js:1
+(anonymous) @ _app-732d0c53af9d63f4.js:29
+ld @ framework-ad82a733f67f8526.js:1
+ou @ framework-ad82a733f67f8526.js:1
+i @ framework-ad82a733f67f8526.js:1
+uI @ framework-ad82a733f67f8526.js:1
+(anonymous) @ framework-ad82a733f67f8526.js:1
+uM @ framework-ad82a733f67f8526.js:1
+uS @ framework-ad82a733f67f8526.js:1
+C @ framework-ad82a733f67f8526.js:1
+z @ framework-ad82a733f67f8526.js:1Understand this errorAI
+Console.js:61 WebSocket connection established
+_app-732d0c53af9d63f4.js:13 Invalid href 'https://aa13a213-2d56-4489-903b-8448a73cccbf-00-1x1k7ctkun7ag.riker.replit.dev//projects' passed to next/router in page: '/replEnvironmentDesktop'. Repeated forward-slashes (//) or backslashes \ are not valid in the href.
+(anonymous) @ _app-732d0c53af9d63f4.js:13
+a.JZ.<computed> @ _app-732d0c53af9d63f4.js:15
+d @ main-761539f03c2abb8e.js:1
+(anonymous) @ _app-732d0c53af9d63f4.js:29
+lU @ framework-ad82a733f67f8526.js:1
+t.useMemo @ framework-ad82a733f67f8526.js:1
+(anonymous) @ _app-732d0c53af9d63f4.js:29
+ld @ framework-ad82a733f67f8526.js:1
+ou @ framework-ad82a733f67f8526.js:1
+i @ framework-ad82a733f67f8526.js:1
+uI @ framework-ad82a733f67f8526.js:1
+(anonymous) @ framework-ad82a733f67f8526.js:1
+uM @ framework-ad82a733f67f8526.js:1
+uS @ framework-ad82a733f67f8526.js:1
+C @ framework-ad82a733f67f8526.js:1
+z @ framework-ad82a733f67f8526.js:1Understand this errorAI
+_app-732d0c53af9d63f4.js:13 Invalid href 'https://aa13a213-2d56-4489-903b-8448a73cccbf-00-1x1k7ctkun7ag.riker.replit.dev//projects/1' passed to next/router in page: '/replEnvironmentDesktop'. Repeated forward-slashes (//) or backslashes \ are not valid in the href.
