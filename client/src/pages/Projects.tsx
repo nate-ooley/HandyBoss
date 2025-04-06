@@ -226,7 +226,7 @@ export default function Projects() {
                 <Button 
                   variant="outline" 
                   className="mr-4"
-                  onClick={() => setLocation("projects")}
+                  onClick={() => setLocation("/projects")}
                 >
                   <ArrowLeft className="h-4 w-4 mr-2" />
                   Back to Projects
@@ -346,7 +346,7 @@ export default function Projects() {
                                 <Button 
                                   variant="ghost" 
                                   size="sm"
-                                  onClick={() => setLocation(`crew/${crewMember.id}`)}
+                                  onClick={() => setLocation(`/crew/${crewMember.id}`)}
                                 >
                                   <ChevronRight className="h-4 w-4" />
                                 </Button>

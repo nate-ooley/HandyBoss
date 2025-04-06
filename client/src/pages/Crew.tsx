@@ -92,6 +92,7 @@ export const CrewPage = () => {
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
 
   const [isProfileView, setIsProfileView] = useState(false);
+  const [isAssignProjectsMode, setIsAssignProjectsMode] = useState(false);
   const [selectedCrewMember, setSelectedCrewMember] = useState<CrewMember | null>(null);
   
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -393,13 +394,22 @@ export const CrewPage = () => {
     return matchesSearch && matchesStatus && matchesJobsite;
   });
 
-  // Check if we should show profile view
+  // Check if we should show profile view or assign projects mode
   useEffect(() => {
     if (crewId) {
       const member = crewMembers.find((c: CrewMember) => c.id === crewId);
       if (member) {
-        setIsProfileView(true);
-        setSelectedCrewMember(member);
+        // Check if we're in assign-projects mode
+        if (location.includes(`/crew/${crewId}/assign-projects`)) {
+          setIsProfileView(false);
+          setIsAssignProjectsMode(true);
+          setSelectedCrewMember(member);
+        } else {
+          // Regular profile view
+          setIsProfileView(true);
+          setIsAssignProjectsMode(false);
+          setSelectedCrewMember(member);
+        }
       } else if (!isLoadingCrewMembers) {
         // Not found and not still loading
         setLocation("/crew");
@@ -411,16 +421,120 @@ export const CrewPage = () => {
       }
     } else {
       setIsProfileView(false);
+      setIsAssignProjectsMode(false);
       setSelectedCrewMember(null);
     }
-  }, [crewId, crewMembers, isLoadingCrewMembers, setLocation]);
+  }, [crewId, crewMembers, isLoadingCrewMembers, setLocation, location]);
 
   return (
     <div className="flex h-screen">
       <SideNavigation />
       <div className="flex-1 overflow-y-auto bg-gray-50">
         <div className="container mx-auto py-6">
-          {isProfileView && selectedCrewMember ? (
+          {isAssignProjectsMode && selectedCrewMember ? (
+            // Assign Projects Mode
+            <>
+              <div className="flex items-center mb-6">
+                <Button 
+                  variant="outline" 
+                  className="mr-4"
+                  onClick={() => {
+                    setIsAssignProjectsMode(false);
+                    setLocation(`/crew/${selectedCrewMember.id}`);
+                  }}
+                >
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back to Profile
+                </Button>
+                <h1 className="text-3xl font-bold">Assign Projects to {selectedCrewMember.name}</h1>
+              </div>
+              
+              <div className="grid grid-cols-1 gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Available Projects</CardTitle>
+                    <CardDescription>
+                      Select projects to assign to this crew member
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {isLoadingJobsites ? (
+                      <div className="flex justify-center py-4">
+                        <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full"></div>
+                      </div>
+                    ) : jobsites.length === 0 ? (
+                      <div className="text-center py-8">
+                        <p className="text-gray-500 mb-4">No projects available</p>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => setLocation("/projects")}
+                        >
+                          Create New Project
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {jobsites.map((project: Jobsite) => {
+                          // Check if crew member is already assigned to this project
+                          const isAssigned = assignedProjects.some((p: any) => p.id === project.id);
+                          
+                          return (
+                            <div 
+                              key={project.id} 
+                              className={`p-4 border rounded-md flex items-center justify-between ${
+                                isAssigned ? 'bg-primary/5 border-primary' : 'hover:bg-gray-50'
+                              }`}
+                            >
+                              <div>
+                                <h4 className="font-medium">{project.name}</h4>
+                                <p className="text-sm text-gray-500">{project.address || 'No address specified'}</p>
+                              </div>
+                              <div>
+                                {isAssigned ? (
+                                  <Button 
+                                    variant="destructive" 
+                                    size="sm"
+                                    onClick={() => {
+                                      // Here you would call the API to remove the assignment
+                                      if (confirm(`Remove ${selectedCrewMember.name} from ${project.name}?`)) {
+                                        // API call would go here
+                                        toast({
+                                          title: "Removed from project",
+                                          description: `${selectedCrewMember.name} removed from ${project.name}`,
+                                        });
+                                      }
+                                    }}
+                                  >
+                                    <X className="h-4 w-4 mr-2" />
+                                    Remove
+                                  </Button>
+                                ) : (
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm"
+                                    onClick={() => {
+                                      // Here you would call the API to add the assignment
+                                      toast({
+                                        title: "Added to project",
+                                        description: `${selectedCrewMember.name} added to ${project.name}`,
+                                      });
+                                    }}
+                                  >
+                                    Add to Project
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            </>
+          ) : isProfileView && selectedCrewMember ? (
             // Profile View
             <>
               <div className="flex items-center mb-6">

@@ -47,6 +47,7 @@ function AppRoutes() {
       <Route path="/projects/:id" component={Projects} />
       <Route path="/crew" component={Crew} />
       <Route path="/crew/:id" component={Crew} />
+      <Route path="/crew/:id/assign-projects" component={Crew} />
       <Route path="/payment-success" component={Checkout} />
       <Route path="/subscription-success" component={Subscribe} />
       <Route component={NotFound} />
