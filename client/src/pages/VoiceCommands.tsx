@@ -7,8 +7,9 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import BossManCharacter from "../components/BossManCharacter";
+import BossManCharacter from "@/components/BossManCharacter";
 import { apiRequest } from '@/lib/queryClient';
+import { useMobile } from '@/hooks/use-mobile';
 
 interface CommandResult {
   intent: string;
@@ -28,6 +29,7 @@ export default function VoiceCommandsPage() {
   const [commandHistory, setCommandHistory] = useState<CommandResult[]>([]);
   const [selectedJobsiteId, setSelectedJobsiteId] = useState<number | null>(null);
   const [commandView, setCommandView] = useState<'basic' | 'advanced'>('basic');
+  const isMobile = useMobile();
   
   // Process the voice command with our server-side AI
   const processVoiceCommand = async (text: string): Promise<CommandResult> => {
@@ -107,43 +109,59 @@ export default function VoiceCommandsPage() {
 
   return (
     <div className="container mx-auto py-4 sm:py-6 md:py-8 px-3 sm:px-4 md:px-6">
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 mb-4 sm:mb-6 md:mb-8">
-        <div className="hidden sm:block">
-          <BossManCharacter mood="neutral" size="sm" className="sm:w-16 md:w-20" />
+      <div className="flex flex-col sm:flex-row items-center justify-center sm:justify-between gap-3 sm:gap-4 mb-5 sm:mb-6 md:mb-8">
+        <div className="flex items-center gap-3">
+          <BossManCharacter 
+            mood="neutral" 
+            size={isMobile ? "xs" : "sm"} 
+            className={`${isMobile ? "w-12 h-12" : "w-16 md:w-20"}`} 
+          />
+          <div className="text-center sm:text-left">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">Voice Commands</h1>
+            <p className="text-sm md:text-base text-muted-foreground">
+              {language === 'en' 
+                ? 'Speak to control BossMan' 
+                : 'Habla para controlar BossMan'}
+            </p>
+          </div>
         </div>
-        <div className="text-center sm:text-left">
-          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">Voice Command Center</h1>
-          <p className="text-sm md:text-base text-muted-foreground">
-            Speak commands to control the BossMan platform
-          </p>
+        
+        <div className="flex items-center space-x-3 mt-1 sm:mt-0">
+          <Label htmlFor="header-language-toggle" className="text-sm sm:text-base font-medium">English</Label>
+          <Switch 
+            id="header-language-toggle" 
+            checked={language === 'es'}
+            onCheckedChange={(checked) => setLanguage(checked ? 'es' : 'en')}
+          />
+          <Label htmlFor="header-language-toggle" className="text-sm sm:text-base font-medium">Español</Label>
         </div>
       </div>
       
+      {/* Full-width voice interface for mobile */}
+      {isMobile && (
+        <div className="w-full mb-5">
+          <VoiceCommandInterface 
+            language={language}
+            onCommandProcessed={handleCommandProcessed}
+            jobsiteId={selectedJobsiteId || undefined}
+            className="max-w-none"
+            compact
+          />
+        </div>
+      )}
+      
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
-        {/* Left Column - Voice Interface */}
-        <div className="md:col-span-1">
+        {/* Left Column - Voice Interface (desktop only) */}
+        <div className="hidden md:block md:col-span-1">
           <Card className="shadow-sm">
             <CardHeader className="pb-3 px-4 pt-4 sm:p-6">
               <div className="flex justify-between items-center">
                 <div>
                   <CardTitle className="text-base sm:text-lg">Voice Controls</CardTitle>
                   <CardDescription className="text-xs sm:text-sm">
-                    Speak commands in English or Spanish
+                    Speak commands in {language === 'en' ? 'English' : 'Spanish'}
                   </CardDescription>
                 </div>
-                <div className="sm:hidden">
-                  <BossManCharacter mood="neutral" size="xs" className="w-10 h-10" />
-                </div>
-              </div>
-              
-              <div className="flex items-center space-x-3 mt-3 sm:mt-4 justify-center sm:justify-start">
-                <Label htmlFor="language-toggle" className="text-sm sm:text-base">English</Label>
-                <Switch 
-                  id="language-toggle" 
-                  checked={language === 'es'}
-                  onCheckedChange={(checked) => setLanguage(checked ? 'es' : 'en')}
-                />
-                <Label htmlFor="language-toggle" className="text-sm sm:text-base">Español</Label>
               </div>
             </CardHeader>
             
@@ -159,12 +177,12 @@ export default function VoiceCommandsPage() {
         </div>
         
         {/* Right Column - Results and History */}
-        <div className="md:col-span-2">
+        <div className={isMobile ? "col-span-1" : "md:col-span-2"}>
           <Tabs defaultValue="current" className="w-full">
             <TabsList className="grid w-full grid-cols-3 text-xs sm:text-sm">
-              <TabsTrigger value="current">Current Result</TabsTrigger>
-              <TabsTrigger value="history">Command History</TabsTrigger>
-              <TabsTrigger value="help">Available Commands</TabsTrigger>
+              <TabsTrigger value="current">Results</TabsTrigger>
+              <TabsTrigger value="history">History</TabsTrigger>
+              <TabsTrigger value="help">Examples</TabsTrigger>
             </TabsList>
             
             <TabsContent value="current" className="mt-3 sm:mt-4">
@@ -259,7 +277,7 @@ export default function VoiceCommandsPage() {
                 
                 <CardContent className="px-4 pb-4 sm:px-6 sm:pb-6">
                   {commandHistory.length > 0 ? (
-                    <ScrollArea className="h-[250px] sm:h-[350px] md:h-[400px] w-full">
+                    <ScrollArea className={`${isMobile ? "h-[200px]" : "h-[250px] sm:h-[350px] md:h-[400px]"} w-full`}>
                       <div className="space-y-3 sm:space-y-4">
                         {commandHistory.map((cmd, idx) => (
                           <div key={idx} className="p-3 sm:p-4 border rounded-md shadow-sm">
@@ -310,7 +328,7 @@ export default function VoiceCommandsPage() {
                 </CardHeader>
                 
                 <CardContent className="px-4 pb-4 sm:px-6 sm:pb-6">
-                  <ScrollArea className="h-[250px] sm:h-[350px] md:h-[400px] w-full">
+                  <ScrollArea className={`${isMobile ? "h-[200px]" : "h-[250px] sm:h-[350px] md:h-[400px]"} w-full`}>
                     <div className="space-y-4 sm:space-y-6">
                       <div>
                         <h3 className="font-medium text-sm sm:text-base md:text-lg mb-2">Scheduling</h3>
