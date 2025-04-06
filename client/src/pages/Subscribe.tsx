@@ -83,8 +83,8 @@ const plans: Plan[] = [
     priceId: 'price_1Og8f8JMYTj8PK3rQKfYhLW2' // Replace with your actual Stripe Price ID
   },
   {
-    id: 'mega',
-    name: 'Mega Plan',
+    id: 'bigboss',
+    name: 'Big Boss Plan',
     description: 'For large construction businesses with multiple teams',
     price: 99.99,
     interval: 'month',
