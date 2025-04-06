@@ -1,5 +1,5 @@
 import React from 'react';
-import { BossManCharacter } from './BossManCharacter';
+import BossManCharacter from './BossManCharacter.tsx';
 import { Umbrella } from 'lucide-react';
 import { WeatherAlert as WeatherAlertType } from '../types';
 
@@ -17,7 +17,7 @@ export const WeatherAlerts: React.FC<WeatherAlertsProps> = ({
       {currentAlert && (
         <div className="mb-4">
           <div className="flex items-start space-x-3">
-            <BossManCharacter size="lg" mood="worried" />
+            <BossManCharacter size="lg" mood="concerned" />
             <div className="bg-light p-4 rounded-xl flex-1">
               <p className="text-primary font-medium">"{currentAlert}"</p>
             </div>
