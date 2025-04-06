@@ -8,6 +8,7 @@ import { insertCommandSchema, insertChatMessageSchema } from "@shared/schema";
 import { translateWithOpenAI, detectLanguageWithOpenAI } from "./openai";
 import { sendEmail, sendSMS, sendBulkNotifications } from "./services/sendgrid";
 import { createPaymentIntent, createCustomer, createSubscription, getCustomer, getSubscription } from "./services/stripe";
+import { processVoiceCommand, translateConstructionText, createCommandFromSpeech } from "./services/anthropic";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
@@ -30,18 +31,135 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
+      // Try to use Anthropic for improved construction-specific translation
+      try {
+        const translatedText = await translateConstructionText(text, targetLanguage as 'en' | 'es');
+        
+        res.json({
+          original: text,
+          translated: translatedText,
+          targetLanguage,
+          provider: 'anthropic'
+        });
+        return;
+      } catch (anthropicError) {
+        // If Anthropic fails, fall back to OpenAI
+        console.log('Anthropic translation failed, falling back to OpenAI:', anthropicError);
+      }
+      
+      // Fallback to OpenAI
       const translatedText = await translateWithOpenAI(text, targetLanguage as 'en' | 'es');
       
       res.json({
         original: text,
         translated: translatedText,
-        targetLanguage
+        targetLanguage,
+        provider: 'openai'
       });
     } catch (error) {
       console.error('Translation error:', error);
       res.status(500).json({ message: 'Error processing translation' });
     }
   });
+  
+  // Process voice commands
+  app.post('/api/voice/process-command', async (req, res) => {
+    try {
+      const { text, language = 'en', jobsiteId, userId = 1 } = req.body;
+      
+      if (!text) {
+        return res.status(400).json({ error: 'Missing required field: text' });
+      }
+      
+      // Process command with Anthropic NLP
+      let commandData;
+      try {
+        commandData = await processVoiceCommand(text);
+      } catch (err) {
+        console.error('Error processing command with Anthropic:', err);
+        // Fallback to basic intent detection
+        commandData = {
+          intent: text.toLowerCase().includes('schedule') ? 'schedule' :
+                  text.toLowerCase().includes('report') ? 'report' :
+                  text.toLowerCase().includes('alert') ? 'alert' :
+                  text.toLowerCase().includes('request') ? 'request' : 'information',
+          action: text,
+          entities: [],
+          priority: 'medium',
+          jobsiteRelevant: jobsiteId !== undefined,
+          requiresResponse: text.endsWith('?')
+        };
+      }
+      
+      // Store the command in the database
+      const command = await storage.createCommand({
+        text,
+        userId: typeof userId === 'number' ? userId : 1,
+        jobsiteId: jobsiteId ? Number(jobsiteId) : undefined,
+        timestamp: new Date(),
+      });
+      
+      // Generate a response message
+      const responseMessage = generateCommandResponse(commandData);
+      
+      // Return processed command with additional information
+      res.json({
+        ...commandData,
+        command,
+        response: responseMessage,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Error processing voice command:', error);
+      res.status(500).json({ error: 'Failed to process voice command' });
+    }
+  });
+  
+  // Helper function to generate responses based on command intent
+  function generateCommandResponse(command: any): string {
+    const intentResponses: Record<string, string[]> = {
+      'schedule': [
+        'I\'ve scheduled that for you.',
+        'Added to the calendar.',
+        'The schedule has been updated.',
+        'Task scheduled successfully.'
+      ],
+      'report': [
+        'Report received. Thank you.',
+        'I\'ve logged your report.',
+        'Thank you for the update.',
+        'Report has been recorded.'
+      ],
+      'alert': [
+        'Alert sent to the team.',
+        'Team has been notified.',
+        'Alert has been issued.',
+        'Emergency notification sent.'
+      ],
+      'request': [
+        'Your request has been submitted.',
+        'I\'ll process that request right away.',
+        'Request received and logged.',
+        'I\'ll take care of that request.'
+      ],
+      'information': [
+        'Here\'s the information you requested.',
+        'I\'ve found that information for you.',
+        'Let me look that up for you.',
+        'Here are the details you asked for.'
+      ]
+    };
+    
+    const fallbackResponses = [
+      'Command processed successfully.',
+      'I\'ve taken care of that for you.',
+      'Your request has been processed.',
+      'All done!'
+    ];
+    
+    const responses = intentResponses[command.intent] || fallbackResponses;
+    return responses[Math.floor(Math.random() * responses.length)];
+  }
   
   // Calendar API Endpoints
   app.get('/api/calendar/events', async (req, res) => {

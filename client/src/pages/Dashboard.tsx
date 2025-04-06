@@ -87,8 +87,24 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
           
-          {/* Payment Options */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          {/* Feature Options */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            <div className="bg-white rounded-lg border shadow-sm p-4">
+              <h3 className="text-lg font-semibold mb-2 flex items-center">
+                <span role="img" aria-label="Speech" className="mr-2">🗣️</span>
+                Voice Commands
+              </h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Control your jobsite with advanced voice commands. Create tasks, send alerts, or get information instantly.
+              </p>
+              <a 
+                href="/voice-commands" 
+                className="bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-lg inline-block font-medium"
+              >
+                Try Voice Commands
+              </a>
+            </div>
+            
             <div className="bg-white rounded-lg border shadow-sm p-4">
               <h3 className="text-lg font-semibold mb-2 flex items-center">
                 <span role="img" aria-label="Money" className="mr-2">💵</span>
