@@ -605,14 +605,14 @@ export const CrewPage = () => {
                 
                 <div className="flex flex-col md:flex-row gap-4">
                   <Select
-                    value={statusFilter || ""}
-                    onValueChange={(value) => setStatusFilter(value || null)}
+                    value={statusFilter || "all"}
+                    onValueChange={(value) => setStatusFilter(value !== "all" ? value : null)}
                   >
                     <SelectTrigger className="w-[200px]">
                       <SelectValue placeholder="Filter by status" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All Statuses</SelectItem>
+                      <SelectItem value="all">All Statuses</SelectItem>
                       <SelectItem value="active">Active</SelectItem>
                       <SelectItem value="on-leave">On Leave</SelectItem>
                       <SelectItem value="terminated">Terminated</SelectItem>
@@ -620,14 +620,14 @@ export const CrewPage = () => {
                   </Select>
                   
                   <Select
-                    value={jobsiteFilter?.toString() || ""}
-                    onValueChange={(value) => setJobsiteFilter(value ? parseInt(value) : null)}
+                    value={jobsiteFilter?.toString() || "all"}
+                    onValueChange={(value) => setJobsiteFilter(value !== "all" ? parseInt(value) : null)}
                   >
                     <SelectTrigger className="w-[200px]">
                       <SelectValue placeholder="Filter by jobsite" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All Jobsites</SelectItem>
+                      <SelectItem value="all">All Jobsites</SelectItem>
                       {jobsites.map((jobsite: Jobsite) => (
                         <SelectItem key={jobsite.id} value={jobsite.id.toString()}>
                           {jobsite.name}
