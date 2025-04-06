@@ -1,4 +1,5 @@
 import { IStorage } from '../storage';
+import mongoose from 'mongoose';
 import { 
   User, Jobsite, WeatherAlert, Command, ChatMessage, MessageReaction,
   IUser, IJobsite, IWeatherAlert, ICommand, IChatMessage, IMessageReaction
@@ -43,16 +44,32 @@ export class MongoStorage implements IStorage {
 
   private async init() {
     try {
+      // Connect to database (this will use the MongoDB Memory Server)
       await connectToDatabase();
-      log('MongoDB storage initialized', 'mongodb');
+      log('MongoDB storage initialized successfully', 'mongodb');
+      
+      // Wait a bit to ensure the connection is established
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Check connection state
+      const connected = mongoose.connection.readyState === 1;
+      if (!connected) {
+        log('MongoDB connection not ready. Retrying...', 'mongodb');
+        await connectToDatabase();
+      }
+      
       // Check if there are any users, if not create a default one
       const userCount = await User.countDocuments();
+      log(`Found ${userCount} users in the database`, 'mongodb');
+      
       if (userCount === 0) {
-        log('No users found. Creating default user...', 'mongodb');
+        log('No users found. Creating sample data...', 'mongodb');
         await this.initSampleData();
       }
     } catch (error) {
       log(`Error initializing MongoDB storage: ${getErrorMessage(error)}`, 'mongodb');
+      log('Falling back to memory storage...', 'mongodb');
+      // Don't throw error so the app can continue with memory storage if needed
     }
   }
 
@@ -148,7 +165,7 @@ export class MongoStorage implements IStorage {
       );
       return jobsite ? documentToObject(jobsite) : undefined;
     } catch (error) {
-      log(`Error updating jobsite dates: ${error.message}`, 'mongodb');
+      log(`Error updating jobsite dates: ${getErrorMessage(error)}`, 'mongodb');
       return undefined;
     }
   }
@@ -159,7 +176,7 @@ export class MongoStorage implements IStorage {
       const alerts = await WeatherAlert.find().sort({ startTime: -1 });
       return alerts.map(documentToObject);
     } catch (error) {
-      log(`Error getting weather alerts: ${error.message}`, 'mongodb');
+      log(`Error getting weather alerts: ${getErrorMessage(error)}`, 'mongodb');
       return [];
     }
   }
@@ -170,7 +187,7 @@ export class MongoStorage implements IStorage {
       const savedAlert = await newAlert.save();
       return documentToObject(savedAlert);
     } catch (error) {
-      log(`Error creating weather alert: ${error.message}`, 'mongodb');
+      log(`Error creating weather alert: ${getErrorMessage(error)}`, 'mongodb');
       throw error;
     }
   }
@@ -184,7 +201,7 @@ export class MongoStorage implements IStorage {
         .populate('userId', 'name');
       return commands.map(documentToObject);
     } catch (error) {
-      log(`Error getting recent commands: ${error.message}`, 'mongodb');
+      log(`Error getting recent commands: ${getErrorMessage(error)}`, 'mongodb');
       return [];
     }
   }
@@ -195,7 +212,7 @@ export class MongoStorage implements IStorage {
       const savedCommand = await newCommand.save();
       return documentToObject(savedCommand);
     } catch (error) {
-      log(`Error creating command: ${error.message}`, 'mongodb');
+      log(`Error creating command: ${getErrorMessage(error)}`, 'mongodb');
       throw error;
     }
   }
@@ -210,7 +227,7 @@ export class MongoStorage implements IStorage {
         .populate('jobsiteId', 'name');
       return messages.map(documentToObject);
     } catch (error) {
-      log(`Error getting chat messages: ${error.message}`, 'mongodb');
+      log(`Error getting chat messages: ${getErrorMessage(error)}`, 'mongodb');
       return [];
     }
   }
@@ -224,7 +241,7 @@ export class MongoStorage implements IStorage {
         .populate('jobsiteId', 'name');
       return messages.map(documentToObject);
     } catch (error) {
-      log(`Error getting chat messages by jobsite: ${error.message}`, 'mongodb');
+      log(`Error getting chat messages by jobsite: ${getErrorMessage(error)}`, 'mongodb');
       return [];
     }
   }
@@ -235,7 +252,7 @@ export class MongoStorage implements IStorage {
       const savedMessage = await newMessage.save();
       return documentToObject(savedMessage);
     } catch (error) {
-      log(`Error creating chat message: ${error.message}`, 'mongodb');
+      log(`Error creating chat message: ${getErrorMessage(error)}`, 'mongodb');
       throw error;
     }
   }
@@ -253,7 +270,7 @@ export class MongoStorage implements IStorage {
       );
       return message ? documentToObject(message) : undefined;
     } catch (error) {
-      log(`Error marking message as calendar event: ${error.message}`, 'mongodb');
+      log(`Error marking message as calendar event: ${getErrorMessage(error)}`, 'mongodb');
       return undefined;
     }
   }
@@ -296,7 +313,7 @@ export class MongoStorage implements IStorage {
         ...messages.map(documentToObject)
       ];
     } catch (error) {
-      log(`Error getting calendar events: ${error.message}`, 'mongodb');
+      log(`Error getting calendar events: ${getErrorMessage(error)}`, 'mongodb');
       return [];
     }
   }
@@ -334,7 +351,7 @@ export class MongoStorage implements IStorage {
 
       return documentToObject(message);
     } catch (error) {
-      log(`Error adding reaction to message: ${error.message}`, 'mongodb');
+      log(`Error adding reaction to message: ${getErrorMessage(error)}`, 'mongodb');
       return undefined;
     }
   }
@@ -361,7 +378,7 @@ export class MongoStorage implements IStorage {
 
       return documentToObject(message);
     } catch (error) {
-      log(`Error removing reaction from message: ${error.message}`, 'mongodb');
+      log(`Error removing reaction from message: ${getErrorMessage(error)}`, 'mongodb');
       return undefined;
     }
   }
@@ -384,7 +401,7 @@ export class MongoStorage implements IStorage {
       
       return groupedReactions;
     } catch (error) {
-      log(`Error getting message reactions: ${error.message}`, 'mongodb');
+      log(`Error getting message reactions: ${getErrorMessage(error)}`, 'mongodb');
       return {};
     }
   }
@@ -458,7 +475,7 @@ export class MongoStorage implements IStorage {
       
       log('Sample data initialized successfully', 'mongodb');
     } catch (error) {
-      log(`Error initializing sample data: ${error.message}`, 'mongodb');
+      log(`Error initializing sample data: ${getErrorMessage(error)}`, 'mongodb');
     }
   }
 }

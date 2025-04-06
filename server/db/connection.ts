@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { MongoMemoryServer } from 'mongodb-memory-server';
 import { log } from '../vite';
 
 // Safely handle error messages
@@ -7,8 +8,8 @@ function getErrorMessage(error: unknown): string {
   return String(error || 'Unknown error');
 }
 
-// Connection URI (using environment variable or default to a local MongoDB)
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/boss-man';
+// MongoDB Memory Server instance
+let mongoMemoryServer: MongoMemoryServer | null = null;
 
 // MongoDB connection options
 const connectionOptions = {
@@ -20,8 +21,22 @@ const connectionOptions = {
 export async function connectToDatabase() {
   try {
     if (mongoose.connection.readyState === 0) {
-      log(`Connecting to MongoDB at ${MONGODB_URI.replace(/mongodb:\/\/(.*@)?/, 'mongodb://****@')}`, 'mongodb');
-      await mongoose.connect(MONGODB_URI, connectionOptions);
+      // Check if we should use MongoDB Memory Server or a real connection
+      if (process.env.MONGODB_URI) {
+        // Use the provided MongoDB URI
+        const MONGODB_URI = process.env.MONGODB_URI;
+        log(`Connecting to MongoDB at ${MONGODB_URI.replace(/mongodb:\/\/(.*@)?/, 'mongodb://****@')}`, 'mongodb');
+        await mongoose.connect(MONGODB_URI, connectionOptions);
+      } else {
+        // Use MongoDB Memory Server for in-memory MongoDB
+        if (!mongoMemoryServer) {
+          log('Creating MongoDB Memory Server instance', 'mongodb');
+          mongoMemoryServer = await MongoMemoryServer.create();
+        }
+        const uri = mongoMemoryServer.getUri();
+        log(`Connecting to MongoDB Memory Server at ${uri}`, 'mongodb');
+        await mongoose.connect(uri, connectionOptions);
+      }
       log('Connected to MongoDB successfully', 'mongodb');
     }
     return { db: mongoose.connection.db, mongoose: mongoose };
@@ -46,6 +61,13 @@ export async function closeConnection() {
   if (mongoose.connection.readyState !== 0) {
     await mongoose.connection.close();
     log('MongoDB connection closed', 'mongodb');
+  }
+  
+  // Stop MongoDB Memory Server if it's running
+  if (mongoMemoryServer) {
+    await mongoMemoryServer.stop();
+    mongoMemoryServer = null;
+    log('MongoDB Memory Server stopped', 'mongodb');
   }
 }
 

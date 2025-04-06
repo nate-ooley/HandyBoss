@@ -8,7 +8,8 @@ let storage: IStorage;
 
 // Function to determine which storage implementation to use
 export function initializeStorage(forceMemory = false): IStorage {
-  const useMongoDb = process.env.USE_MONGODB === 'true' && !forceMemory;
+  // Use MongoDB by default, unless forceMemory is true
+  const useMongoDb = !forceMemory;
   
   if (useMongoDb) {
     log('Using MongoDB storage implementation', 'storage');
