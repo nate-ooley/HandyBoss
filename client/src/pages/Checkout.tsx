@@ -3,7 +3,7 @@ import { loadStripe } from '@stripe/stripe-js';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { apiRequest } from '@/lib/queryClient';
 import { Button } from '@/components/ui/button';
-import BossManCharacter from '../components/BossManCharacter';
+import BossManCharacter from '../components/BossManCharacter.tsx';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 
 // Make sure to call loadStripe outside of a component's render to avoid

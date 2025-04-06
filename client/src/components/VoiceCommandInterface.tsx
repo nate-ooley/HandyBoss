@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Mic, MicOff, Volume2, Activity, Play, Radio, AlertTriangle } from 'lucide-react';
-import BossManCharacter from './BossManCharacter';
+import BossManCharacter from './BossManCharacter.tsx';
 import { Separator } from '@/components/ui/separator';
 import { apiRequest } from '@/lib/queryClient';
 import { cn } from '@/lib/utils';

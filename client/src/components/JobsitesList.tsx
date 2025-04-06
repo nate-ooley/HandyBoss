@@ -1,5 +1,5 @@
 import React from 'react';
-import { BossManCharacter } from './BossManCharacter';
+import BossManCharacter from './BossManCharacter.tsx';
 import { Clock, CloudRain } from 'lucide-react';
 import { Jobsite } from '../types';
 
@@ -8,16 +8,16 @@ interface JobsitesListProps {
 }
 
 export const JobsitesList: React.FC<JobsitesListProps> = ({ jobsites }) => {
-  const getMoodForStatus = (status: string): 'normal' | 'happy' | 'angry' | 'worried' | 'busy' => {
+  const getMoodForStatus = (status: string): 'neutral' | 'happy' | 'angry' | 'confused' | 'excited' | 'concerned' => {
     switch (status.toLowerCase()) {
       case 'delayed':
-        return 'worried';
+        return 'concerned';
       case 'weather alert':
         return 'angry';
       case 'on time':
         return 'happy';
       default:
-        return 'normal';
+        return 'neutral';
     }
   };
 

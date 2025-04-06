@@ -1,5 +1,5 @@
 import React from 'react';
-import { BossManCharacter } from './BossManCharacter';
+import BossManCharacter from './BossManCharacter.tsx';
 import { Button } from '@/components/ui/button';
 import { MapPin } from 'lucide-react';
 import { Command } from '../types';
@@ -13,11 +13,11 @@ export const RecentCommands: React.FC<RecentCommandsProps> = ({
   commands,
   onViewMap 
 }) => {
-  const getMoodForCommand = (command: string): 'normal' | 'happy' | 'angry' | 'worried' | 'busy' => {
-    if (command.toLowerCase().includes('late')) return 'worried';
-    if (command.toLowerCase().includes('more') || command.toLowerCase().includes('need')) return 'busy';
+  const getMoodForCommand = (command: string): 'neutral' | 'happy' | 'angry' | 'confused' | 'excited' | 'concerned' => {
+    if (command.toLowerCase().includes('late')) return 'concerned';
+    if (command.toLowerCase().includes('more') || command.toLowerCase().includes('need')) return 'confused';
     if (command.toLowerCase().includes('safety')) return 'angry';
-    return 'normal';
+    return 'neutral';
   };
 
   return (
