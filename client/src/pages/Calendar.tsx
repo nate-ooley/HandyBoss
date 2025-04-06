@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BossManImage } from '@/components/BossManImage';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { SideNavigation } from '@/components/SideNavigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -57,10 +58,16 @@ export default function Calendar() {
   const { sendMessage, lastMessage } = useWebSocket();
   
   // Embla carousel for day view
-  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: false });
+  const [emblaRef, emblaApi] = useEmblaCarousel({ 
+    loop: false,
+    align: 'center',
+    containScroll: 'trimSnaps',
+    dragFree: true
+  });
   const daysChanging = useRef<boolean>(false); // Ref to prevent infinite loops
   const [dayViewIndex, setDayViewIndex] = useState(0);
   const [days, setDays] = useState<Date[]>([]);
+  const [eventTypeFilter, setEventTypeFilter] = useState<'all' | 'jobsite' | 'message'>('all');
 
   // Get calendar events from API
   const { data: events = [], isLoading } = useQuery({
@@ -151,9 +158,17 @@ export default function Calendar() {
 
   // Get events for the selected date
   const getEventsForDate = (day: Date) => {
-    return filteredEvents.filter(event => 
-      isSameDay(parseISO(event.date.toISOString()), day)
-    );
+    return filteredEvents.filter(event => {
+      // First filter by date
+      const matchesDate = isSameDay(parseISO(event.date.toISOString()), day);
+      
+      // Then filter by event type if a specific filter is active
+      if (eventTypeFilter !== 'all') {
+        return matchesDate && event.type === eventTypeFilter;
+      }
+      
+      return matchesDate;
+    });
   };
 
   // Handle date cell rendering to add dots for events
@@ -358,234 +373,227 @@ export default function Calendar() {
       <SideNavigation />
       <div className="flex-1">
         <div className="container mx-auto px-4 py-8">
-          <div className="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4">
-            {/* Calendar sidebar */}
-            <div className="w-full md:w-64">
-              <Card>
-                <CardHeader>
+          <div className="flex flex-col space-y-4">
+            {/* Top section with view selector and controls */}
+            <Card>
+              <CardHeader>
+                <div className="flex justify-between items-center">
                   <CardTitle className="flex items-center">
                     <CalendarIcon className="mr-2 h-5 w-5" />
                     Calendar
                   </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Tabs defaultValue="day" onValueChange={(value) => setView(value as any)}>
-                    <TabsList className="grid w-full grid-cols-3">
-                      <TabsTrigger value="month">Month</TabsTrigger>
+                  <Tabs defaultValue="day" value={view} onValueChange={(value) => setView(value as any)}>
+                    <TabsList className="grid grid-cols-3">
                       <TabsTrigger value="day">Day</TabsTrigger>
+                      <TabsTrigger value="month">Month</TabsTrigger>
                       <TabsTrigger value="list">List</TabsTrigger>
                     </TabsList>
                   </Tabs>
-                  
-                  <div className="mt-4">
-                    <div className="flex justify-between items-center mb-2">
-                      <Button variant="outline" size="sm" onClick={goToPreviousMonth}>
-                        <ChevronLeft className="h-4 w-4" />
-                      </Button>
-                      <Button variant="outline" size="sm" onClick={goToToday}>
-                        Today
-                      </Button>
-                      <Button variant="outline" size="sm" onClick={goToNextMonth}>
-                        <ChevronRight className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    <CalendarComponent
-                      mode="single"
-                      selected={date}
-                      onSelect={(date) => date && setDate(date)}
-                      className="rounded-md border"
-                    />
-                  </div>
-                  
-                  <div className="mt-4 space-y-2">
-                    <div className="flex items-center">
-                      <div className="h-3 w-3 rounded-full bg-indigo-500 mr-2"></div>
-                      <span className="text-sm">Projects</span>
-                    </div>
-                    <div className="flex items-center">
-                      <div className="h-3 w-3 rounded-full bg-green-500 mr-2"></div>
-                      <span className="text-sm">Chat Messages</span>
-                    </div>
-                  </div>
-                  
-                  <div className="mt-4">
-                    <Button 
-                      variant="outline" 
-                      className="w-full" 
-                      onClick={generateICalFile}
-                    >
-                      <Download className="mr-2 h-4 w-4" />
-                      Export Calendar
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
+                </div>
+              </CardHeader>
+            </Card>
+            
             {/* Main content area */}
-            <div className="flex-1">
-              <Card className="h-full">
-                <CardHeader>
-                  <div className="flex justify-between items-center">
-                    <CardTitle>
-                      {view === 'month' && format(date, 'MMMM yyyy')}
-                      {view === 'day' && format(date, 'EEEE, MMMM do, yyyy')}
-                      {view === 'list' && 'Event List'}
-                    </CardTitle>
-                    <div className="flex items-center space-x-2">
-                      <div className="relative">
-                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          type="search"
-                          placeholder="Search events..."
-                          className="pl-8 w-[200px]"
-                          value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
-                        />
-                        {searchQuery && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="absolute right-0 top-0 h-9 w-9 p-0"
-                            onClick={() => setSearchQuery('')}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  <CardDescription>
-                    {isLoading 
-                      ? 'Loading events...' 
-                      : searchQuery
-                        ? `${filteredEvents.length} events found`
-                        : `${events.length} events in ${format(date, 'MMMM')}`
-                    }
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {/* Start with Day carousel at top */}
-                  {view === 'day' && (
-                    <div className="space-y-4 mb-6">
-                      {/* Day navigation bar */}
-                      <div className="flex items-center justify-between mb-4">
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          onClick={goToPreviousDay} 
-                          className="flex items-center space-x-1"
-                        >
-                          <MoveLeft className="h-4 w-4" />
-                          <span>Previous Day</span>
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          onClick={goToNextDay}
-                          className="flex items-center space-x-1"
-                        >
-                          <span>Next Day</span>
-                          <MoveRight className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      
-                      {/* Carousel view */}
-                      <div className="embla" ref={emblaRef}>
-                        <div className="embla__container">
-                          {days.map((day, index) => (
-                            <div 
-                              key={format(day, 'yyyy-MM-dd')} 
-                              className="embla__slide"
+            <div className="flex flex-col md:flex-row gap-4">
+              {/* Main content section */}
+              <div className="flex-1">
+                <Card className="h-full">
+                  <CardHeader>
+                    <div className="flex justify-between items-center">
+                      <CardTitle>
+                        {view === 'month' && format(date, 'MMMM yyyy')}
+                        {view === 'day' && format(date, 'EEEE, MMMM do, yyyy')}
+                        {view === 'list' && 'Event List'}
+                      </CardTitle>
+                      <div className="flex items-center space-x-2">
+                        {/* Event type filter */}
+                        <Select value={eventTypeFilter} onValueChange={(value) => setEventTypeFilter(value as 'all' | 'jobsite' | 'message')}>
+                          <SelectTrigger className="w-[140px]">
+                            <SelectValue placeholder="Filter by type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Events</SelectItem>
+                            <SelectItem value="jobsite">Projects Only</SelectItem>
+                            <SelectItem value="message">Messages Only</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        
+                        {/* Search input */}
+                        <div className="relative">
+                          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            type="search"
+                            placeholder="Search events..."
+                            className="pl-8 w-[200px]"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                          />
+                          {searchQuery && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="absolute right-0 top-0 h-9 w-9 p-0"
+                              onClick={() => setSearchQuery('')}
                             >
-                              <Card className="border shadow-sm h-full">
-                                <CardHeader className="pb-2">
-                                  <CardTitle className="text-lg font-semibold text-center">
-                                    {format(day, 'EEEE')}
-                                    <span className="block text-sm font-normal text-muted-foreground">
-                                      {format(day, 'MMMM d, yyyy')}
-                                    </span>
-                                  </CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                  <div className="space-y-3">
-                                    {getEventsForDate(day).length > 0 ? (
-                                      getEventsForDate(day).map(event => (
-                                        <Card 
-                                          key={`${event.type}-${event.id}`} 
-                                          className="calendar-event-card cursor-pointer"
-                                          style={{ borderLeftColor: event.color }}
-                                          onClick={() => handleSelectEvent(event)}
-                                        >
-                                          <CardHeader className="py-2.5 px-3">
-                                            <div className="flex items-start justify-between">
-                                              <CardTitle className="text-base">
-                                                {event.title}
-                                              </CardTitle>
-                                              <Badge 
-                                                variant={event.type === 'jobsite' ? 'default' : 'outline'}
-                                                className={event.type === 'jobsite' ? 'bg-indigo-500' : 'bg-green-500 text-white'}
-                                              >
-                                                {event.type === 'jobsite' ? 'Project' : 'Message'}
-                                              </Badge>
-                                            </div>
-                                          </CardHeader>
-                                          <CardContent className="py-1.5 px-3 border-t">
-                                            <div className="flex items-center text-sm text-muted-foreground">
-                                              <Clock className="h-3.5 w-3.5 mr-1" />
-                                              {format(event.date, 'h:mm a')}
-                                              {event.endDate && ` - ${format(event.endDate, 'h:mm a')}`}
-                                            </div>
-                                            {'address' in event && event.address && (
-                                              <div className="flex items-center mt-1.5 text-sm text-muted-foreground">
-                                                <MapPin className="h-3.5 w-3.5 mr-1" />
-                                                {event.address}
-                                              </div>
-                                            )}
-                                            {'text' in event && (
-                                              <div className="mt-1.5 text-sm">
-                                                <MessageSquare className="h-3.5 w-3.5 mr-1 inline-block" />
-                                                <span className="line-clamp-2">{event.text}</span>
-                                              </div>
-                                            )}
-                                          </CardContent>
-                                        </Card>
-                                      ))
-                                    ) : (
-                                      <div className="flex flex-col items-center justify-center py-10 text-center">
-                                        <BossManImage mood="angry" size="sm" />
-                                        <h3 className="mt-3 text-base font-semibold">No events for this day</h3>
-                                        <p className="text-sm text-muted-foreground">Swipe to check other days</p>
-                                      </div>
-                                    )}
-                                  </div>
-                                </CardContent>
-                              </Card>
-                            </div>
-                          ))}
+                              <X className="h-4 w-4" />
+                            </Button>
+                          )}
                         </div>
                       </div>
-                      
-                      {/* Day indicators - circles at bottom showing which day we're viewing */}
-                      <div className="flex justify-center mt-4 space-x-1">
-                        {days.map((day, index) => (
-                          <div 
-                            key={`indicator-${index}`}
-                            className={`day-indicator h-2 w-2 rounded-full ${index === dayViewIndex ? 'active bg-primary' : 'bg-gray-300'}`}
-                            onClick={() => emblaApi?.scrollTo(index)}
-                          />
-                        ))}
-                      </div>
                     </div>
-                  )}
-                  
-                  {/* Tabs below the carousel */}
-                  <Tabs defaultValue="day" value={view} onValueChange={(value) => setView(value as any)}>
-                    <TabsList className="w-full mb-4">
-                      <TabsTrigger value="day">Day</TabsTrigger>
-                      <TabsTrigger value="month">Month</TabsTrigger>
-                      <TabsTrigger value="list">List</TabsTrigger>
-                    </TabsList>
+                    <CardDescription>
+                      {isLoading 
+                        ? 'Loading events...' 
+                        : searchQuery
+                          ? `${filteredEvents.length} events found`
+                          : `${events.length} events in ${format(date, 'MMMM')}`
+                      }
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {/* Day carousel at top (only shown in day view) */}
+                    {view === 'day' && (
+                      <div className="space-y-4 mb-6">
+                        {/* Day navigation bar */}
+                        <div className="flex items-center justify-between mb-4">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={goToPreviousDay} 
+                            className="flex items-center space-x-1"
+                          >
+                            <MoveLeft className="h-4 w-4" />
+                            <span>Previous Day</span>
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={goToNextDay}
+                            className="flex items-center space-x-1"
+                          >
+                            <span>Next Day</span>
+                            <MoveRight className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        
+                        {/* Carousel view */}
+                        <div className="embla" ref={emblaRef}>
+                          <div className="embla__container">
+                            {days.map((day, index) => (
+                              <div 
+                                key={format(day, 'yyyy-MM-dd')} 
+                                className="embla__slide"
+                              >
+                                <Card className="border shadow-sm h-full">
+                                  <CardHeader className="pb-2">
+                                    <CardTitle className="text-lg font-semibold text-center">
+                                      {format(day, 'EEEE')}
+                                      <span className="block text-sm font-normal text-muted-foreground">
+                                        {format(day, 'MMMM d, yyyy')}
+                                      </span>
+                                    </CardTitle>
+                                  </CardHeader>
+                                  <CardContent>
+                                    <div className="space-y-3">
+                                      {getEventsForDate(day).length > 0 ? (
+                                        getEventsForDate(day).map(event => (
+                                          <Card 
+                                            key={`${event.type}-${event.id}`} 
+                                            className="calendar-event-card cursor-pointer"
+                                            style={{ borderLeftColor: event.color }}
+                                            onClick={() => handleSelectEvent(event)}
+                                          >
+                                            <CardHeader className="py-2.5 px-3">
+                                              <div className="flex items-start justify-between">
+                                                <CardTitle className="text-base">
+                                                  {event.title}
+                                                </CardTitle>
+                                                <Badge 
+                                                  variant={event.type === 'jobsite' ? 'default' : 'outline'}
+                                                  className={event.type === 'jobsite' ? 'bg-indigo-500' : 'bg-green-500 text-white'}
+                                                >
+                                                  {event.type === 'jobsite' ? 'Project' : 'Message'}
+                                                </Badge>
+                                              </div>
+                                            </CardHeader>
+                                            <CardContent className="py-1.5 px-3 border-t">
+                                              <div className="flex items-center text-sm text-muted-foreground">
+                                                <Clock className="h-3.5 w-3.5 mr-1" />
+                                                {format(event.date, 'h:mm a')}
+                                                {event.endDate && ` - ${format(event.endDate, 'h:mm a')}`}
+                                              </div>
+                                              {'address' in event && event.address && (
+                                                <div className="flex items-center mt-1.5 text-sm text-muted-foreground">
+                                                  <MapPin className="h-3.5 w-3.5 mr-1" />
+                                                  {event.address}
+                                                </div>
+                                              )}
+                                              {'text' in event && (
+                                                <div className="mt-1.5 text-sm">
+                                                  <MessageSquare className="h-3.5 w-3.5 mr-1 inline-block" />
+                                                  <span className="line-clamp-2">{event.text}</span>
+                                                </div>
+                                              )}
+                                            </CardContent>
+                                          </Card>
+                                        ))
+                                      ) : (
+                                        <div className="flex flex-col items-center justify-center py-10 text-center">
+                                          <BossManImage mood="angry" size="sm" />
+                                          <h3 className="mt-3 text-base font-semibold">No events for this day</h3>
+                                          <p className="text-sm text-muted-foreground">Swipe to check other days</p>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </CardContent>
+                                </Card>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        
+                        {/* Day indicators - circles at bottom showing which day we're viewing */}
+                        <div className="flex justify-center mt-4 space-x-1">
+                          {days.map((day, index) => (
+                            <div 
+                              key={`indicator-${index}`}
+                              className={`day-indicator h-2 w-2 rounded-full ${index === dayViewIndex ? 'active bg-primary' : 'bg-gray-300'}`}
+                              onClick={() => emblaApi?.scrollTo(index)}
+                            />
+                          ))}
+                        </div>
+                        
+                        {/* Event type filter for day view */}
+                        <div className="flex justify-center mt-4 space-x-2">
+                          <Button 
+                            size="sm" 
+                            variant={eventTypeFilter === 'all' ? 'default' : 'outline'}
+                            onClick={() => setEventTypeFilter('all')}
+                          >
+                            All
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant={eventTypeFilter === 'jobsite' ? 'default' : 'outline'}
+                            className={eventTypeFilter === 'jobsite' ? 'bg-indigo-500' : ''}
+                            onClick={() => setEventTypeFilter('jobsite')}
+                          >
+                            Projects
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant={eventTypeFilter === 'message' ? 'default' : 'outline'}
+                            className={eventTypeFilter === 'message' ? 'bg-green-500 text-white' : ''}
+                            onClick={() => setEventTypeFilter('message')}
+                          >
+                            Messages
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Content container for different views */}
+                    <div className="mt-4">
 
                     <TabsContent value="month" className="space-y-4">
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
