@@ -1,13 +1,16 @@
 import React from 'react';
 import BossManCharacter from "./BossManCharacter";
-import { Clock, CloudRain } from 'lucide-react';
+import { Clock, CloudRain, ChevronRight } from 'lucide-react';
 import { Jobsite } from '../types';
+import { useLocation } from 'wouter';
 
 interface JobsitesListProps {
   jobsites: Jobsite[];
 }
 
 export const JobsitesList: React.FC<JobsitesListProps> = ({ jobsites }) => {
+  const [, navigate] = useLocation();
+
   const getMoodForStatus = (status: string): 'neutral' | 'happy' | 'angry' | 'confused' | 'excited' | 'concerned' => {
     switch (status.toLowerCase()) {
       case 'delayed':
@@ -21,14 +24,24 @@ export const JobsitesList: React.FC<JobsitesListProps> = ({ jobsites }) => {
     }
   };
 
+  const handleJobsiteClick = (jobsiteId: number) => {
+    navigate(`/voice-commands?jobsite=${jobsiteId}`);
+  };
+
   return (
     <div className="p-4">
       <h2 className="text-lg font-bold text-dark mb-3">TODAY'S JOBSITES</h2>
       
       {jobsites.map((jobsite) => (
-        <div key={jobsite.id} className="mb-3 border border-gray-200 rounded-xl p-4">
-          <div className="flex justify-between">
-            <div>
+        <div 
+          key={jobsite.id} 
+          className="mb-3 border border-gray-200 rounded-xl p-4 hover:shadow-md hover:border-primary/50 transition-all cursor-pointer active:scale-98"
+          onClick={() => handleJobsiteClick(jobsite.id)}
+          role="button"
+          aria-label={`Navigate to ${jobsite.name} jobsite`}
+        >
+          <div className="flex justify-between items-center">
+            <div className="flex-grow">
               <h3 className="font-semibold text-dark">{jobsite.name}</h3>
               <p className="text-gray-500 text-sm">{jobsite.address}</p>
               <div className="flex items-center mt-1">
@@ -50,7 +63,10 @@ export const JobsitesList: React.FC<JobsitesListProps> = ({ jobsites }) => {
                 )}
               </div>
             </div>
-            <BossManCharacter size="sm" mood={getMoodForStatus(jobsite.status)} />
+            <div className="flex items-center">
+              <BossManCharacter size="sm" mood={getMoodForStatus(jobsite.status)} />
+              <ChevronRight className="h-5 w-5 text-gray-400 ml-1" />
+            </div>
           </div>
         </div>
       ))}
