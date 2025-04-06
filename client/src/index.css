@@ -47,40 +47,40 @@
 
 @layer base {
   :root {
-    --background: 0 0% 97%;
+    --background: 0 0% 98%;
     --foreground: 0 0% 12%;
-    --card: 0 75% 25%;
-    --card-foreground: 0 0% 100%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 12%;
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 12%;
-    --primary: 0 75% 25%;
+    --primary: 0 70% 35%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 220 65% 25%;
+    --secondary: 220 60% 40%;
     --secondary-foreground: 0 0% 100%;
-    --muted: 0 20% 96%;
+    --muted: 0 0% 96%;
     --muted-foreground: 0 0% 45%;
-    --accent: 36 80% 45%;
-    --accent-foreground: 0 0% 10%;
+    --accent: 36 80% 50%;
+    --accent-foreground: 0 0% 12%;
     --destructive: 0 74% 42%;
     --destructive-foreground: 0 0% 100%;
-    --border: 0 20% 90%;
-    --input: 0 20% 90%;
-    --ring: 0 75% 25%;
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 0 70% 35%;
     --warning: 38 85% 52%;
-    --warning-foreground: 0 0% 100%;
-    --success: 142 65% 35%;
+    --warning-foreground: 0 0% 12%;
+    --success: 142 65% 40%;
     --success-foreground: 0 0% 100%;
-    --light: 0 20% 98%;
-    --dark: 220 65% 15%;
-    --sidebar-background: 0 75% 25%;
+    --light: 0 0% 98%;
+    --dark: 220 60% 18%;
+    --sidebar-background: 220 60% 18%;
     --sidebar-foreground: 0 0% 100%;
-    --sidebar-primary: 36 80% 45%;
-    --sidebar-primary-foreground: 0 0% 10%;
-    --sidebar-accent: 36 80% 45%;
-    --sidebar-accent-foreground: 0 0% 10%;
-    --sidebar-border: 0 50% 20%;
-    --sidebar-ring: 36 80% 45%;
-    --radius: 1rem;
+    --sidebar-primary: 36 80% 50%;
+    --sidebar-primary-foreground: 0 0% 12%;
+    --sidebar-accent: 36 80% 50%;
+    --sidebar-accent-foreground: 0 0% 12%;
+    --sidebar-border: 220 40% 15%;
+    --sidebar-ring: 36 80% 50%;
+    --radius: 0.75rem;
   }
 
   .dark {
@@ -279,15 +279,11 @@
   /* Enhanced card styles for fancy effect */
   .fancy-card {
     @apply relative overflow-hidden rounded-lg shadow-md border border-solid transition-all duration-300;
-    background: linear-gradient(135deg, 
-      hsl(var(--card)) 0%, 
-      hsl(var(--card)/0.95) 100%
-    );
-    border-color: rgba(var(--card), 0.15);
+    background: white;
+    border-color: rgba(0, 0, 0, 0.1);
     box-shadow: 
       0 4px 6px -1px rgba(0, 0, 0, 0.1),
-      0 2px 4px -1px rgba(0, 0, 0, 0.06),
-      inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
+      0 2px 4px -1px rgba(0, 0, 0, 0.06);
   }
   
   .fancy-card::before {
@@ -300,7 +296,7 @@
     background: linear-gradient(
       45deg,
       transparent 0%,
-      rgba(255, 255, 255, 0.08) 50%,
+      rgba(255, 255, 255, 0.6) 50%,
       transparent 100%
     );
     pointer-events: none;
@@ -310,7 +306,7 @@
     transform: translateY(-2px);
     box-shadow: 
       0 10px 15px -3px rgba(0, 0, 0, 0.1),
-      0 4px 6px -2px rgba(0, 0, 0, 0.05),
-      inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
+      0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    border-color: rgba(0, 0, 0, 0.2);
   }
 }

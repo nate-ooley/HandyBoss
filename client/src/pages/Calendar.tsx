@@ -638,8 +638,8 @@ export default function Calendar() {
                                                 )}
                                               </div>
                                               <Badge 
-                                                variant={event.type === 'jobsite' ? 'default' : 'outline'}
-                                                className={event.type === 'jobsite' ? 'bg-indigo-500' : 'bg-green-500 text-white'}
+                                                variant={event.type === 'jobsite' ? 'default' : 'default'}
+                                                className={`font-medium ${event.type === 'jobsite' ? 'bg-secondary text-white' : 'bg-accent text-accent-foreground'}`}
                                               >
                                                 {event.type === 'jobsite' ? 'Project' : 'Message'}
                                               </Badge>
@@ -744,7 +744,7 @@ export default function Calendar() {
                               {filteredEvents.map(event => (
                                 <div 
                                   key={`${event.type}-${event.id}`} 
-                                  className={`fancy-card ${event.type === 'jobsite' ? 'border-l-4 border-l-secondary' : 'border-l-4 border-l-accent'}`}
+                                  className={`fancy-card ${event.type === 'jobsite' ? 'border-l-4 border-l-blue-100' : 'border-l-4 border-l-amber-100'}`}
                                   onClick={() => handleSelectEvent(event)}
                                 >
                                   <div className="p-3 sm:p-4">
@@ -753,8 +753,8 @@ export default function Calendar() {
                                         {event.title}
                                       </h3>
                                       <Badge 
-                                        variant={event.type === 'jobsite' ? 'default' : 'outline'}
-                                        className={`text-xs ${event.type === 'jobsite' ? 'bg-secondary text-white' : 'bg-accent text-white'}`}
+                                        variant="default"
+                                        className={`text-xs font-semibold ${event.type === 'jobsite' ? 'bg-secondary text-white' : 'bg-accent text-accent-foreground'}`}
                                       >
                                         {event.type === 'jobsite' ? 'Project' : 'Message'}
                                       </Badge>
@@ -796,7 +796,7 @@ export default function Calendar() {
                                 .map(event => (
                                   <div 
                                     key={`${event.type}-${event.id}`} 
-                                    className={`fancy-card ${event.type === 'jobsite' ? 'border-l-4 border-l-secondary' : 'border-l-4 border-l-accent'}`}
+                                    className={`fancy-card ${event.type === 'jobsite' ? 'border-l-4 border-l-blue-100' : 'border-l-4 border-l-amber-100'}`}
                                     onClick={() => handleSelectEvent(event)}
                                   >
                                     <div className="py-2 px-3 sm:py-3 sm:px-4">
@@ -810,8 +810,8 @@ export default function Calendar() {
                                           </div>
                                         </div>
                                         <Badge 
-                                          variant={event.type === 'jobsite' ? 'default' : 'outline'}
-                                          className={`text-xs ${event.type === 'jobsite' ? 'bg-secondary text-white' : 'bg-accent text-white'}`}
+                                          variant="default"
+                                          className={`text-xs font-semibold ${event.type === 'jobsite' ? 'bg-secondary text-white' : 'bg-accent text-accent-foreground'}`}
                                         >
                                           {event.type === 'jobsite' ? 'Project' : 'Message'}
                                         </Badge>
@@ -891,7 +891,7 @@ export default function Calendar() {
                             {selectedEvent.status && (
                               <div>
                                 <h4 className="text-xs sm:text-sm font-medium mb-1">Status</h4>
-                                <Badge className="text-xs">{selectedEvent.status}</Badge>
+                                <Badge className="text-xs font-medium px-2.5 py-1" variant="outline">{selectedEvent.status}</Badge>
                               </div>
                             )}
                             
@@ -905,13 +905,13 @@ export default function Calendar() {
                             {selectedEvent.progress !== undefined && (
                               <div>
                                 <h4 className="text-xs sm:text-sm font-medium mb-1">Progress</h4>
-                                <div className="w-full bg-gray-200 rounded-full h-2">
+                                <div className="w-full bg-slate-100 rounded-full h-2.5 border border-slate-200">
                                   <div 
-                                    className="bg-primary h-2 rounded-full" 
+                                    className="bg-blue-500 h-2.5 rounded-full" 
                                     style={{ width: `${selectedEvent.progress}%` }}
                                   ></div>
                                 </div>
-                                <p className="text-[10px] sm:text-xs text-right mt-1">{selectedEvent.progress}%</p>
+                                <p className="text-[10px] sm:text-xs text-right mt-1.5 font-medium">{selectedEvent.progress}% Complete</p>
                               </div>
                             )}
                           </>
@@ -926,12 +926,12 @@ export default function Calendar() {
                             </h4>
                             
                             {/* Show the selected/primary message */}
-                            <div className="border rounded-md p-2 sm:p-3 bg-slate-50 mb-2">
-                              <p className="text-xs sm:text-sm">{selectedEvent.text}</p>
+                            <div className="border rounded-md p-2.5 sm:p-3.5 bg-slate-50/70 mb-2 shadow-sm">
+                              <p className="text-xs sm:text-sm font-medium text-slate-800">{selectedEvent.text}</p>
                               {selectedEvent.translatedText && (
                                 <>
-                                  <Separator className="my-1.5 sm:my-2" />
-                                  <p className="text-xs sm:text-sm text-muted-foreground italic">
+                                  <Separator className="my-1.5 sm:my-2 bg-slate-200" />
+                                  <p className="text-xs sm:text-sm text-slate-500 italic">
                                     {selectedEvent.translatedText}
                                   </p>
                                 </>
@@ -945,8 +945,8 @@ export default function Calendar() {
                                 
                                 {/* Show up to 2 more messages */}
                                 {selectedEvent.relatedMessages.slice(1, 3).map((message, index) => (
-                                  <div key={index} className="border rounded-md p-2 bg-slate-50/70">
-                                    <p className="text-xs line-clamp-1">{message.text}</p>
+                                  <div key={index} className="border rounded-md p-2 bg-slate-50/50 shadow-sm">
+                                    <p className="text-xs line-clamp-1 text-slate-700">{message.text}</p>
                                   </div>
                                 ))}
                                 
