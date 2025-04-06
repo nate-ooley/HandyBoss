@@ -144,9 +144,9 @@ export function ProjectAIAssistant({ projectId, userId = 1 }: ProjectAIAssistant
   if (proAccess === null) {
     return (
       <Card className="mb-6">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <MessageSquare className="h-5 w-5" />
+        <CardHeader className="pb-3">
+          <CardTitle className="text-2xl font-bold flex items-center gap-2">
+            <MessageSquare className="h-6 w-6 text-indigo-500" />
             Project AI Assistant
           </CardTitle>
         </CardHeader>
@@ -165,13 +165,13 @@ export function ProjectAIAssistant({ projectId, userId = 1 }: ProjectAIAssistant
   if (proAccess === false) {
     return (
       <Card className="mb-6 border-dashed">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Lock className="h-5 w-5" />
+        <CardHeader className="pb-3">
+          <CardTitle className="text-2xl font-bold flex items-center gap-2">
+            <Lock className="h-6 w-6 text-indigo-500" />
             Project AI Assistant
             <Badge variant="outline" className="ml-2">PRO</Badge>
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-base">
             Unlock AI-powered project insights and assistance
           </CardDescription>
         </CardHeader>
@@ -190,10 +190,10 @@ export function ProjectAIAssistant({ projectId, userId = 1 }: ProjectAIAssistant
   
   return (
     <Card className="mb-6">
-      <CardHeader className="pb-2">
+      <CardHeader className="pb-3">
         <div className="flex justify-between items-center">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <MessageSquare className="h-5 w-5" />
+          <CardTitle className="text-2xl font-bold flex items-center gap-2">
+            <MessageSquare className="h-6 w-6 text-indigo-500" />
             Project AI Assistant
             <Badge variant="outline" className="ml-2">PRO</Badge>
           </CardTitle>
@@ -206,7 +206,7 @@ export function ProjectAIAssistant({ projectId, userId = 1 }: ProjectAIAssistant
             {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </Button>
         </div>
-        <CardDescription>
+        <CardDescription className="text-base">
           AI-powered insights and assistance for your project
         </CardDescription>
       </CardHeader>
@@ -232,8 +232,8 @@ export function ProjectAIAssistant({ projectId, userId = 1 }: ProjectAIAssistant
                   <div className="space-y-6">
                     {/* Project Overview Section */}
                     <div>
-                      <h3 className="font-medium flex items-center gap-2 mb-2">
-                        <CheckCircle2 className="h-4 w-4 text-blue-500" />
+                      <h3 className="text-xl font-semibold flex items-center gap-2 mb-3">
+                        <CheckCircle2 className="h-5 w-5 text-blue-500" />
                         Project Overview
                       </h3>
                       <p className="text-sm text-muted-foreground mb-2">{summary.projectOverview.description}</p>
@@ -252,8 +252,8 @@ export function ProjectAIAssistant({ projectId, userId = 1 }: ProjectAIAssistant
                     
                     {/* Timeline Analysis */}
                     <div>
-                      <h3 className="font-medium flex items-center gap-2 mb-2">
-                        <Clock className="h-4 w-4 text-indigo-500" />
+                      <h3 className="text-xl font-semibold flex items-center gap-2 mb-3">
+                        <Clock className="h-5 w-5 text-indigo-500" />
                         Timeline
                       </h3>
                       <div className="mb-1 flex gap-2 items-center">
@@ -281,8 +281,8 @@ export function ProjectAIAssistant({ projectId, userId = 1 }: ProjectAIAssistant
                     {/* Key Issues */}
                     {summary.keyIssues.length > 0 && (
                       <div>
-                        <h3 className="font-medium flex items-center gap-2 mb-2">
-                          <AlertTriangle className="h-4 w-4 text-amber-500" />
+                        <h3 className="text-xl font-semibold flex items-center gap-2 mb-3">
+                          <AlertTriangle className="h-5 w-5 text-amber-500" />
                           Key Issues
                         </h3>
                         <ul className="space-y-2">
@@ -311,8 +311,8 @@ export function ProjectAIAssistant({ projectId, userId = 1 }: ProjectAIAssistant
                     
                     {/* Team Insights */}
                     <div>
-                      <h3 className="font-medium flex items-center gap-2 mb-2">
-                        <Users className="h-4 w-4 text-violet-500" />
+                      <h3 className="text-xl font-semibold flex items-center gap-2 mb-3">
+                        <Users className="h-5 w-5 text-violet-500" />
                         Team ({summary.teamInsights.memberCount})
                       </h3>
                       <p className="text-sm text-muted-foreground mb-2">{summary.teamInsights.performance}</p>
@@ -332,8 +332,8 @@ export function ProjectAIAssistant({ projectId, userId = 1 }: ProjectAIAssistant
                     
                     {/* Next Steps */}
                     <div>
-                      <h3 className="font-medium flex items-center gap-2 mb-2">
-                        <ArrowRightCircle className="h-4 w-4 text-green-500" />
+                      <h3 className="text-xl font-semibold flex items-center gap-2 mb-3">
+                        <ArrowRightCircle className="h-5 w-5 text-green-500" />
                         Next Steps
                       </h3>
                       <ul className="space-y-2">
@@ -390,7 +390,7 @@ export function ProjectAIAssistant({ projectId, userId = 1 }: ProjectAIAssistant
                   
                   {!askingQuestion && answer && (
                     <div className="border rounded-md p-4 bg-muted/50">
-                      <h4 className="font-medium mb-2">Answer:</h4>
+                      <h4 className="text-lg font-semibold mb-3">Answer:</h4>
                       <p className="text-sm whitespace-pre-line">{answer}</p>
                     </div>
                   )}
