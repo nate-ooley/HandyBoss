@@ -1098,6 +1098,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // User settings routes
+  app.get('/api/user-settings', async (req, res) => {
+    try {
+      // In a real app, this would get settings from the database
+      // For now, we'll just return default settings
+      // Note: req.session is not available because we haven't set up express-session
+      // This would be implemented with proper user authentication
+      
+      // Let's assume we have user settings stored by user ID
+      const user = await storage.getUser(1); // Default user
+      
+      if (user && user.settings) {
+        res.json(user.settings);
+      } else {
+        // Return null if no settings found - frontend will use defaults
+        res.json(null);
+      }
+    } catch (error) {
+      console.error('Error getting user settings:', error);
+      res.status(500).json({ error: 'Failed to retrieve user settings' });
+    }
+  });
+  
+  app.post('/api/user-settings', async (req, res) => {
+    try {
+      // In a real app, this would save settings to the database
+      // For now, we'll just log that we received the settings
+      
+      console.log('Received user settings:', req.body);
+      
+      // Here you would save the settings to the user record
+      // const updated = await storage.updateUserSettings(1, req.body);
+      
+      res.json({ success: true, message: 'Settings received' });
+    } catch (error) {
+      console.error('Error saving user settings:', error);
+      res.status(500).json({ error: 'Failed to save user settings' });
+    }
+  });
+  
   app.post('/api/jobsites', async (req, res) => {
     try {
       const { name, address, status, startDate, endDate, description, progress, location } = req.body;

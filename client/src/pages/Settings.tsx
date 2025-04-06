@@ -8,45 +8,25 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { Slider } from '@/components/ui/slider';
-import { ChevronLeft, ChevronRight, BellRing, Volume2, Globe, Users, Shield, Smartphone, Moon, Sun } from 'lucide-react';
+import { 
+  ChevronLeft, 
+  BellRing, 
+  Volume2, 
+  Globe, 
+  Users, 
+  Shield, 
+  Smartphone, 
+  Moon, 
+  Sun, 
+  Save,
+  RefreshCw 
+} from 'lucide-react';
 import { useMobile } from '@/hooks/use-mobile';
 import { useToast } from '@/hooks/use-toast';
 import BossManCharacter from '@/components/BossManCharacter';
-
-// Settings types and interfaces
-interface SettingsState {
-  // App preferences
-  language: 'en' | 'es';
-  theme: 'light' | 'dark' | 'system';
-  notifications: boolean;
-  soundEffects: boolean;
-  vibration: boolean;
-  
-  // Voice settings
-  voiceSpeed: number; // 0-100
-  voiceVolume: number; // 0-100
-  voiceLanguage: 'en' | 'es';
-  autoTranslate: boolean;
-  lowPowerMode: boolean;
-  
-  // Notification settings
-  emailNotifications: boolean;
-  smsNotifications: boolean;
-  pushNotifications: boolean;
-  notifyOnNewMessages: boolean;
-  notifyOnJobsiteUpdates: boolean;
-  notifyOnWeatherAlerts: boolean;
-  notifyOnSafetyIncidents: boolean;
-  quietHoursEnabled: boolean;
-  quietHoursStart: string;
-  quietHoursEnd: string;
-  
-  // Privacy & Security
-  locationSharing: boolean;
-  dataCollection: boolean;
-  biometricLogin: boolean;
-  autoLogout: number; // minutes
-}
+import { useSettings, SettingsState } from '@/contexts/SettingsContext';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 export default function Settings() {
   const [location, setLocation] = useLocation();
@@ -54,63 +34,15 @@ export default function Settings() {
   const { toast } = useToast();
   const [activeSection, setActiveSection] = useState<string>('general');
   
-  // Initial settings state with recommended defaults
-  const [settings, setSettings] = useState<SettingsState>({
-    // App preferences
-    language: 'en',
-    theme: 'system',
-    notifications: true,
-    soundEffects: true,
-    vibration: true,
-    
-    // Voice settings
-    voiceSpeed: 50,
-    voiceVolume: 80,
-    voiceLanguage: 'en',
-    autoTranslate: true,
-    lowPowerMode: false,
-    
-    // Notification settings
-    emailNotifications: true,
-    smsNotifications: true,
-    pushNotifications: true,
-    notifyOnNewMessages: true,
-    notifyOnJobsiteUpdates: true,
-    notifyOnWeatherAlerts: true,
-    notifyOnSafetyIncidents: true,
-    quietHoursEnabled: false,
-    quietHoursStart: '22:00',
-    quietHoursEnd: '07:00',
-    
-    // Privacy & Security
-    locationSharing: true,
-    dataCollection: true,
-    biometricLogin: true,
-    autoLogout: 30
-  });
-  
-  // Update settings handler
-  const updateSetting = <K extends keyof SettingsState>(key: K, value: SettingsState[K]) => {
-    setSettings(prev => ({ ...prev, [key]: value }));
-    
-    // In a real app, you would save this to the server/local storage
-    // For now, we'll just show a toast confirmation
-    toast({
-      title: 'Setting updated',
-      description: `${key} has been updated.`,
-      duration: 1500
-    });
-  };
-  
-  // Save all settings
-  const saveSettings = () => {
-    // In a real app, you would save all settings to the server/local storage
-    toast({
-      title: 'Settings saved',
-      description: 'Your preferences have been saved.',
-      duration: 2000
-    });
-  };
+  // Use the settings context instead of local state
+  const { 
+    settings, 
+    updateSetting, 
+    saveSettings, 
+    resetSettings,
+    isSaving,
+    hasChanges
+  } = useSettings();
   
   // Handle section navigation
   const navigateToSection = (section: string) => {
@@ -360,8 +292,56 @@ export default function Settings() {
                     </div>
                   </div>
                 </CardContent>
-                <CardFooter className="border-t pt-4">
-                  <Button onClick={saveSettings}>Save Changes</Button>
+                <CardFooter className="border-t pt-4 flex justify-between">
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="outline" className="flex gap-2">
+                        <RefreshCw size={16} />
+                        Reset to Defaults
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Reset all settings?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This will reset all your settings to the factory defaults. This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={resetSettings}>Reset</AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                  
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          onClick={saveSettings} 
+                          disabled={!hasChanges || isSaving}
+                          className="flex gap-2"
+                        >
+                          {isSaving ? (
+                            <>
+                              <RefreshCw size={16} className="animate-spin" />
+                              Saving...
+                            </>
+                          ) : (
+                            <>
+                              <Save size={16} />
+                              Save Changes
+                            </>
+                          )}
+                        </Button>
+                      </TooltipTrigger>
+                      {!hasChanges && (
+                        <TooltipContent>
+                          <p>No changes to save</p>
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
+                  </TooltipProvider>
                 </CardFooter>
               </Card>
             )}
@@ -471,8 +451,56 @@ export default function Settings() {
                     </div>
                   </div>
                 </CardContent>
-                <CardFooter className="border-t pt-4">
-                  <Button onClick={saveSettings}>Save Changes</Button>
+                <CardFooter className="border-t pt-4 flex justify-between">
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="outline" className="flex gap-2">
+                        <RefreshCw size={16} />
+                        Reset to Defaults
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Reset all settings?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This will reset all your settings to the factory defaults. This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={resetSettings}>Reset</AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                  
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          onClick={saveSettings} 
+                          disabled={!hasChanges || isSaving}
+                          className="flex gap-2"
+                        >
+                          {isSaving ? (
+                            <>
+                              <RefreshCw size={16} className="animate-spin" />
+                              Saving...
+                            </>
+                          ) : (
+                            <>
+                              <Save size={16} />
+                              Save Changes
+                            </>
+                          )}
+                        </Button>
+                      </TooltipTrigger>
+                      {!hasChanges && (
+                        <TooltipContent>
+                          <p>No changes to save</p>
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
+                  </TooltipProvider>
                 </CardFooter>
               </Card>
             )}
@@ -634,8 +662,56 @@ export default function Settings() {
                     </div>
                   </div>
                 </CardContent>
-                <CardFooter className="border-t pt-4">
-                  <Button onClick={saveSettings}>Save Changes</Button>
+                <CardFooter className="border-t pt-4 flex justify-between">
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="outline" className="flex gap-2">
+                        <RefreshCw size={16} />
+                        Reset to Defaults
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Reset all settings?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This will reset all your settings to the factory defaults. This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={resetSettings}>Reset</AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                  
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          onClick={saveSettings} 
+                          disabled={!hasChanges || isSaving}
+                          className="flex gap-2"
+                        >
+                          {isSaving ? (
+                            <>
+                              <RefreshCw size={16} className="animate-spin" />
+                              Saving...
+                            </>
+                          ) : (
+                            <>
+                              <Save size={16} />
+                              Save Changes
+                            </>
+                          )}
+                        </Button>
+                      </TooltipTrigger>
+                      {!hasChanges && (
+                        <TooltipContent>
+                          <p>No changes to save</p>
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
+                  </TooltipProvider>
                 </CardFooter>
               </Card>
             )}
@@ -736,8 +812,56 @@ export default function Settings() {
                     </div>
                   </div>
                 </CardContent>
-                <CardFooter className="border-t pt-4">
-                  <Button onClick={saveSettings}>Save Changes</Button>
+                <CardFooter className="border-t pt-4 flex justify-between">
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="outline" className="flex gap-2">
+                        <RefreshCw size={16} />
+                        Reset to Defaults
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Reset all settings?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This will reset all your settings to the factory defaults. This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={resetSettings}>Reset</AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                  
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          onClick={saveSettings} 
+                          disabled={!hasChanges || isSaving}
+                          className="flex gap-2"
+                        >
+                          {isSaving ? (
+                            <>
+                              <RefreshCw size={16} className="animate-spin" />
+                              Saving...
+                            </>
+                          ) : (
+                            <>
+                              <Save size={16} />
+                              Save Changes
+                            </>
+                          )}
+                        </Button>
+                      </TooltipTrigger>
+                      {!hasChanges && (
+                        <TooltipContent>
+                          <p>No changes to save</p>
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
+                  </TooltipProvider>
                 </CardFooter>
               </Card>
             )}
@@ -797,6 +921,57 @@ export default function Settings() {
                     </div>
                   </div>
                 </CardContent>
+                <CardFooter className="border-t pt-4 flex justify-between">
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="outline" className="flex gap-2">
+                        <RefreshCw size={16} />
+                        Reset to Defaults
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Reset all settings?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This will reset all your settings to the factory defaults. This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={resetSettings}>Reset</AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                  
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          onClick={saveSettings} 
+                          disabled={!hasChanges || isSaving}
+                          className="flex gap-2"
+                        >
+                          {isSaving ? (
+                            <>
+                              <RefreshCw size={16} className="animate-spin" />
+                              Saving...
+                            </>
+                          ) : (
+                            <>
+                              <Save size={16} />
+                              Save Changes
+                            </>
+                          )}
+                        </Button>
+                      </TooltipTrigger>
+                      {!hasChanges && (
+                        <TooltipContent>
+                          <p>No changes to save</p>
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
+                  </TooltipProvider>
+                </CardFooter>
               </Card>
             )}
           </div>
