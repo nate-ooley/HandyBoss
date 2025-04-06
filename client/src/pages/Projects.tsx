@@ -367,8 +367,19 @@ export default function Projects() {
           </main>
           
           {/* Dialog for adding crew members */}
-          <Dialog open={isAddCrewDialogOpen} onOpenChange={setIsAddCrewDialogOpen}>
-            <DialogContent>
+          <Dialog 
+            open={isAddCrewDialogOpen} 
+            onOpenChange={(open) => {
+              setIsAddCrewDialogOpen(open);
+              if (!open) {
+                // Reset form state when dialog is closed
+                setSelectedCrewMember(null);
+                setSearchQuery('');
+                setIsAddingCrewMember(false);
+              }
+            }}
+          >
+            <DialogContent className="sm:max-w-md">
               <DialogHeader>
                 <DialogTitle>Add Crew Member to Project</DialogTitle>
                 <DialogDescription>
@@ -376,89 +387,97 @@ export default function Projects() {
                 </DialogDescription>
               </DialogHeader>
               
-              <div className="py-4">
-                <div className="mb-4">
-                  <Input 
-                    placeholder="Search crew members..." 
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="mb-4"
-                  />
-                  
-                  {isLoadingCrew ? (
-                    <div className="flex justify-center py-6">
-                      <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full"></div>
-                    </div>
-                  ) : filteredAvailableCrewMembers.length === 0 ? (
-                    <div className="text-center py-6">
-                      <AlertCircle className="h-10 w-10 mx-auto text-gray-400 mb-2" />
-                      <p className="text-gray-500">
-                        {searchQuery 
-                          ? "No matching crew members found. Try a different search term." 
-                          : "No available crew members to assign."}
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="max-h-72 overflow-y-auto space-y-2">
-                      {filteredAvailableCrewMembers.map(crew => (
-                        <div 
-                          key={crew.id} 
-                          className={`p-3 border rounded-md flex items-center justify-between cursor-pointer hover:bg-gray-50 ${
-                            selectedCrewMember === crew.id ? 'border-primary bg-primary/5' : ''
-                          }`}
-                          onClick={() => setSelectedCrewMember(crew.id)}
-                        >
-                          <div className="flex items-center">
-                            <Avatar className="h-8 w-8 mr-3">
-                              {crew.profileImage ? (
-                                <AvatarImage src={crew.profileImage} alt={crew.name} />
-                              ) : (
-                                <AvatarFallback>
-                                  {crew.name.split(' ').map((n: string) => n[0]).join('')}
-                                </AvatarFallback>
-                              )}
-                            </Avatar>
-                            <div>
-                              <h4 className="font-medium">{crew.name}</h4>
-                              <p className="text-xs text-gray-500">
-                                {crew.role}
-                                {crew.specialization && ` • ${crew.specialization}`}
-                              </p>
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                if (selectedCrewMember) {
+                  handleAddCrewToProject();
+                }
+              }}>
+                <div className="py-4">
+                  <div className="mb-4">
+                    <Input 
+                      placeholder="Search crew members..." 
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="mb-4"
+                    />
+                    
+                    {isLoadingCrew ? (
+                      <div className="flex justify-center py-6">
+                        <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full"></div>
+                      </div>
+                    ) : filteredAvailableCrewMembers.length === 0 ? (
+                      <div className="text-center py-6">
+                        <AlertCircle className="h-10 w-10 mx-auto text-gray-400 mb-2" />
+                        <p className="text-gray-500">
+                          {searchQuery 
+                            ? "No matching crew members found. Try a different search term." 
+                            : "No available crew members to assign."}
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="max-h-72 overflow-y-auto space-y-2">
+                        {filteredAvailableCrewMembers.map(crew => (
+                          <div 
+                            key={crew.id} 
+                            className={`p-3 border rounded-md flex items-center justify-between cursor-pointer hover:bg-gray-50 ${
+                              selectedCrewMember === crew.id ? 'border-primary bg-primary/5' : ''
+                            }`}
+                            onClick={() => setSelectedCrewMember(crew.id)}
+                          >
+                            <div className="flex items-center">
+                              <Avatar className="h-8 w-8 mr-3">
+                                {crew.profileImage ? (
+                                  <AvatarImage src={crew.profileImage} alt={crew.name} />
+                                ) : (
+                                  <AvatarFallback>
+                                    {crew.name.split(' ').map((n: string) => n[0]).join('')}
+                                  </AvatarFallback>
+                                )}
+                              </Avatar>
+                              <div>
+                                <h4 className="font-medium">{crew.name}</h4>
+                                <p className="text-xs text-gray-500">
+                                  {crew.role}
+                                  {crew.specialization && ` • ${crew.specialization}`}
+                                </p>
+                              </div>
                             </div>
+                            {selectedCrewMember === crew.id && (
+                              <CheckCircle className="h-5 w-5 text-primary" />
+                            )}
                           </div>
-                          {selectedCrewMember === crew.id && (
-                            <CheckCircle className="h-5 w-5 text-primary" />
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-              
-              <DialogFooter>
-                <Button 
-                  variant="outline" 
-                  onClick={() => {
-                    setIsAddCrewDialogOpen(false);
-                    setSelectedCrewMember(null);
-                    setSearchQuery('');
-                  }}
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  onClick={handleAddCrewToProject}
-                  disabled={!selectedCrewMember || addCrewToProjectMutation.isPending}
-                >
-                  {addCrewToProjectMutation.isPending ? (
-                    <>
-                      <div className="animate-spin w-4 h-4 border-2 border-background border-t-transparent rounded-full mr-2"></div>
-                      Adding...
-                    </>
-                  ) : 'Add to Project'}
-                </Button>
-              </DialogFooter>
+                
+                <DialogFooter>
+                  <Button 
+                    type="button"
+                    variant="outline" 
+                    onClick={() => {
+                      setIsAddCrewDialogOpen(false);
+                      setSelectedCrewMember(null);
+                      setSearchQuery('');
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    type="submit"
+                    disabled={!selectedCrewMember || isAddingCrewMember || addCrewToProjectMutation.isPending}
+                  >
+                    {isAddingCrewMember || addCrewToProjectMutation.isPending ? (
+                      <>
+                        <div className="animate-spin w-4 h-4 border-2 border-background border-t-transparent rounded-full mr-2"></div>
+                        Adding...
+                      </>
+                    ) : 'Add to Project'}
+                  </Button>
+                </DialogFooter>
+              </form>
             </DialogContent>
           </Dialog>
         </div>
@@ -475,13 +494,23 @@ export default function Projects() {
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold tracking-tight">Projects</h1>
             <div className="flex items-center gap-4">
-              <Dialog open={isNewProjectDialogOpen} onOpenChange={setIsNewProjectDialogOpen}>
+              <Dialog 
+                open={isNewProjectDialogOpen} 
+                onOpenChange={(open) => {
+                  setIsNewProjectDialogOpen(open);
+                  
+                  // Reset form state when dialog is closed
+                  if (!open) {
+                    setIsSubmitting(false);
+                  }
+                }}
+              >
                 <DialogTrigger asChild>
-                  <Button className="gap-1" onClick={() => setIsNewProjectDialogOpen(true)}>
+                  <Button className="gap-1">
                     <span>New Project</span>
                   </Button>
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent className="sm:max-w-xl">
                   <DialogHeader>
                     <DialogTitle>Create New Project</DialogTitle>
                     <DialogDescription>
@@ -511,7 +540,7 @@ export default function Projects() {
                         // Reset form and close the dialog
                         (e.target as HTMLFormElement).reset();
                         
-                        // Close the dialog programmatically without using DOM manipulation
+                        // Close the dialog programmatically
                         setIsNewProjectDialogOpen(false);
                         
                         // Invalidate queries to refresh data
