@@ -99,14 +99,22 @@ export default function Projects() {
   const addCrewToProjectMutation = useMutation({
     mutationFn: async (data: { projectId: number, crewMemberId: number, role: string }) => {
       try {
-        const response = await apiRequest("POST", `/api/projects/${data.projectId}/crew`, data);
+        setIsAddingCrewMember(true);
+        const response = await apiRequest("POST", `/api/projects/${data.projectId}/crew`, {
+          crewMemberId: data.crewMemberId,
+          role: data.role
+        });
+        
         if (!response.ok) {
           const errorData = await response.json();
           throw new Error(errorData.message || 'Failed to add crew member');
         }
         return response.json();
       } catch (error: any) {
+        console.error("Error adding crew member:", error);
         throw new Error(error.message || 'Failed to add crew member to project');
+      } finally {
+        setIsAddingCrewMember(false);
       }
     },
     onSuccess: () => {

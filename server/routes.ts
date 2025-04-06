@@ -1237,6 +1237,82 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Project crew API endpoints
+  app.get('/api/projects/:projectId/crew', async (req, res) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      if (isNaN(projectId)) {
+        return res.status(400).json({ message: 'Invalid project ID' });
+      }
+      
+      const projectMembers = await storage.getProjectMembers(projectId);
+      return res.json(projectMembers);
+    } catch (error) {
+      console.error('Error fetching project crew:', error);
+      return res.status(500).json({ message: 'Failed to fetch project crew' });
+    }
+  });
+  
+  app.post('/api/projects/:projectId/crew', async (req, res) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      if (isNaN(projectId)) {
+        return res.status(400).json({ message: 'Invalid project ID' });
+      }
+      
+      const { crewMemberId, role = 'crew-member' } = req.body;
+      if (!crewMemberId) {
+        return res.status(400).json({ message: 'Crew member ID is required' });
+      }
+      
+      // Add crew member to project
+      const projectMember = await storage.addProjectMember({
+        projectId,
+        crewMemberId,
+        role,
+        assignedBy: 1, // Default to first user (admin)
+        notes: null,
+        hourlyRate: null
+      });
+      
+      return res.json(projectMember);
+    } catch (error) {
+      console.error('Error adding crew member to project:', error);
+      return res.status(500).json({ message: 'Failed to add crew member to project' });
+    }
+  });
+  
+  app.delete('/api/projects/:projectId/crew/:crewMemberId', async (req, res) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      const crewMemberId = parseInt(req.params.crewMemberId);
+      
+      if (isNaN(projectId) || isNaN(crewMemberId)) {
+        return res.status(400).json({ message: 'Invalid project or crew member ID' });
+      }
+      
+      // Find the project member record
+      const projectMembers = await storage.getProjectMembers(projectId);
+      const memberToRemove = projectMembers.find(m => m.crewMemberId === crewMemberId);
+      
+      if (!memberToRemove) {
+        return res.status(404).json({ message: 'Crew member not found in this project' });
+      }
+      
+      // Remove the project member
+      const removed = await storage.removeProjectMember(memberToRemove.id);
+      
+      if (!removed) {
+        return res.status(500).json({ message: 'Failed to remove crew member from project' });
+      }
+      
+      return res.json({ success: true });
+    } catch (error) {
+      console.error('Error removing crew member from project:', error);
+      return res.status(500).json({ message: 'Failed to remove crew member from project' });
+    }
+  });
+
   // Project members API endpoints
   app.get('/api/projects/:projectId/members', async (req, res) => {
     try {
