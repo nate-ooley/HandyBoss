@@ -668,12 +668,13 @@ export default function Calendar() {
                         </div>
                         
                         {/* Mobile carousel controls - Fixed position buttons that stay in view */}
-                        <div className="fixed bottom-24 left-0 right-0 z-50 flex justify-center items-center gap-16 md:hidden">
-                          <Button variant="outline" size="sm" onClick={goToPreviousDay} className="bg-white shadow-md h-10 w-10 rounded-full p-0">
-                            <MoveLeft className="h-5 w-5" />
-                          </Button>
-                          
-                          {/* Center calendar button - Opens date picker */}
+                        <div className="fixed bottom-[72px] left-0 right-0 z-50 flex justify-center items-center md:hidden">
+                          <div className="flex justify-between items-center w-[220px]">
+                            <Button variant="outline" size="sm" onClick={goToPreviousDay} className="bg-white shadow-md h-12 w-12 rounded-full p-0">
+                              <MoveLeft className="h-5 w-5" />
+                            </Button>
+                            
+                            {/* Center calendar button - Opens date picker */}
                           <Dialog open={datePickerOpen} onOpenChange={setDatePickerOpen}>
                             <DialogTrigger asChild>
                               <Button 
@@ -713,9 +714,10 @@ export default function Calendar() {
                             </DialogContent>
                           </Dialog>
                           
-                          <Button variant="outline" size="sm" onClick={goToNextDay} className="bg-white shadow-md h-10 w-10 rounded-full p-0">
+                          <Button variant="outline" size="sm" onClick={goToNextDay} className="bg-white shadow-md h-12 w-12 rounded-full p-0">
                             <MoveRight className="h-5 w-5" />
                           </Button>
+                          </div>
                         </div>
                         
                         {/* Fixed bottom right add project button */}
