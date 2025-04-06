@@ -15,6 +15,7 @@ import Subscribe from "@/pages/Subscribe";
 import VoiceCommands from "@/pages/VoiceCommands";
 import Projects from "@/pages/Projects";
 import { CrewPage as Crew } from "@/pages/Crew";
+import Settings from "@/pages/Settings";
 import { VoiceProvider } from "@/contexts/VoiceContext";
 import { WebSocketProvider } from "@/contexts/WebSocketContext";
 import { MobileNavigation } from "@/components/MobileNavigation";
@@ -51,6 +52,7 @@ function AppRoutes() {
       <Route path="/crew/:id/assign-projects" component={Crew} />
       <Route path="/payment-success" component={Checkout} />
       <Route path="/subscription-success" component={Subscribe} />
+      <Route path="/settings" component={Settings} />
       <Route component={NotFound} />
     </Switch>
   );

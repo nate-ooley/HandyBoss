@@ -6,7 +6,8 @@ import {
   Users, 
   HardHat,  
   MessageSquare,
-  Mic
+  Mic,
+  Settings
 } from 'lucide-react';
 
 export function MobileNavigation() {
@@ -18,6 +19,7 @@ export function MobileNavigation() {
     { href: '/projects', label: 'Projects', icon: HardHat },
     { href: '/crew', label: 'Crew', icon: Users },
     { href: '/voice-commands', label: 'Voice', icon: Mic },
+    { href: '/settings', label: 'Settings', icon: Settings },
   ];
   
   return (
