@@ -14,6 +14,7 @@ import { translateWithOpenAI, detectLanguageWithOpenAI } from "./openai";
 import { sendEmail, sendSMS, sendBulkNotifications } from "./services/sendgrid";
 import { createPaymentIntent, createCustomer, createSubscription, getCustomer, getSubscription } from "./services/stripe";
 import { processVoiceCommand, translateConstructionText, createCommandFromSpeech } from "./services/anthropic";
+import { generateProjectSummary, answerProjectQuestion, hasProAccess } from "./services/projectAI";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
@@ -1675,6 +1676,87 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error removing reaction from communication:', error);
       res.status(500).json({ error: 'Failed to remove reaction' });
+    }
+  });
+  
+  // Project AI Assistant Endpoints
+  
+  app.get('/api/projects/:projectId/ai/summary', async (req, res) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      const userId = req.query.userId ? parseInt(req.query.userId as string) : 1;
+      
+      // Check if user has Pro access to use AI features
+      const hasAccess = await hasProAccess(userId);
+      if (!hasAccess) {
+        return res.status(403).json({ 
+          error: 'Pro subscription required to access AI features',
+          requires: 'pro-subscription'
+        });
+      }
+      
+      const summary = await generateProjectSummary(projectId);
+      res.json(summary);
+    } catch (error: any) {
+      console.error('Error generating project summary:', error);
+      res.status(500).json({ 
+        error: 'Failed to generate project summary',
+        message: error.message || 'Unknown error'
+      });
+    }
+  });
+  
+  app.post('/api/projects/:projectId/ai/ask', async (req, res) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      const { question, userId = 1 } = req.body;
+      
+      if (!question) {
+        return res.status(400).json({ error: 'Question is required' });
+      }
+      
+      // Check if user has Pro access to use AI features
+      const hasAccess = await hasProAccess(userId);
+      if (!hasAccess) {
+        return res.status(403).json({ 
+          error: 'Pro subscription required to access AI features',
+          requires: 'pro-subscription'
+        });
+      }
+      
+      const answer = await answerProjectQuestion(projectId, question);
+      
+      res.json({ 
+        question,
+        answer,
+        projectId,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error: any) {
+      console.error('Error answering project question:', error);
+      res.status(500).json({ 
+        error: 'Failed to answer project question',
+        message: error.message || 'Unknown error'
+      });
+    }
+  });
+  
+  app.get('/api/users/:userId/pro-access', async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const hasAccess = await hasProAccess(userId);
+      
+      res.json({ 
+        userId,
+        hasProAccess: hasAccess,
+        timestamp: new Date().toISOString() 
+      });
+    } catch (error: any) {
+      console.error('Error checking pro access:', error);
+      res.status(500).json({ 
+        error: 'Failed to check pro access status',
+        message: error.message || 'Unknown error'
+      });
     }
   });
   

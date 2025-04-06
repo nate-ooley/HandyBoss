@@ -17,6 +17,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { apiRequest } from '@/lib/queryClient';
 import { toast } from '@/hooks/use-toast';
+import { ProjectAIAssistant } from '@/components/ProjectAIAssistant';
 
 // Types
 interface Jobsite {
@@ -298,6 +299,9 @@ export default function Projects() {
                     </div>
                   </CardContent>
                 </Card>
+                
+                {/* Project AI Assistant Card */}
+                <ProjectAIAssistant projectId={projectId} userId={1} />
                 
                 <Card className="shadow-sm">
                   <CardHeader className="pb-2 p-4 sm:p-6">
