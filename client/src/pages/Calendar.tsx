@@ -10,7 +10,6 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { SideNavigation } from '@/components/SideNavigation';
 import { MobileNavigation } from '@/components/MobileNavigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
@@ -429,10 +428,6 @@ export default function Calendar() {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      {/* Hide sidebar on smaller screens, show on larger (iPad and up) */}
-      <div className="hidden md:block">
-        <SideNavigation />
-      </div>
       <div className="flex-1">
         <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-6">
           <div className="flex flex-col space-y-3 sm:space-y-4">

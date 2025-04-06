@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useLocation, useParams } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { SideNavigation } from '@/components/SideNavigation';
+
 import { Badge } from '@/components/ui/badge';
 import { 
   Calendar, Clock, MapPin, Users, Package, Wrench, ChevronRight, 
@@ -221,9 +221,7 @@ export default function Projects() {
     // PROJECT DETAIL VIEW
     return (
       <div className="flex min-h-screen bg-background">
-        <div className="hidden md:block">
-          <SideNavigation />
-        </div>
+
         <div className="flex-1 flex flex-col">
           <header className="border-b px-3 sm:px-6 md:px-8 py-4 md:py-6 bg-gradient-to-r from-primary/10 to-primary/5">
             <div className="flex flex-col gap-2 sm:gap-3">
@@ -558,9 +556,6 @@ export default function Projects() {
   // PROJECTS LIST VIEW
   return (
     <div className="flex min-h-screen bg-background">
-      <div className="hidden md:block">
-        <SideNavigation />
-      </div>
       <div className="flex-1 flex flex-col">
         <header className="border-b px-4 sm:px-6 md:px-8 py-3 md:py-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">

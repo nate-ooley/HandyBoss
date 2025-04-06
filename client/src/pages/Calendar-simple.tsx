@@ -4,7 +4,7 @@ import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { SideNavigation } from '@/components/SideNavigation';
+
 import { BossManImage } from '@/components/BossManImage';
 import { CalendarIcon } from 'lucide-react';
 
@@ -42,7 +42,6 @@ export default function Calendar() {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <SideNavigation />
       <div className="flex-1">
         <div className="container mx-auto px-4 py-8">
           <div className="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4">

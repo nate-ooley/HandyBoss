@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { SideNavigation } from '../components/SideNavigation';
+
 import { BossManHeader } from '../components/BossManHeader';
 import BossManCharacter from "../components/BossManCharacter";
 import { 
@@ -327,8 +327,6 @@ export default function TeamProgress() {
   
   return (
     <div className="flex min-h-screen bg-background">
-      <SideNavigation />
-      
       <div className="flex-1">
         <BossManHeader 
           title="Team Progress Dashboard" 
