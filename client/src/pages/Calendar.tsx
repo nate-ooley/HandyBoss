@@ -593,7 +593,7 @@ export default function Calendar() {
                                       </CardDescription>
                                     </div>
                                   </CardHeader>
-                                  <CardContent className="p-4 pt-2 pb-12 max-h-[50vh] overflow-y-auto">
+                                  <CardContent className="p-4 pt-2 pb-16 max-h-[60vh] md:max-h-[50vh] overflow-y-auto">
                                     <div className="space-y-3">
                                       {isLoading ? (
                                         <div className="flex justify-center py-8">
