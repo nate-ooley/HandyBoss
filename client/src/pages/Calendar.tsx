@@ -681,17 +681,18 @@ export default function Calendar() {
                               ))}
                               
                               {filteredEvents.length === 0 && !isLoading && (
-                              <div className="col-span-3 flex flex-col items-center justify-center p-4 sm:p-8 text-center">
-                                <BossManImage mood="angry" size="sm" className="sm:hidden" />
-                                <BossManImage mood="angry" size="md" className="hidden sm:block" />
-                                <h3 className="mt-3 sm:mt-4 text-base sm:text-lg font-semibold">No events found</h3>
-                                <p className="text-xs sm:text-sm text-muted-foreground">
-                                  {searchQuery 
-                                    ? "Try changing your search criteria" 
-                                    : "No events scheduled for this month"}
-                                </p>
-                              </div>
-                            )}
+                                <div className="col-span-3 flex flex-col items-center justify-center p-4 sm:p-8 text-center">
+                                  <BossManImage mood="angry" size="sm" className="sm:hidden" />
+                                  <BossManImage mood="angry" size="md" className="hidden sm:block" />
+                                  <h3 className="mt-3 sm:mt-4 text-base sm:text-lg font-semibold">No events found</h3>
+                                  <p className="text-xs sm:text-sm text-muted-foreground">
+                                    {searchQuery 
+                                      ? "Try changing your search criteria" 
+                                      : "No events scheduled for this month"}
+                                  </p>
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </TabsContent>
 
