@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'wouter';
-import { LayoutDashboard, Building, HardHat, Package, Drill, Calendar, Mic, Globe, Languages, Trophy, Award } from 'lucide-react';
+import { LayoutDashboard, Building, HardHat, Package, Drill, Calendar, Mic, Globe, Languages, Trophy, Award, CreditCard, DollarSign } from 'lucide-react';
 
 interface NavItem {
   href: string;
@@ -59,6 +59,17 @@ export const SideNavigation: React.FC<React.PropsWithChildren> = ({ children }) 
       href: '/equipment',
       icon: <Drill className="h-5 w-5" />,
       label: 'Equipment'
+    },
+    {
+      href: '/checkout',
+      icon: <CreditCard className="h-5 w-5" />,
+      label: 'One-time Payment'
+    },
+    {
+      href: '/subscribe',
+      icon: <DollarSign className="h-5 w-5" />,
+      label: 'Subscription',
+      featured: true
     }
   ];
 

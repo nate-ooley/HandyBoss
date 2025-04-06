@@ -7,6 +7,7 @@ import { log } from "./vite";
 import { insertCommandSchema, insertChatMessageSchema } from "@shared/schema";
 import { translateWithOpenAI, detectLanguageWithOpenAI } from "./openai";
 import { sendEmail, sendSMS, sendBulkNotifications } from "./services/sendgrid";
+import { createPaymentIntent, createCustomer, createSubscription, getCustomer, getSubscription } from "./services/stripe";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
@@ -344,6 +345,142 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     });
   };
+  
+  // Payment API Endpoints with Stripe
+  app.post('/api/create-payment-intent', async (req, res) => {
+    try {
+      const { amount, currency = 'usd', metadata = {} } = req.body;
+      
+      if (!amount) {
+        return res.status(400).json({ error: 'Amount is required' });
+      }
+      
+      // Convert dollars to cents for Stripe
+      const amountInCents = Math.round(amount * 100);
+      
+      const paymentIntent = await createPaymentIntent(amountInCents, currency, metadata);
+      
+      res.json({ 
+        clientSecret: paymentIntent.client_secret || '',
+        amount: amountInCents,
+        currency
+      });
+    } catch (error: any) {
+      console.error('Error creating payment intent:', error);
+      res.status(500).json({ 
+        error: 'Failed to create payment intent',
+        message: error.message
+      });
+    }
+  });
+  
+  app.post('/api/create-customer', async (req, res) => {
+    try {
+      const { email, name, metadata = {} } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({ error: 'Email is required' });
+      }
+      
+      const customer = await createCustomer(email, name, metadata);
+      
+      res.json({ 
+        customerId: customer.id,
+        email: customer.email,
+        name: customer.name
+      });
+    } catch (error: any) {
+      console.error('Error creating customer:', error);
+      res.status(500).json({ 
+        error: 'Failed to create customer',
+        message: error.message
+      });
+    }
+  });
+  
+  app.post('/api/create-subscription', async (req, res) => {
+    try {
+      const { customerId, priceId, metadata = {} } = req.body;
+      
+      if (!customerId || !priceId) {
+        return res.status(400).json({ 
+          error: 'Customer ID and Price ID are required' 
+        });
+      }
+      
+      const subscription = await createSubscription(customerId, priceId, metadata);
+      
+      // Type assertion for latest_invoice since it could be an expanded object
+      const latestInvoice = subscription.latest_invoice as any;
+      const paymentIntent = latestInvoice?.payment_intent as any;
+      
+      res.json({ 
+        subscriptionId: subscription.id,
+        clientSecret: paymentIntent?.client_secret || null,
+        status: subscription.status
+      });
+    } catch (error: any) {
+      console.error('Error creating subscription:', error);
+      res.status(500).json({ 
+        error: 'Failed to create subscription',
+        message: error.message
+      });
+    }
+  });
+  
+  app.get('/api/customer/:id', async (req, res) => {
+    try {
+      const customerId = req.params.id;
+      
+      if (!customerId) {
+        return res.status(400).json({ error: 'Customer ID is required' });
+      }
+      
+      const customer = await getCustomer(customerId);
+      
+      res.json({
+        id: customer.id,
+        email: customer.email,
+        name: customer.name,
+        metadata: customer.metadata
+      });
+    } catch (error: any) {
+      console.error('Error fetching customer:', error);
+      res.status(500).json({ 
+        error: 'Failed to fetch customer',
+        message: error.message
+      });
+    }
+  });
+  
+  app.get('/api/subscription/:id', async (req, res) => {
+    try {
+      const subscriptionId = req.params.id;
+      
+      if (!subscriptionId) {
+        return res.status(400).json({ error: 'Subscription ID is required' });
+      }
+      
+      const subscription = await getSubscription(subscriptionId);
+      
+      // Type assert the subscription for easier access to properties
+      const sub = subscription as any;
+      
+      res.json({
+        id: subscription.id,
+        status: subscription.status,
+        currentPeriodEnd: sub.current_period_end,
+        currentPeriodStart: sub.current_period_start,
+        cancelAtPeriodEnd: sub.cancel_at_period_end
+      });
+    } catch (error: any) {
+      console.error('Error fetching subscription:', error);
+      res.status(500).json({ 
+        error: 'Failed to fetch subscription',
+        message: error.message
+      });
+    }
+  });
   
   // Handle command messages
   const handleCommand = async (ws: WebSocket, data: any) => {

@@ -87,6 +87,41 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
           
+          {/* Payment Options */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <div className="bg-white rounded-lg border shadow-sm p-4">
+              <h3 className="text-lg font-semibold mb-2 flex items-center">
+                <span role="img" aria-label="Money" className="mr-2">💵</span>
+                Single Job Payment
+              </h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Need to process a quick payment for a completed job? Use our secure one-time payment processor.
+              </p>
+              <a 
+                href="/checkout" 
+                className="bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-lg inline-block font-medium"
+              >
+                Process Payment
+              </a>
+            </div>
+            
+            <div className="bg-white rounded-lg border shadow-sm p-4">
+              <h3 className="text-lg font-semibold mb-2 flex items-center">
+                <span role="img" aria-label="Calendar" className="mr-2">📅</span>
+                Subscription Plans
+              </h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Get full access to all features with our flexible subscription plans designed for teams of all sizes.
+              </p>
+              <a 
+                href="/subscribe" 
+                className="bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-lg inline-block font-medium"
+              >
+                View Plans
+              </a>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {weatherAlerts && (
               <WeatherAlerts 

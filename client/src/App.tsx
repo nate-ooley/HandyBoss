@@ -10,6 +10,8 @@ import TranslationChat from "@/pages/TranslationChat";
 import Calendar from "@/pages/Calendar-simple";
 import SocketTest from "@/pages/SocketTest";
 import TeamProgress from "@/pages/TeamProgress";
+import Checkout from "@/pages/Checkout";
+import Subscribe from "@/pages/Subscribe";
 import { VoiceProvider } from "@/contexts/VoiceContext";
 import { WebSocketProvider } from "@/contexts/WebSocketContext";
 import { useMobile } from "@/hooks/use-mobile";
@@ -35,6 +37,10 @@ function AppRoutes() {
       <Route path="/calendar" component={Calendar} />
       <Route path="/socket-test" component={SocketTest} />
       <Route path="/team-progress" component={TeamProgress} />
+      <Route path="/checkout" component={Checkout} />
+      <Route path="/subscribe" component={Subscribe} />
+      <Route path="/payment-success" component={Checkout} />
+      <Route path="/subscription-success" component={Subscribe} />
       <Route component={NotFound} />
     </Switch>
   );
