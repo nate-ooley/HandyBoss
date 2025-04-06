@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { BossManHeader } from '../components/BossManHeader';
-import { SideNavigation } from '../components/SideNavigation';
 import { MobileNavigation } from '../components/MobileNavigation';
-import { ProfileCard } from '../components/ProfileCard';
 import { WeatherAlerts } from '../components/WeatherAlerts';
 import { RecentCommands } from '../components/RecentCommands';
 import { VoiceChatbot } from '../components/VoiceChatbot';
@@ -61,13 +59,6 @@ const Dashboard: React.FC = () => {
       />
       
       <div className="flex">
-        {/* Only hide SideNavigation on very small screens (phones), show on sm and larger (iPad and web) */}
-        <div className="hidden sm:block">
-          <SideNavigation>
-            {user && <ProfileCard user={user} />}
-          </SideNavigation>
-        </div>
-        
         <div className="flex-1 p-4 md:p-6 w-full">
           {/* Featured translation app banner */}
           <div className="bg-gradient-to-r from-primary/20 to-primary/5 p-4 mb-6 rounded-lg border border-primary/20 shadow-sm">
