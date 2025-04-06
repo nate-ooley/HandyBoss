@@ -44,6 +44,8 @@ type CalendarEvent = {
   description?: string; // For jobsites
   text?: string; // For messages
   translatedText?: string; // For messages
+  jobsiteId?: number; // Used for messages and jobsites
+  relatedMessages?: ChatMessage[]; // Collection of messages for the same date/jobsite
   [key: string]: any; // Allow for other properties from either type
 };
 
@@ -95,11 +97,14 @@ export default function Calendar() {
       return [];
     }
     
-    return rawEvents.map(event => {
-      // Determine if this is a jobsite or message
+    // First pass: separate jobsites and messages
+    const jobsites: CalendarEvent[] = [];
+    const allMessages: ChatMessage[] = [];
+    
+    rawEvents.forEach(event => {
       if ('name' in event) {
         // This is a jobsite
-        return {
+        jobsites.push({
           id: typeof event.id === 'string' ? parseInt(event.id) : event.id,
           title: event.name,
           date: parseISO(event.startDate as string),
@@ -109,20 +114,56 @@ export default function Calendar() {
           address: event.address,
           status: event.status,
           description: event.description,
-        };
+          jobsiteId: event.id
+        });
       } else {
-        // This is a chat message
-        return {
-          id: typeof event.id === 'string' ? parseInt(event.id) : event.id,
-          title: event.eventTitle || 'Chat message',
-          date: parseISO(event.timestamp as string),
-          type: 'message',
-          color: '#10b981', // Green for messages
-          text: event.text,
-          translatedText: event.translatedText,
-        };
+        // Add to the messages collection
+        allMessages.push(event);
       }
     });
+    
+    // Second pass: Group messages by date and jobsite
+    const groupedMessages: { [key: string]: ChatMessage[] } = {};
+    
+    allMessages.forEach(message => {
+      const date = parseISO(message.timestamp as string);
+      const dateKey = format(date, 'yyyy-MM-dd');
+      const jobsiteKey = message.jobsiteId ? `${dateKey}-${message.jobsiteId}` : dateKey;
+      
+      if (!groupedMessages[jobsiteKey]) {
+        groupedMessages[jobsiteKey] = [];
+      }
+      
+      groupedMessages[jobsiteKey].push(message);
+    });
+    
+    // Third pass: Create message events from grouped messages
+    const messageEvents: CalendarEvent[] = Object.keys(groupedMessages).map(key => {
+      const messages = groupedMessages[key];
+      const firstMessage = messages[0];
+      const date = parseISO(firstMessage.timestamp as string);
+      const messageCount = messages.length;
+      const jobsiteId = firstMessage.jobsiteId;
+      
+      // Find a message with an event title, or use the first message
+      const eventMessage = messages.find(m => m.eventTitle) || firstMessage;
+      
+      return {
+        id: typeof firstMessage.id === 'string' ? parseInt(firstMessage.id) : firstMessage.id,
+        title: eventMessage.eventTitle || 
+               (messageCount > 1 ? `${messageCount} messages` : 'Chat message'),
+        date: date,
+        type: 'message',
+        color: '#10b981', // Green for messages
+        text: eventMessage.text,
+        translatedText: eventMessage.translatedText,
+        jobsiteId: jobsiteId,
+        relatedMessages: messages // Store all related messages
+      };
+    });
+    
+    // Combine and return all events
+    return [...jobsites, ...messageEvents];
   };
 
   // Filter events based on search query
@@ -789,8 +830,14 @@ export default function Calendar() {
                         
                         {selectedEvent.type === 'message' && (
                           <div>
-                            <h4 className="text-xs sm:text-sm font-medium mb-1">Message</h4>
-                            <div className="border rounded-md p-2 sm:p-3 bg-slate-50">
+                            <h4 className="text-xs sm:text-sm font-medium mb-1">
+                              {selectedEvent.relatedMessages && selectedEvent.relatedMessages.length > 1 
+                                ? `Messages (${selectedEvent.relatedMessages.length})` 
+                                : 'Message'}
+                            </h4>
+                            
+                            {/* Show the selected/primary message */}
+                            <div className="border rounded-md p-2 sm:p-3 bg-slate-50 mb-2">
                               <p className="text-xs sm:text-sm">{selectedEvent.text}</p>
                               {selectedEvent.translatedText && (
                                 <>
@@ -801,6 +848,27 @@ export default function Calendar() {
                                 </>
                               )}
                             </div>
+                            
+                            {/* If there are more related messages, show a sample of them */}
+                            {selectedEvent.relatedMessages && selectedEvent.relatedMessages.length > 1 && (
+                              <div className="space-y-2">
+                                <h5 className="text-xs font-medium text-muted-foreground mb-1">Related messages:</h5>
+                                
+                                {/* Show up to 2 more messages */}
+                                {selectedEvent.relatedMessages.slice(1, 3).map((message, index) => (
+                                  <div key={index} className="border rounded-md p-2 bg-slate-50/70">
+                                    <p className="text-xs line-clamp-1">{message.text}</p>
+                                  </div>
+                                ))}
+                                
+                                {/* If there are more than 3 messages total, show message count */}
+                                {selectedEvent.relatedMessages.length > 3 && (
+                                  <p className="text-xs text-muted-foreground text-center">
+                                    +{selectedEvent.relatedMessages.length - 3} more messages
+                                  </p>
+                                )}
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
@@ -812,6 +880,22 @@ export default function Calendar() {
                           variant="outline"
                         >
                           View Project Details
+                        </Button>
+                      )}
+                      
+                      {selectedEvent.type === 'message' && (
+                        <Button 
+                          className="w-full h-9 sm:h-10 text-xs sm:text-sm" 
+                          variant="outline"
+                          onClick={() => {
+                            // Navigate to VoiceCommands page with selected message/jobsite ID
+                            window.location.href = selectedEvent.jobsiteId 
+                              ? `/voice?jobsite=${selectedEvent.jobsiteId}` 
+                              : '/voice';
+                          }}
+                        >
+                          <MessageSquare className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5" />
+                          View All Messages
                         </Button>
                       )}
                     </CardFooter>

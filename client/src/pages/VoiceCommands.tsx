@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { VoiceCommandInterface } from '@/components/VoiceCommandInterface';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,6 +10,8 @@ import { Separator } from '@/components/ui/separator';
 import BossManCharacter from "@/components/BossManCharacter";
 import { apiRequest } from '@/lib/queryClient';
 import { useMobile } from '@/hooks/use-mobile';
+import { AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 interface CommandResult {
   intent: string;
@@ -29,7 +31,42 @@ export default function VoiceCommandsPage() {
   const [commandHistory, setCommandHistory] = useState<CommandResult[]>([]);
   const [selectedJobsiteId, setSelectedJobsiteId] = useState<number | null>(null);
   const [commandView, setCommandView] = useState<'basic' | 'advanced'>('basic');
+  const [jobsiteInfo, setJobsiteInfo] = useState<string | null>(null);
   const isMobile = useMobile();
+  
+  // Handle URL parameters for jobsite selection
+  useEffect(() => {
+    // Parse URL parameters
+    const params = new URLSearchParams(window.location.search);
+    const jobsiteParam = params.get('jobsite');
+    
+    if (jobsiteParam) {
+      try {
+        const jobsiteId = parseInt(jobsiteParam, 10);
+        if (!isNaN(jobsiteId)) {
+          // Set the jobsite ID
+          setSelectedJobsiteId(jobsiteId);
+          
+          // Fetch jobsite details
+          const fetchJobsiteInfo = async () => {
+            try {
+              const response = await apiRequest('GET', `/api/jobsites/${jobsiteId}`);
+              if (response.ok) {
+                const jobsite = await response.json();
+                setJobsiteInfo(jobsite.name);
+              }
+            } catch (error) {
+              console.error('Error fetching jobsite details:', error);
+            }
+          };
+          
+          fetchJobsiteInfo();
+        }
+      } catch (error) {
+        console.error('Error parsing jobsite ID:', error);
+      }
+    }
+  }, []);
   
   // Process the voice command with our server-side AI
   const processVoiceCommand = async (text: string): Promise<CommandResult> => {
@@ -136,6 +173,17 @@ export default function VoiceCommandsPage() {
           <Label htmlFor="header-language-toggle" className="text-sm sm:text-base font-medium">Español</Label>
         </div>
       </div>
+      
+      {/* Jobsite context notification */}
+      {selectedJobsiteId && jobsiteInfo && (
+        <Alert className="mb-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Jobsite Context Active</AlertTitle>
+          <AlertDescription>
+            Voice commands will be associated with the jobsite: <strong>{jobsiteInfo}</strong>
+          </AlertDescription>
+        </Alert>
+      )}
       
       {/* Full-width voice interface for mobile */}
       {isMobile && (

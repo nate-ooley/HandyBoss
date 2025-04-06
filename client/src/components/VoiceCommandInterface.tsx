@@ -78,6 +78,9 @@ export function VoiceCommandInterface({
       'information': { en: 'Info', es: 'Info', color: 'bg-green-500' },
       'team_message': { en: 'Message', es: 'Mensaje', color: 'bg-sky-500' },
       'safety_alert': { en: 'Safety', es: 'Seguridad', color: 'bg-red-600' },
+      'call_me': { en: 'Call Me', es: 'Llámame', color: 'bg-blue-600' },
+      'code_red': { en: 'Code Red', es: 'Código Rojo', color: 'bg-red-700' },
+      'send_help': { en: 'Send Help', es: 'Enviar Ayuda', color: 'bg-orange-600' },
       'status_update': { en: 'Status', es: 'Estado', color: 'bg-teal-500' },
       'weather_update': { en: 'Weather', es: 'Clima', color: 'bg-indigo-500' },
     };
@@ -185,7 +188,11 @@ export function VoiceCommandInterface({
             "Send weather alert to all teams on Riverside project",
             "Update timeline for electrical work completion",
             "Check inventory of drywall materials",
-            "Postpone roof inspection due to rain forecast"
+            "Postpone roof inspection due to rain forecast",
+            // Added new quick commands
+            "Call me back as soon as possible",
+            "Code red: electrical failure in Building C",
+            "Send more help to the north section immediately"
           ],
           es: [
             "Programar entrega de materiales para mañana a las 9 AM",
@@ -195,7 +202,11 @@ export function VoiceCommandInterface({
             "Enviar alerta de clima a todos los equipos en proyecto Riverside",
             "Actualizar cronograma para finalización de trabajo eléctrico",
             "Verificar inventario de materiales de paneles de yeso",
-            "Posponer inspección del techo debido al pronóstico de lluvia"
+            "Posponer inspección del techo debido al pronóstico de lluvia",
+            // Added new quick commands in Spanish
+            "Llámame de vuelta lo antes posible",
+            "Código rojo: falla eléctrica en el Edificio C", 
+            "Envía más ayuda a la sección norte inmediatamente"
           ]
         };
         
