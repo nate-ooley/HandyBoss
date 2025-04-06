@@ -1,6 +1,6 @@
 import express, { type Request, Response, NextFunction } from "express";
-// Use debug routes temporarily
-import { registerRoutes } from "./routes-debug";
+// Use main routes
+import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { initializeStorage } from './db/config';
 
