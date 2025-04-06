@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 export const SideNavigation = () => {
   const [location, setLocation] = useLocation();
@@ -98,39 +99,89 @@ export const SideNavigation = () => {
       </div>
       
       <div className="flex-1 py-6 flex flex-col gap-2">
-        {navItems.map((item) => (
-          <Button
-            key={item.path}
-            variant="ghost"
-            size="lg"
-            className={cn(
-              "w-full justify-start px-4 gap-3 rounded-none hover:bg-gray-800 relative h-12",
-              isActive(item.path) && "bg-gray-800 font-medium"
-            )}
-            onClick={() => navigate(item.path)}
-          >
-            {isActive(item.path) && (
-              <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary" />
-            )}
-            <span>{item.icon}</span>
-            {!collapsed && <span>{item.label}</span>}
-          </Button>
-        ))}
+        <TooltipProvider>
+          {navItems.map((item) => (
+            <div key={item.path} className="relative">
+              {collapsed ? (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="lg"
+                      className={cn(
+                        "w-full justify-start px-4 gap-3 rounded-none hover:bg-gray-800 relative h-12",
+                        isActive(item.path) && "bg-gray-800 font-medium"
+                      )}
+                      onClick={() => navigate(item.path)}
+                    >
+                      {isActive(item.path) && (
+                        <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary" />
+                      )}
+                      <span>{item.icon}</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">
+                    {item.label}
+                  </TooltipContent>
+                </Tooltip>
+              ) : (
+                <Button
+                  variant="ghost"
+                  size="lg"
+                  className={cn(
+                    "w-full justify-start px-4 gap-3 rounded-none hover:bg-gray-800 relative h-12",
+                    isActive(item.path) && "bg-gray-800 font-medium"
+                  )}
+                  onClick={() => navigate(item.path)}
+                >
+                  {isActive(item.path) && (
+                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary" />
+                  )}
+                  <span>{item.icon}</span>
+                  <span>{item.label}</span>
+                </Button>
+              )}
+            </div>
+          ))}
+        </TooltipProvider>
       </div>
       
       <div className="p-4 border-t border-gray-800">
-        <Button
-          variant="ghost"
-          size="lg"
-          className="w-full justify-start px-4 gap-3 rounded-none hover:bg-gray-800"
-          onClick={() => {
-            // Handle logout logic
-            console.log("Logging out...");
-          }}
-        >
-          <LogOut className="h-5 w-5" />
-          {!collapsed && <span>Logout</span>}
-        </Button>
+        <TooltipProvider>
+          {collapsed ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="lg"
+                  className="w-full justify-start px-4 gap-3 rounded-none hover:bg-gray-800"
+                  onClick={() => {
+                    // Handle logout logic
+                    console.log("Logging out...");
+                  }}
+                >
+                  <LogOut className="h-5 w-5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                Logout
+              </TooltipContent>
+            </Tooltip>
+          ) : (
+            <Button
+              variant="ghost"
+              size="lg"
+              className="w-full justify-start px-4 gap-3 rounded-none hover:bg-gray-800"
+              onClick={() => {
+                // Handle logout logic
+                console.log("Logging out...");
+              }}
+            >
+              <LogOut className="h-5 w-5" />
+              <span>Logout</span>
+            </Button>
+          )}
+        </TooltipProvider>
       </div>
     </div>
   );
