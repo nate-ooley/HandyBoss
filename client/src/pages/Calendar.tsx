@@ -10,6 +10,7 @@ import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { SideNavigation } from '@/components/SideNavigation';
+import { MobileNavigation } from '@/components/MobileNavigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { format, parseISO, isToday, startOfMonth, endOfMonth, isSameDay, startOfDay, endOfDay, addDays, subDays } from 'date-fns';
@@ -370,114 +371,149 @@ export default function Calendar() {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <SideNavigation />
+      {/* Hide sidebar on smaller screens, show on larger (iPad and up) */}
+      <div className="hidden md:block">
+        <SideNavigation />
+      </div>
       <div className="flex-1">
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex flex-col space-y-4">
-            {/* Top section with view selector and controls */}
-            <Card>
-              <CardHeader>
-                <div className="flex justify-between items-center">
-                  <CardTitle className="flex items-center">
-                    <CalendarIcon className="mr-2 h-5 w-5" />
-                    Calendar
-                  </CardTitle>
-                  <Tabs defaultValue="day" value={view} onValueChange={(value) => setView(value as any)}>
-                    <TabsList className="grid grid-cols-3">
-                      <TabsTrigger value="day">Day</TabsTrigger>
-                      <TabsTrigger value="month">Month</TabsTrigger>
-                      <TabsTrigger value="list">List</TabsTrigger>
-                    </TabsList>
-                  </Tabs>
+        <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-6">
+          <div className="flex flex-col space-y-3 sm:space-y-4">
+            {/* Top section with view selector and controls - Mobile-optimized */}
+            <Card className="shadow-sm">
+              <CardHeader className="py-3 px-3 sm:p-6">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-2 sm:space-y-0">
+                  <div className="flex justify-between items-center w-full sm:w-auto">
+                    <CardTitle className="flex items-center text-lg">
+                      <CalendarIcon className="mr-2 h-5 w-5" />
+                      Calendar
+                    </CardTitle>
+                    
+                    {/* Mobile menu button - visible on small screens */}
+                    <div className="block sm:hidden">
+                      <Tabs defaultValue="day" value={view} onValueChange={(value) => setView(value as any)}>
+                        <TabsList className="grid grid-cols-3 w-full">
+                          <TabsTrigger value="day" className="text-xs py-1.5">Day</TabsTrigger>
+                          <TabsTrigger value="month" className="text-xs py-1.5">Month</TabsTrigger>
+                          <TabsTrigger value="list" className="text-xs py-1.5">List</TabsTrigger>
+                        </TabsList>
+                      </Tabs>
+                    </div>
+                  </div>
+                  
+                  {/* Tablet/Desktop view selector - hidden on mobile */}
+                  <div className="hidden sm:block">
+                    <Tabs defaultValue="day" value={view} onValueChange={(value) => setView(value as any)}>
+                      <TabsList className="grid grid-cols-3">
+                        <TabsTrigger value="day">Day</TabsTrigger>
+                        <TabsTrigger value="month">Month</TabsTrigger>
+                        <TabsTrigger value="list">List</TabsTrigger>
+                      </TabsList>
+                    </Tabs>
+                  </div>
                 </div>
               </CardHeader>
             </Card>
             
             {/* Main content area */}
-            <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex flex-col lg:flex-row gap-3 sm:gap-4">
               {/* Main content section */}
               <div className="flex-1">
-                <Card className="h-full">
-                  <CardHeader>
-                    <div className="flex justify-between items-center">
-                      <CardTitle>
-                        {view === 'month' && format(date, 'MMMM yyyy')}
-                        {view === 'day' && format(date, 'EEEE, MMMM do, yyyy')}
+                <Card className="h-full shadow-sm">
+                  <CardHeader className="py-3 px-3 sm:p-6">
+                    <div className="flex flex-col space-y-3 sm:space-y-0 sm:flex-row sm:justify-between sm:items-center">
+                      <CardTitle className="text-base sm:text-lg order-1">
+                        {view === 'month' && format(date, 'MMM yyyy')}
+                        {view === 'day' && format(date, 'EEE, MMM do')}
                         {view === 'list' && 'Event List'}
                       </CardTitle>
-                      <div className="flex items-center space-x-2">
-                        {/* Event type filter */}
-                        <Select value={eventTypeFilter} onValueChange={(value) => setEventTypeFilter(value as 'all' | 'jobsite' | 'message')}>
-                          <SelectTrigger className="w-[140px]">
-                            <SelectValue placeholder="Filter by type" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">All Events</SelectItem>
-                            <SelectItem value="jobsite">Projects Only</SelectItem>
-                            <SelectItem value="message">Messages Only</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        
-                        {/* Search input */}
-                        <div className="relative">
-                          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                          <Input
-                            type="search"
-                            placeholder="Search events..."
-                            className="pl-8 w-[200px]"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                          />
-                          {searchQuery && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="absolute right-0 top-0 h-9 w-9 p-0"
-                              onClick={() => setSearchQuery('')}
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          )}
+
+                      {/* Controls that stack on mobile */}
+                      <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-2 order-3 sm:order-2">
+                        {/* Filters section - now stacks on mobile, showing filters only when needed */}
+                        <div className="flex items-center justify-between sm:justify-start space-x-2">
+                          {/* Event type filter */}
+                          <Select value={eventTypeFilter} onValueChange={(value) => setEventTypeFilter(value as 'all' | 'jobsite' | 'message')}>
+                            <SelectTrigger className="w-[130px] sm:w-[140px] text-xs sm:text-sm h-8 sm:h-10">
+                              <SelectValue placeholder="Filter by type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">All Events</SelectItem>
+                              <SelectItem value="jobsite">Projects Only</SelectItem>
+                              <SelectItem value="message">Messages Only</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          
+                          {/* Search input - smaller on mobile */}
+                          <div className="relative flex-1 sm:flex-none">
+                            <Search className="absolute left-2 top-[9px] h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
+                            <Input
+                              type="search"
+                              placeholder="Search..."
+                              className="pl-7 sm:pl-8 h-8 sm:h-10 text-xs sm:text-sm w-full sm:w-[160px] md:w-[200px]"
+                              value={searchQuery}
+                              onChange={(e) => setSearchQuery(e.target.value)}
+                            />
+                            {searchQuery && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="absolute right-0 top-0 h-8 sm:h-10 w-8 sm:w-10 p-0"
+                                onClick={() => setSearchQuery('')}
+                              >
+                                <X className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                              </Button>
+                            )}
+                          </div>
+                          
+                          {/* Export button - icon only on mobile */}
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={generateICalFile}
+                            className="h-8 sm:h-10 px-2 sm:px-3 text-xs sm:text-sm"
+                          >
+                            <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4 sm:mr-1" />
+                            <span className="hidden sm:inline">Export</span>
+                          </Button>
                         </div>
-                        
-                        {/* Export button */}
-                        <Button variant="ghost" size="sm" onClick={generateICalFile}>
-                          <Download className="h-4 w-4 mr-1" />
-                          Export
-                        </Button>
                       </div>
-                    </div>
-                    
-                    {/* Navigation buttons */}
-                    <div className="flex justify-between items-center mt-2">
-                      <div className="flex items-center space-x-2">
-                        {view === 'month' && (
-                          <>
-                            <Button variant="outline" size="sm" onClick={goToPreviousMonth}>
-                              <ChevronLeft className="h-4 w-4 mr-1" />
-                              Previous
-                            </Button>
-                            <Button variant="outline" size="sm" onClick={goToNextMonth}>
-                              Next
-                              <ChevronRight className="h-4 w-4 ml-1" />
-                            </Button>
-                          </>
-                        )}
-                        {view === 'day' && (
-                          <>
-                            <Button variant="outline" size="sm" onClick={goToPreviousDay}>
-                              <ChevronLeft className="h-4 w-4 mr-1" />
-                              Previous Day
-                            </Button>
-                            <Button variant="outline" size="sm" onClick={goToNextDay}>
-                              Next Day
-                              <ChevronRight className="h-4 w-4 ml-1" />
-                            </Button>
-                          </>
-                        )}
-                        <Button variant="ghost" size="sm" onClick={goToToday}>
-                          Today
-                        </Button>
+                      
+                      {/* Navigation buttons - more compact on mobile */}
+                      <div className="flex justify-between items-center order-2 sm:order-3">
+                        <div className="flex items-center space-x-1 sm:space-x-2">
+                          {view === 'month' && (
+                            <>
+                              <Button variant="outline" size="sm" onClick={goToPreviousMonth} className="h-8 sm:h-10 px-2 sm:px-3 text-xs sm:text-sm">
+                                <ChevronLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4 sm:mr-1" />
+                                <span className="hidden sm:inline">Previous</span>
+                              </Button>
+                              <Button variant="outline" size="sm" onClick={goToNextMonth} className="h-8 sm:h-10 px-2 sm:px-3 text-xs sm:text-sm">
+                                <span className="hidden sm:inline">Next</span>
+                                <ChevronRight className="h-3.5 w-3.5 sm:h-4 sm:w-4 sm:ml-1" />
+                              </Button>
+                            </>
+                          )}
+                          {view === 'day' && (
+                            <>
+                              <Button variant="outline" size="sm" onClick={goToPreviousDay} className="h-8 sm:h-10 px-2 sm:px-3 text-xs sm:text-sm">
+                                <ChevronLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4 sm:mr-1" />
+                                <span className="hidden sm:inline">Previous</span>
+                              </Button>
+                              <Button variant="outline" size="sm" onClick={goToNextDay} className="h-8 sm:h-10 px-2 sm:px-3 text-xs sm:text-sm">
+                                <span className="hidden sm:inline">Next</span>
+                                <ChevronRight className="h-3.5 w-3.5 sm:h-4 sm:w-4 sm:ml-1" />
+                              </Button>
+                            </>
+                          )}
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={goToToday}
+                            className="h-8 sm:h-10 px-2 sm:px-3 text-xs sm:text-sm"
+                          >
+                            Today
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   </CardHeader>
@@ -574,28 +610,28 @@ export default function Calendar() {
                     {/* Content container for different views */}
                     <div className="mt-4">
                       <Tabs value={view}>
-                        <TabsContent value="month" className="space-y-4">
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <TabsContent value="month" className="space-y-3 sm:space-y-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
                             {filteredEvents.map(event => (
                               <Card 
                                 key={`${event.type}-${event.id}`} 
                                 className="cursor-pointer hover:shadow-md transition-shadow"
                                 onClick={() => handleSelectEvent(event)}
                               >
-                                <CardHeader className="p-4">
+                                <CardHeader className="p-3 sm:p-4">
                                   <div className="flex items-start justify-between">
-                                    <CardTitle className="text-base">
+                                    <CardTitle className="text-sm sm:text-base">
                                       {event.title}
                                     </CardTitle>
                                     <Badge 
                                       variant={event.type === 'jobsite' ? 'default' : 'outline'}
-                                      className={event.type === 'jobsite' ? 'bg-indigo-500' : 'bg-green-500 text-white'}
+                                      className={`text-xs ${event.type === 'jobsite' ? 'bg-indigo-500' : 'bg-green-500 text-white'}`}
                                     >
                                       {event.type === 'jobsite' ? 'Project' : 'Message'}
                                     </Badge>
                                   </div>
-                                  <CardDescription className="flex items-center mt-1">
-                                    <Clock className="h-3.5 w-3.5 mr-1" />
+                                  <CardDescription className="flex items-center mt-1 text-xs sm:text-sm">
+                                    <Clock className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1" />
                                     {format(event.date, 'MMM do, h:mm a')}
                                   </CardDescription>
                                 </CardHeader>
@@ -603,10 +639,11 @@ export default function Calendar() {
                             ))}
                             
                             {filteredEvents.length === 0 && !isLoading && (
-                              <div className="col-span-3 flex flex-col items-center justify-center p-8 text-center">
-                                <BossManImage mood="angry" size="md" />
-                                <h3 className="mt-4 text-lg font-semibold">No events found</h3>
-                                <p className="text-muted-foreground">
+                              <div className="col-span-3 flex flex-col items-center justify-center p-4 sm:p-8 text-center">
+                                <BossManImage mood="angry" size="sm" className="sm:hidden" />
+                                <BossManImage mood="angry" size="md" className="hidden sm:block" />
+                                <h3 className="mt-3 sm:mt-4 text-base sm:text-lg font-semibold">No events found</h3>
+                                <p className="text-xs sm:text-sm text-muted-foreground">
                                   {searchQuery 
                                     ? "Try changing your search criteria" 
                                     : "No events scheduled for this month"}
@@ -621,8 +658,8 @@ export default function Calendar() {
                           {/* This is just a placeholder to make the tab navigation work */}
                         </TabsContent>
 
-                        <TabsContent value="list" className="space-y-4">
-                          <div className="space-y-4">
+                        <TabsContent value="list" className="space-y-2 sm:space-y-4">
+                          <div className="space-y-2 sm:space-y-4">
                             {filteredEvents.length > 0 ? (
                               filteredEvents
                                 .sort((a, b) => a.date.getTime() - b.date.getTime())
@@ -632,19 +669,19 @@ export default function Calendar() {
                                     className="cursor-pointer hover:shadow-md transition-shadow"
                                     onClick={() => handleSelectEvent(event)}
                                   >
-                                    <CardHeader className="py-3 px-4">
+                                    <CardHeader className="py-2 px-3 sm:py-3 sm:px-4">
                                       <div className="flex items-center justify-between">
                                         <div>
-                                          <CardTitle className="text-base">
+                                          <CardTitle className="text-sm sm:text-base font-medium">
                                             {event.title}
                                           </CardTitle>
-                                          <CardDescription>
+                                          <CardDescription className="text-xs sm:text-sm mt-0.5">
                                             {format(event.date, 'EEE, MMM do')}
                                           </CardDescription>
                                         </div>
                                         <Badge 
                                           variant={event.type === 'jobsite' ? 'default' : 'outline'}
-                                          className={event.type === 'jobsite' ? 'bg-indigo-500' : 'bg-green-500 text-white'}
+                                          className={`text-xs ${event.type === 'jobsite' ? 'bg-indigo-500' : 'bg-green-500 text-white'}`}
                                         >
                                           {event.type === 'jobsite' ? 'Project' : 'Message'}
                                         </Badge>
@@ -653,10 +690,11 @@ export default function Calendar() {
                                   </Card>
                                 ))
                             ) : (
-                              <div className="flex flex-col items-center justify-center p-8 text-center">
-                                <BossManImage mood="angry" size="md" />
-                                <h3 className="mt-4 text-lg font-semibold">No events found</h3>
-                                <p className="text-muted-foreground">
+                              <div className="flex flex-col items-center justify-center p-4 sm:p-8 text-center">
+                                <BossManImage mood="angry" size="sm" className="sm:hidden" />
+                                <BossManImage mood="angry" size="md" className="hidden sm:block" />
+                                <h3 className="mt-3 sm:mt-4 text-base sm:text-lg font-semibold">No events found</h3>
+                                <p className="text-xs sm:text-sm text-muted-foreground">
                                   {searchQuery 
                                     ? "Try changing your search criteria" 
                                     : "Try changing the selected month"}
@@ -671,30 +709,40 @@ export default function Calendar() {
                 </Card>
               </div>
 
-              {/* Event details panel - shown when an event is selected */}
+              {/* Event details panel - shows in modal on mobile, sidebar on tablet/desktop */}
               {selectedEvent && (
-                <div className="w-full md:w-80">
-                  <Card>
-                    <CardHeader>
+                <div className={`
+                  ${view === 'month' ? 'mt-4 lg:mt-0' : ''}
+                  w-full lg:w-80 z-10
+                  fixed inset-0 bg-black/50 lg:static lg:bg-transparent
+                  flex items-center justify-center lg:block
+                `}>
+                  <Card className="w-[calc(100%-32px)] max-w-md lg:w-full max-h-[80vh] lg:max-h-none overflow-auto">
+                    <CardHeader className="p-3 sm:p-6 sticky top-0 bg-white z-10 border-b">
                       <div className="flex justify-between items-start">
-                        <CardTitle>{selectedEvent.title}</CardTitle>
-                        <Button variant="ghost" size="sm" onClick={() => setSelectedEvent(null)}>
+                        <CardTitle className="text-base sm:text-lg mr-4">{selectedEvent.title}</CardTitle>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => setSelectedEvent(null)}
+                          className="h-8 w-8 p-0 rounded-full"
+                        >
                           <X className="h-4 w-4" />
                         </Button>
                       </div>
-                      <CardDescription>
+                      <CardDescription className="text-xs sm:text-sm">
                         {selectedEvent.type === 'jobsite' ? 'Project Details' : 'Message Details'}
                       </CardDescription>
                     </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
+                    <CardContent className="p-3 sm:p-6 pt-2 sm:pt-4">
+                      <div className="space-y-3 sm:space-y-4">
                         <div>
-                          <h4 className="text-sm font-medium mb-1">Date & Time</h4>
-                          <div className="flex items-center text-sm">
-                            <Clock className="h-3.5 w-3.5 mr-1 text-muted-foreground" />
-                            {format(selectedEvent.date, 'EEEE, MMMM do, yyyy')}
+                          <h4 className="text-xs sm:text-sm font-medium mb-1">Date & Time</h4>
+                          <div className="flex items-center text-xs sm:text-sm">
+                            <Clock className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1 text-muted-foreground" />
+                            {format(selectedEvent.date, 'EEEE, MMM do, yyyy')}
                           </div>
-                          <div className="text-sm ml-5">
+                          <div className="text-xs sm:text-sm ml-4 sm:ml-5">
                             {format(selectedEvent.date, 'h:mm a')}
                             {selectedEvent.endDate && ` - ${format(selectedEvent.endDate, 'h:mm a')}`}
                           </div>
@@ -703,37 +751,37 @@ export default function Calendar() {
                         {selectedEvent.type === 'jobsite' && (
                           <>
                             <div>
-                              <h4 className="text-sm font-medium mb-1">Address</h4>
-                              <div className="flex items-center text-sm">
-                                <MapPin className="h-3.5 w-3.5 mr-1 text-muted-foreground" />
+                              <h4 className="text-xs sm:text-sm font-medium mb-1">Address</h4>
+                              <div className="flex items-center text-xs sm:text-sm">
+                                <MapPin className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1 text-muted-foreground" />
                                 {selectedEvent.address || 'No address provided'}
                               </div>
                             </div>
                             
                             {selectedEvent.status && (
                               <div>
-                                <h4 className="text-sm font-medium mb-1">Status</h4>
-                                <Badge>{selectedEvent.status}</Badge>
+                                <h4 className="text-xs sm:text-sm font-medium mb-1">Status</h4>
+                                <Badge className="text-xs">{selectedEvent.status}</Badge>
                               </div>
                             )}
                             
                             {selectedEvent.description && (
                               <div>
-                                <h4 className="text-sm font-medium mb-1">Description</h4>
-                                <p className="text-sm">{selectedEvent.description}</p>
+                                <h4 className="text-xs sm:text-sm font-medium mb-1">Description</h4>
+                                <p className="text-xs sm:text-sm">{selectedEvent.description}</p>
                               </div>
                             )}
                             
                             {selectedEvent.progress !== undefined && (
                               <div>
-                                <h4 className="text-sm font-medium mb-1">Progress</h4>
-                                <div className="w-full bg-gray-200 rounded-full h-2.5">
+                                <h4 className="text-xs sm:text-sm font-medium mb-1">Progress</h4>
+                                <div className="w-full bg-gray-200 rounded-full h-2">
                                   <div 
-                                    className="bg-primary h-2.5 rounded-full" 
+                                    className="bg-primary h-2 rounded-full" 
                                     style={{ width: `${selectedEvent.progress}%` }}
                                   ></div>
                                 </div>
-                                <p className="text-xs text-right mt-1">{selectedEvent.progress}%</p>
+                                <p className="text-[10px] sm:text-xs text-right mt-1">{selectedEvent.progress}%</p>
                               </div>
                             )}
                           </>
@@ -741,13 +789,13 @@ export default function Calendar() {
                         
                         {selectedEvent.type === 'message' && (
                           <div>
-                            <h4 className="text-sm font-medium mb-1">Message</h4>
-                            <div className="border rounded-md p-3 bg-slate-50">
-                              <p className="text-sm">{selectedEvent.text}</p>
+                            <h4 className="text-xs sm:text-sm font-medium mb-1">Message</h4>
+                            <div className="border rounded-md p-2 sm:p-3 bg-slate-50">
+                              <p className="text-xs sm:text-sm">{selectedEvent.text}</p>
                               {selectedEvent.translatedText && (
                                 <>
-                                  <Separator className="my-2" />
-                                  <p className="text-sm text-muted-foreground italic">
+                                  <Separator className="my-1.5 sm:my-2" />
+                                  <p className="text-xs sm:text-sm text-muted-foreground italic">
                                     {selectedEvent.translatedText}
                                   </p>
                                 </>
@@ -757,9 +805,12 @@ export default function Calendar() {
                         )}
                       </div>
                     </CardContent>
-                    <CardFooter>
+                    <CardFooter className="p-3 sm:p-6 pt-0 sm:pt-0 border-t mt-2">
                       {selectedEvent.type === 'jobsite' && (
-                        <Button className="w-full" variant="outline">
+                        <Button 
+                          className="w-full h-9 sm:h-10 text-xs sm:text-sm" 
+                          variant="outline"
+                        >
                           View Project Details
                         </Button>
                       )}

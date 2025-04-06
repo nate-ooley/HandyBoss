@@ -17,6 +17,7 @@ import Projects from "@/pages/Projects";
 import { CrewPage as Crew } from "@/pages/Crew";
 import { VoiceProvider } from "@/contexts/VoiceContext";
 import { WebSocketProvider } from "@/contexts/WebSocketContext";
+import { MobileNavigation } from "@/components/MobileNavigation";
 import { useMobile } from "@/hooks/use-mobile";
 import { useEffect } from "react";
 
@@ -56,12 +57,18 @@ function AppRoutes() {
 }
 
 function App() {
+  const isMobile = useMobile();
+
   return (
     <QueryClientProvider client={queryClient}>
       <WebSocketProvider>
         <VoiceProvider>
           <Router>
             <AppRoutes />
+            {/* Global mobile navigation for all pages */}
+            {isMobile && <MobileNavigation />}
+            {/* Add spacing at the bottom for mobile navigation */}
+            {isMobile && <div className="h-16"></div>}
           </Router>
           <Toaster />
         </VoiceProvider>
