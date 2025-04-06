@@ -66,15 +66,131 @@ export default function Projects() {
                     </DialogDescription>
                   </DialogHeader>
                   
-                  <div className="grid gap-4 py-4">
-                    {/* Form would go here */}
-                    <p className="text-sm text-muted-foreground">Project creation form is under development.</p>
-                  </div>
-                  
-                  <DialogFooter>
-                    <Button variant="outline">Cancel</Button>
-                    <Button>Create Project</Button>
-                  </DialogFooter>
+                  <form onSubmit={(e) => {
+                    e.preventDefault();
+                    
+                    // Get form data
+                    const formData = new FormData(e.currentTarget);
+                    const name = formData.get('name') as string;
+                    const address = formData.get('address') as string;
+                    const status = formData.get('status') as string;
+                    const startDate = formData.get('startDate') as string;
+                    const endDate = formData.get('endDate') as string;
+                    const description = formData.get('description') as string;
+                    
+                    // Create a new project
+                    fetch('/api/jobsites', {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                      },
+                      body: JSON.stringify({
+                        name,
+                        address,
+                        status,
+                        startDate,
+                        endDate,
+                        description,
+                        time: new Date().toISOString(),
+                        progress: 0,
+                      }),
+                    })
+                      .then(response => response.json())
+                      .then(() => {
+                        // Close dialog and refetch projects
+                        document.getElementById('closeNewProjectDialog')?.click();
+                        // This will trigger a refetch of jobsites
+                        window.location.reload();
+                      })
+                      .catch(error => {
+                        console.error('Error creating project:', error);
+                      });
+                  }}>
+                    <div className="grid gap-4 py-4">
+                      <div className="grid grid-cols-4 items-center gap-4">
+                        <label htmlFor="name" className="text-right">
+                          Project Name*
+                        </label>
+                        <input
+                          id="name"
+                          name="name"
+                          className="col-span-3 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                          required
+                        />
+                      </div>
+                      <div className="grid grid-cols-4 items-center gap-4">
+                        <label htmlFor="address" className="text-right">
+                          Address*
+                        </label>
+                        <input
+                          id="address"
+                          name="address"
+                          className="col-span-3 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                          required
+                        />
+                      </div>
+                      <div className="grid grid-cols-4 items-center gap-4">
+                        <label htmlFor="status" className="text-right">
+                          Status*
+                        </label>
+                        <select
+                          id="status"
+                          name="status"
+                          className="col-span-3 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                          required
+                        >
+                          <option value="scheduled">Scheduled</option>
+                          <option value="active">Active</option>
+                          <option value="delayed">Delayed</option>
+                          <option value="completed">Completed</option>
+                        </select>
+                      </div>
+                      <div className="grid grid-cols-4 items-center gap-4">
+                        <label htmlFor="startDate" className="text-right">
+                          Start Date*
+                        </label>
+                        <input
+                          id="startDate"
+                          name="startDate"
+                          type="date"
+                          className="col-span-3 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                          required
+                        />
+                      </div>
+                      <div className="grid grid-cols-4 items-center gap-4">
+                        <label htmlFor="endDate" className="text-right">
+                          End Date
+                        </label>
+                        <input
+                          id="endDate"
+                          name="endDate"
+                          type="date"
+                          className="col-span-3 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                        />
+                      </div>
+                      <div className="grid grid-cols-4 items-center gap-4">
+                        <label htmlFor="description" className="text-right">
+                          Description
+                        </label>
+                        <textarea
+                          id="description"
+                          name="description"
+                          className="col-span-3 flex h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                        />
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button 
+                        id="closeNewProjectDialog" 
+                        type="button" 
+                        variant="outline"
+                        onClick={() => document.querySelector('dialog')?.close()}
+                      >
+                        Cancel
+                      </Button>
+                      <Button type="submit">Create Project</Button>
+                    </DialogFooter>
+                  </form>
                 </DialogContent>
               </Dialog>
             </div>
