@@ -15,7 +15,6 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 export const SideNavigation = () => {
   const [location, setLocation] = useLocation();
@@ -73,11 +72,11 @@ export const SideNavigation = () => {
   return (
     <div 
       className={cn(
-        "h-screen bg-gray-900 text-white transition-all duration-300 flex flex-col", 
+        "h-screen bg-white border-r text-gray-700 transition-all duration-300 flex flex-col", 
         collapsed ? "w-16" : "w-64"
       )}
     >
-      <div className="p-4 flex items-center justify-between border-b border-gray-800">
+      <div className="p-4 flex items-center justify-between border-b border-gray-200">
         {!collapsed && (
           <div className="flex items-center gap-2">
             <HardHat className="h-6 w-6 text-primary" />
@@ -89,7 +88,7 @@ export const SideNavigation = () => {
           variant="ghost" 
           size="sm" 
           className={cn(
-            "text-gray-400 hover:text-white hover:bg-gray-800 p-1", 
+            "text-gray-500 hover:text-gray-900 hover:bg-gray-100 p-1", 
             collapsed && "mx-auto"
           )}
           onClick={() => setCollapsed(!collapsed)}
@@ -99,89 +98,41 @@ export const SideNavigation = () => {
       </div>
       
       <div className="flex-1 py-6 flex flex-col gap-2">
-        <TooltipProvider>
-          {navItems.map((item) => (
-            <div key={item.path} className="relative">
-              {collapsed ? (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="lg"
-                      className={cn(
-                        "w-full justify-start px-4 gap-3 rounded-none hover:bg-gray-800 relative h-12",
-                        isActive(item.path) && "bg-gray-800 font-medium"
-                      )}
-                      onClick={() => navigate(item.path)}
-                    >
-                      {isActive(item.path) && (
-                        <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary" />
-                      )}
-                      <span>{item.icon}</span>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="right">
-                    {item.label}
-                  </TooltipContent>
-                </Tooltip>
-              ) : (
-                <Button
-                  variant="ghost"
-                  size="lg"
-                  className={cn(
-                    "w-full justify-start px-4 gap-3 rounded-none hover:bg-gray-800 relative h-12",
-                    isActive(item.path) && "bg-gray-800 font-medium"
-                  )}
-                  onClick={() => navigate(item.path)}
-                >
-                  {isActive(item.path) && (
-                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary" />
-                  )}
-                  <span>{item.icon}</span>
-                  <span>{item.label}</span>
-                </Button>
-              )}
-            </div>
-          ))}
-        </TooltipProvider>
+        {navItems.map((item) => (
+          <Button
+            key={item.path}
+            variant="ghost"
+            size="lg"
+            className={cn(
+              "w-full justify-start px-4 gap-3 rounded-none hover:bg-gray-100 relative h-12",
+              isActive(item.path) && "bg-gray-100 text-primary font-medium"
+            )}
+            onClick={() => navigate(item.path)}
+            title={collapsed ? item.label : undefined}
+          >
+            {isActive(item.path) && (
+              <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary" />
+            )}
+            <span className={isActive(item.path) ? "text-primary" : "text-gray-600"}>{item.icon}</span>
+            {!collapsed && <span>{item.label}</span>}
+          </Button>
+        ))}
       </div>
       
-      <div className="p-4 border-t border-gray-800">
-        <TooltipProvider>
-          {collapsed ? (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="lg"
-                  className="w-full justify-start px-4 gap-3 rounded-none hover:bg-gray-800"
-                  onClick={() => {
-                    // Handle logout logic
-                    console.log("Logging out...");
-                  }}
-                >
-                  <LogOut className="h-5 w-5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="right">
-                Logout
-              </TooltipContent>
-            </Tooltip>
-          ) : (
-            <Button
-              variant="ghost"
-              size="lg"
-              className="w-full justify-start px-4 gap-3 rounded-none hover:bg-gray-800"
-              onClick={() => {
-                // Handle logout logic
-                console.log("Logging out...");
-              }}
-            >
-              <LogOut className="h-5 w-5" />
-              <span>Logout</span>
-            </Button>
-          )}
-        </TooltipProvider>
+      <div className="p-4 border-t border-gray-200">
+        <Button
+          variant="ghost"
+          size="lg"
+          className="w-full justify-start px-4 gap-3 rounded-none hover:bg-gray-100"
+          onClick={() => {
+            // Handle logout logic
+            console.log("Logging out...");
+          }}
+          title={collapsed ? "Logout" : undefined}
+        >
+          <LogOut className="h-5 w-5 text-gray-600" />
+          {!collapsed && <span>Logout</span>}
+        </Button>
       </div>
     </div>
   );
