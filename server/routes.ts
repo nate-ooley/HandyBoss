@@ -1099,14 +1099,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // User settings routes
-  app.get('/api/user-settings', async (req, res) => {
+  app.get('/api/user/settings', async (req, res) => {
     try {
-      // In a real app, this would get settings from the database
-      // For now, we'll just return default settings
-      // Note: req.session is not available because we haven't set up express-session
-      // This would be implemented with proper user authentication
-      
-      // Let's assume we have user settings stored by user ID
+      // Get settings for default user (in a real app, this would use authentication)
       const user = await storage.getUser(1); // Default user
       
       if (user && user.settings) {
@@ -1121,19 +1116,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.post('/api/user-settings', async (req, res) => {
+  app.post('/api/user/settings', async (req, res) => {
     try {
-      // In a real app, this would save settings to the database
-      // For now, we'll just log that we received the settings
+      // Validate settings with zod
+      const settingsValidator = z.object({
+        language: z.enum(['en', 'es']).optional(),
+        theme: z.enum(['light', 'dark', 'system']).optional(),
+        notifications: z.boolean().optional(),
+        soundEffects: z.boolean().optional(),
+        vibration: z.boolean().optional(),
+        voiceSpeed: z.number().min(0).max(100).optional(),
+        voiceVolume: z.number().min(0).max(100).optional(),
+        voiceLanguage: z.enum(['en', 'es']).optional(),
+        autoTranslate: z.boolean().optional(),
+        lowPowerMode: z.boolean().optional(),
+        emailNotifications: z.boolean().optional(),
+        smsNotifications: z.boolean().optional(),
+        pushNotifications: z.boolean().optional(),
+        notifyOnNewMessages: z.boolean().optional(),
+        notifyOnJobsiteUpdates: z.boolean().optional(),
+        notifyOnWeatherAlerts: z.boolean().optional(),
+        notifyOnSafetyIncidents: z.boolean().optional(),
+        quietHoursEnabled: z.boolean().optional(),
+        quietHoursStart: z.string().optional(),
+        quietHoursEnd: z.string().optional(),
+        locationSharing: z.boolean().optional(),
+        dataCollection: z.boolean().optional(),
+        biometricLogin: z.boolean().optional(),
+        autoLogout: z.number().min(0).optional()
+      }).passthrough(); // Allow additional properties
       
-      console.log('Received user settings:', req.body);
+      // Parse settings
+      const settings = settingsValidator.parse(req.body);
       
-      // Here you would save the settings to the user record
-      // const updated = await storage.updateUserSettings(1, req.body);
+      // Get current user
+      const user = await storage.getUser(1); // Default user
       
-      res.json({ success: true, message: 'Settings received' });
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      
+      // Update user settings (in a real app, this would be a formal database update)
+      // Here we're simulating it with a direct object manipulation
+      user.settings = {
+        ...(user.settings || {}),
+        ...settings
+      };
+      
+      // In a real app with a database, we would update the record
+      // For now, we'll just return success
+      
+      // Return the updated settings
+      res.json({ 
+        success: true, 
+        message: 'Settings saved successfully',
+        settings: user.settings
+      });
     } catch (error) {
       console.error('Error saving user settings:', error);
+      
+      // Handle validation errors
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          error: 'Invalid settings data', 
+          details: error.errors 
+        });
+      }
+      
       res.status(500).json({ error: 'Failed to save user settings' });
     }
   });

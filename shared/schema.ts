@@ -12,6 +12,7 @@ export const users = pgTable("users", {
   email: text("email"),
   phone: text("phone"),
   notificationPreference: text("notification_preference").default("none"), // none, email, sms, both
+  settings: json("settings").$type<Record<string, any>>(),
 });
 
 export const jobsites = pgTable("jobsites", {

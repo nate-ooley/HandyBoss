@@ -18,6 +18,7 @@ import { CrewPage as Crew } from "@/pages/Crew";
 import Settings from "@/pages/Settings";
 import { VoiceProvider } from "@/contexts/VoiceContext";
 import { WebSocketProvider } from "@/contexts/WebSocketContext";
+import { SettingsProvider } from "@/contexts/SettingsContext";
 import { MobileNavigation } from "@/components/MobileNavigation";
 import { useMobile } from "@/hooks/use-mobile";
 import { useEffect } from "react";
@@ -64,16 +65,18 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <WebSocketProvider>
-        <VoiceProvider>
-          <Router>
-            <AppRoutes />
-            {/* Global mobile navigation for all pages */}
-            {isMobile && <MobileNavigation />}
-            {/* Add spacing at the bottom for mobile navigation */}
-            {isMobile && <div className="h-16"></div>}
-          </Router>
-          <Toaster />
-        </VoiceProvider>
+        <SettingsProvider>
+          <VoiceProvider>
+            <Router>
+              <AppRoutes />
+              {/* Global mobile navigation for all pages */}
+              {isMobile && <MobileNavigation />}
+              {/* Add spacing at the bottom for mobile navigation */}
+              {isMobile && <div className="h-16"></div>}
+            </Router>
+            <Toaster />
+          </VoiceProvider>
+        </SettingsProvider>
       </WebSocketProvider>
     </QueryClientProvider>
   );
