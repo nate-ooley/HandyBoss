@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { SideNavigation } from '../components/SideNavigation';
 import { BossManHeader } from '../components/BossManHeader';
-import BossManCharacter from '../components/BossManCharacter.tsx';
+import BossManCharacter from "./BossManCharacter"';
 import { 
   Award, 
   Trophy, 

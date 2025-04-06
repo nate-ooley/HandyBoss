@@ -1,5 +1,5 @@
 import React from 'react';
-import BossManCharacter from './BossManCharacter.tsx';
+import BossManCharacter from "./BossManCharacter"';
 import { Clock, CloudRain } from 'lucide-react';
 import { Jobsite } from '../types';
 

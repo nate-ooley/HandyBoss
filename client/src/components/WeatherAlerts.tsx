@@ -1,5 +1,5 @@
 import React from 'react';
-import BossManCharacter from './BossManCharacter.tsx';
+import BossManCharacter from "./BossManCharacter"';
 import { Umbrella } from 'lucide-react';
 import { WeatherAlert as WeatherAlertType } from '../types';
 

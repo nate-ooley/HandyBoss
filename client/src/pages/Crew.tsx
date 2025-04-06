@@ -423,103 +423,71 @@ const CrewPage: React.FC = () => {
                           size="icon" 
                           variant="ghost" 
                           onClick={() => handleDeleteClick(crewMember)}
-                          className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50"
+                          className="h-8 w-8 text-red-500 hover:text-red-700"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
                     </div>
                   </CardHeader>
+                  
                   <CardContent className="pt-4">
-                    <div className="flex mb-4 items-center">
-                      <Avatar className="h-12 w-12 border-2 border-white shadow-sm">
-                        {crewMember.profileImage ? (
-                          <AvatarImage src={crewMember.profileImage} alt={crewMember.name} />
-                        ) : (
-                          <AvatarFallback className="bg-primary text-white">
-                            {crewMember.name.split(' ').map(n => n[0]).join('').toUpperCase()}
-                          </AvatarFallback>
-                        )}
-                      </Avatar>
-                      <div className="ml-3">
-                        <div className="flex items-center text-sm">
-                          <MapPin className="h-3.5 w-3.5 mr-1 text-gray-500" />
-                          <span className="text-gray-600">
-                            {getJobsiteName(crewMember.jobsiteId)}
-                          </span>
-                        </div>
-                        {crewMember.experienceYears && (
-                          <div className="flex items-center text-sm mt-1">
-                            <Award className="h-3.5 w-3.5 mr-1 text-gray-500" />
-                            <span className="text-gray-600">
-                              {crewMember.experienceYears} {crewMember.experienceYears === 1 ? 'year' : 'years'} experience
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
                     <div className="space-y-3">
+                      <div className="flex items-center text-sm text-gray-600 gap-1">
+                        <MapPin className="h-4 w-4 text-gray-400" /> 
+                        <span>{getJobsiteName(crewMember.jobsiteId)}</span>
+                      </div>
+                      
                       {crewMember.phone && (
-                        <div className="flex items-center text-sm">
-                          <Phone className="h-4 w-4 mr-2 text-gray-500" />
+                        <div className="flex items-center text-sm text-gray-600 gap-1">
+                          <Phone className="h-4 w-4 text-gray-400" /> 
                           <span>{crewMember.phone}</span>
                         </div>
                       )}
+                      
                       {crewMember.email && (
-                        <div className="flex items-center text-sm">
-                          <Mail className="h-4 w-4 mr-2 text-gray-500" />
+                        <div className="flex items-center text-sm text-gray-600 gap-1">
+                          <Mail className="h-4 w-4 text-gray-400" /> 
                           <span className="truncate">{crewMember.email}</span>
                         </div>
                       )}
+                      
+                      {crewMember.experienceYears && crewMember.experienceYears > 0 && (
+                        <div className="flex items-center text-sm text-gray-600 gap-1">
+                          <Calendar className="h-4 w-4 text-gray-400" /> 
+                          <span>{crewMember.experienceYears} {crewMember.experienceYears === 1 ? 'year' : 'years'} experience</span>
+                        </div>
+                      )}
+                      
                       {crewMember.languages && crewMember.languages.length > 0 && (
-                        <div className="flex items-center text-sm">
-                          <Languages className="h-4 w-4 mr-2 text-gray-500" />
-                          <span>{crewMember.languages.join(', ')}</span>
+                        <div className="flex items-start text-sm text-gray-600 gap-1">
+                          <Languages className="h-4 w-4 text-gray-400 mt-0.5" /> 
+                          <span>
+                            {crewMember.languages.join(', ')}
+                          </span>
                         </div>
                       )}
                     </div>
-
-                    {(crewMember.lastCheckIn || crewMember.locationName) && (
-                      <div className="mt-4 pt-4 border-t border-gray-100">
-                        {crewMember.lastCheckIn && (
-                          <div className="flex items-center text-xs text-gray-500 mb-1">
-                            <Clock className="h-3 w-3 mr-1" />
-                            <span>Last check-in: {new Date(crewMember.lastCheckIn).toLocaleString()}</span>
-                          </div>
-                        )}
-                        {crewMember.locationName && (
-                          <div className="flex items-center text-xs text-gray-500">
-                            <MapPin className="h-3 w-3 mr-1" />
-                            <span>Location: {crewMember.locationName}</span>
-                          </div>
-                        )}
+                    
+                    {crewMember.certifications && crewMember.certifications.length > 0 && (
+                      <div className="mt-4">
+                        <p className="text-xs text-gray-500 mb-2">Certifications:</p>
+                        <div className="flex flex-wrap gap-1">
+                          {crewMember.certifications.map((cert, idx) => (
+                            <Badge key={idx} variant="outline" className="text-xs py-0">
+                              <Shield className="h-3 w-3 mr-1 text-blue-500" />
+                              {cert}
+                            </Badge>
+                          ))}
+                        </div>
                       </div>
                     )}
                   </CardContent>
-                  <CardFooter className="bg-gray-50 border-t py-3">
-                    <div className="w-full flex justify-between items-center">
-                      <div className="flex space-x-1">
-                        {crewMember.certifications && crewMember.certifications.slice(0, 2).map((cert, i) => (
-                          <Badge variant="outline" key={i} className="bg-white">
-                            <Shield className="h-3 w-3 mr-1 text-primary" />
-                            {cert}
-                          </Badge>
-                        ))}
-                        {crewMember.certifications && crewMember.certifications.length > 2 && (
-                          <Badge variant="outline" className="bg-white">+{crewMember.certifications.length - 2}</Badge>
-                        )}
-                      </div>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="text-primary hover:text-primary"
-                        onClick={() => handleEditClick(crewMember)}
-                      >
-                        <Info className="h-4 w-4 mr-1" />
-                        Details
-                      </Button>
-                    </div>
+                  
+                  <CardFooter className="pt-0 flex justify-end">
+                    <Button variant="ghost" size="sm" asChild>
+                      <Link to={`/crew/${crewMember.id}`}>View Profile</Link>
+                    </Button>
                   </CardFooter>
                 </Card>
               ))}
@@ -527,54 +495,45 @@ const CrewPage: React.FC = () => {
           )}
         </div>
       </div>
-
+      
       {/* Add Crew Member Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        {isAddDialogOpen && (
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Add New Crew Member</DialogTitle>
-              <DialogDescription>
-                Enter the details of the new crew member below.
-              </DialogDescription>
-            </DialogHeader>
-
-          <form onSubmit={handleSubmit} className="space-y-6 py-4">
-            <Tabs defaultValue="basic" className="w-full">
-              <TabsList className="w-full grid grid-cols-3">
-                <TabsTrigger value="basic">Basic Info</TabsTrigger>
-                <TabsTrigger value="qualifications">Qualifications</TabsTrigger>
-                <TabsTrigger value="additional">Additional Details</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="basic" className="space-y-4 mt-4">
-                <div className="grid grid-cols-2 gap-4">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Add New Crew Member</DialogTitle>
+            <DialogDescription>
+              Add a new member to your construction crew. Fill out the required information.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <form onSubmit={handleSubmit}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4 md:col-span-2">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Full Name <span className="text-red-500">*</span></Label>
+                  <Input
+                    id="name"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    required
+                    placeholder="Enter full name"
+                  />
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="name">Full Name *</Label>
-                    <Input
-                      id="name"
-                      name="name"
-                      placeholder="John Doe"
-                      value={formData.name}
-                      onChange={handleInputChange}
-                      required
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="role">Role *</Label>
+                    <Label htmlFor="role">Role <span className="text-red-500">*</span></Label>
                     <Input
                       id="role"
                       name="role"
-                      placeholder="Construction Worker"
                       value={formData.role}
                       onChange={handleInputChange}
                       required
+                      placeholder="e.g. Foreman, Site Manager"
                     />
                   </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
+                  
                   <div className="space-y-2">
                     <Label htmlFor="specialization">Specialization</Label>
                     <Select
@@ -591,29 +550,17 @@ const CrewPage: React.FC = () => {
                       </SelectContent>
                     </Select>
                   </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="experienceYears">Years of Experience</Label>
-                    <Input
-                      id="experienceYears"
-                      name="experienceYears"
-                      type="number"
-                      min="0"
-                      value={formData.experienceYears}
-                      onChange={handleInputChange}
-                    />
-                  </div>
                 </div>
-
-                <div className="grid grid-cols-2 gap-4">
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="phone">Phone Number</Label>
                     <Input
                       id="phone"
                       name="phone"
-                      placeholder="+1 (555) 123-4567"
                       value={formData.phone}
                       onChange={handleInputChange}
+                      placeholder="(XXX) XXX-XXXX"
                     />
                   </div>
                   
@@ -623,25 +570,25 @@ const CrewPage: React.FC = () => {
                       id="email"
                       name="email"
                       type="email"
-                      placeholder="john.doe@example.com"
                       value={formData.email}
                       onChange={handleInputChange}
+                      placeholder="email@example.com"
                     />
                   </div>
                 </div>
-
-                <div className="grid grid-cols-2 gap-4">
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="jobsiteId">Assigned Jobsite</Label>
                     <Select
-                      value={formData.jobsiteId?.toString() || ""}
-                      onValueChange={(value) => handleSelectChange('jobsiteId', value ? parseInt(value) : null)}
+                      value={formData.jobsiteId?.toString() || "none"}
+                      onValueChange={(value) => handleSelectChange('jobsiteId', value !== "none" ? parseInt(value) : null)}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select jobsite" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Not Assigned</SelectItem>
+                        <SelectItem value="none">Not Assigned</SelectItem>
                         {jobsites.map((jobsite: any) => (
                           <SelectItem key={jobsite.id} value={jobsite.id.toString()}>
                             {jobsite.name}
@@ -658,7 +605,7 @@ const CrewPage: React.FC = () => {
                       onValueChange={(value) => handleSelectChange('status', value)}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select status" />
+                        <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="active">Active</SelectItem>
@@ -668,194 +615,182 @@ const CrewPage: React.FC = () => {
                     </Select>
                   </div>
                 </div>
-              </TabsContent>
-              
-              <TabsContent value="qualifications" className="space-y-4 mt-4">
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="experienceYears">Years of Experience</Label>
+                    <Input
+                      id="experienceYears"
+                      name="experienceYears"
+                      type="number"
+                      min="0"
+                      max="50"
+                      value={formData.experienceYears}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="emergencyContact">Emergency Contact</Label>
+                    <Input
+                      id="emergencyContact"
+                      name="emergencyContact"
+                      value={formData.emergencyContact}
+                      onChange={handleInputChange}
+                      placeholder="Name: (XXX) XXX-XXXX"
+                    />
+                  </div>
+                </div>
+                
                 <div className="space-y-2">
                   <Label>Certifications</Label>
-                  <div className="flex space-x-2">
+                  <div className="flex gap-2">
                     <Input
-                      placeholder="Add certification..."
                       value={newCertification}
                       onChange={(e) => setNewCertification(e.target.value)}
+                      placeholder="Add certification"
                       className="flex-1"
                     />
                     <Button 
-                      type="button"
+                      type="button" 
+                      variant="outline" 
                       onClick={handleAddCertification}
                       disabled={!newCertification.trim()}
                     >
                       Add
                     </Button>
                   </div>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {formData.certifications.map((cert, index) => (
-                      <Badge key={index} variant="secondary" className="flex items-center space-x-1 py-1.5 pl-2">
-                        <span>{cert}</span>
-                        <Button 
-                          type="button"
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-4 w-4 rounded-full ml-1"
-                          onClick={() => handleRemoveCertification(cert)}
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </Badge>
-                    ))}
-                  </div>
+                  {formData.certifications.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {formData.certifications.map((cert, idx) => (
+                        <Badge key={idx} variant="secondary" className="flex items-center gap-1 py-1">
+                          <Shield className="h-3 w-3" />
+                          <span>{cert}</span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            onClick={() => handleRemoveCertification(cert)}
+                            className="h-4 w-4 p-0 ml-1"
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
                 </div>
-
+                
                 <div className="space-y-2">
                   <Label>Languages</Label>
-                  <div className="flex space-x-2">
+                  <div className="flex gap-2">
                     <Input
-                      placeholder="Add language..."
                       value={newLanguage}
                       onChange={(e) => setNewLanguage(e.target.value)}
+                      placeholder="Add language"
                       className="flex-1"
                     />
                     <Button 
-                      type="button"
+                      type="button" 
+                      variant="outline" 
                       onClick={handleAddLanguage}
                       disabled={!newLanguage.trim()}
                     >
                       Add
                     </Button>
                   </div>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {formData.languages.map((lang, index) => (
-                      <Badge key={index} variant="secondary" className="flex items-center space-x-1 py-1.5 pl-2">
-                        <span>{lang}</span>
-                        <Button 
-                          type="button"
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-4 w-4 rounded-full ml-1"
-                          onClick={() => handleRemoveLanguage(lang)}
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </Badge>
-                    ))}
-                  </div>
+                  {formData.languages.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {formData.languages.map((lang, idx) => (
+                        <Badge key={idx} variant="secondary" className="flex items-center gap-1 py-1">
+                          <Languages className="h-3 w-3" />
+                          <span>{lang}</span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            onClick={() => handleRemoveLanguage(lang)}
+                            className="h-4 w-4 p-0 ml-1"
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              </TabsContent>
-              
-              <TabsContent value="additional" className="space-y-4 mt-4">
-                <div className="space-y-2">
-                  <Label htmlFor="emergencyContact">Emergency Contact</Label>
-                  <Input
-                    id="emergencyContact"
-                    name="emergencyContact"
-                    placeholder="Name: Jane Doe, Phone: (555) 987-6543"
-                    value={formData.emergencyContact}
-                    onChange={handleInputChange}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="profileImage">Profile Image URL</Label>
-                  <Input
-                    id="profileImage"
-                    name="profileImage"
-                    placeholder="https://example.com/profile.jpg"
-                    value={formData.profileImage || ''}
-                    onChange={handleInputChange}
-                  />
-                </div>
-
+                
                 <div className="space-y-2">
                   <Label htmlFor="notes">Notes</Label>
                   <Textarea
                     id="notes"
                     name="notes"
-                    placeholder="Additional information about this crew member..."
-                    rows={4}
                     value={formData.notes}
                     onChange={handleInputChange}
+                    placeholder="Additional information about this crew member..."
+                    className="min-h-[100px]"
                   />
                 </div>
-              </TabsContent>
-            </Tabs>
-
-            <DialogFooter>
+              </div>
+            </div>
+            
+            <DialogFooter className="mt-6">
               <Button 
                 type="button" 
                 variant="outline" 
-                onClick={() => {
-                  setIsAddDialogOpen(false);
-                  setFormData(getInitialFormData());
-                }}
+                onClick={() => setIsAddDialogOpen(false)}
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={addCrewMutation.isPending}>
-                {addCrewMutation.isPending ? (
-                  <>
-                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Saving...
-                  </>
-                ) : 'Add Crew Member'}
+              <Button 
+                type="submit" 
+                disabled={!formData.name || !formData.role || addCrewMutation.isPending}
+              >
+                {addCrewMutation.isPending ? 'Adding...' : 'Add Crew Member'}
               </Button>
             </DialogFooter>
           </form>
         </DialogContent>
-        )}
       </Dialog>
-
+      
       {/* Edit Crew Member Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        {isEditDialogOpen && (
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Edit Crew Member</DialogTitle>
-              <DialogDescription>
-                Update the details of {selectedCrewMember?.name || 'this crew member'}.
-              </DialogDescription>
-            </DialogHeader>
-
-          <form onSubmit={handleSubmit} className="space-y-6 py-4">
-            <Tabs defaultValue="basic" className="w-full">
-              <TabsList className="w-full grid grid-cols-3">
-                <TabsTrigger value="basic">Basic Info</TabsTrigger>
-                <TabsTrigger value="qualifications">Qualifications</TabsTrigger>
-                <TabsTrigger value="additional">Additional Details</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="basic" className="space-y-4 mt-4">
-                <div className="grid grid-cols-2 gap-4">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Crew Member</DialogTitle>
+            <DialogDescription>
+              Update information for {selectedCrewMember?.name}.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <form onSubmit={handleSubmit}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4 md:col-span-2">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Full Name <span className="text-red-500">*</span></Label>
+                  <Input
+                    id="name"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    required
+                    placeholder="Enter full name"
+                  />
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="edit-name">Full Name *</Label>
+                    <Label htmlFor="role">Role <span className="text-red-500">*</span></Label>
                     <Input
-                      id="edit-name"
-                      name="name"
-                      placeholder="John Doe"
-                      value={formData.name}
+                      id="role"
+                      name="role"
+                      value={formData.role}
                       onChange={handleInputChange}
                       required
+                      placeholder="e.g. Foreman, Site Manager"
                     />
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="edit-role">Role *</Label>
-                    <Input
-                      id="edit-role"
-                      name="role"
-                      placeholder="Construction Worker"
-                      value={formData.role}
-                      onChange={handleInputChange}
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-specialization">Specialization</Label>
+                    <Label htmlFor="specialization">Specialization</Label>
                     <Select
                       value={formData.specialization}
                       onValueChange={(value) => handleSelectChange('specialization', value)}
@@ -870,57 +805,45 @@ const CrewPage: React.FC = () => {
                       </SelectContent>
                     </Select>
                   </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-experienceYears">Years of Experience</Label>
-                    <Input
-                      id="edit-experienceYears"
-                      name="experienceYears"
-                      type="number"
-                      min="0"
-                      value={formData.experienceYears}
-                      onChange={handleInputChange}
-                    />
-                  </div>
                 </div>
-
-                <div className="grid grid-cols-2 gap-4">
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="edit-phone">Phone Number</Label>
+                    <Label htmlFor="phone">Phone Number</Label>
                     <Input
-                      id="edit-phone"
+                      id="phone"
                       name="phone"
-                      placeholder="+1 (555) 123-4567"
                       value={formData.phone}
                       onChange={handleInputChange}
+                      placeholder="(XXX) XXX-XXXX"
                     />
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="edit-email">Email Address</Label>
+                    <Label htmlFor="email">Email Address</Label>
                     <Input
-                      id="edit-email"
+                      id="email"
                       name="email"
                       type="email"
-                      placeholder="john.doe@example.com"
                       value={formData.email}
                       onChange={handleInputChange}
+                      placeholder="email@example.com"
                     />
                   </div>
                 </div>
-
-                <div className="grid grid-cols-2 gap-4">
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="edit-jobsiteId">Assigned Jobsite</Label>
+                    <Label htmlFor="jobsiteId">Assigned Jobsite</Label>
                     <Select
-                      value={formData.jobsiteId?.toString() || ""}
-                      onValueChange={(value) => handleSelectChange('jobsiteId', value ? parseInt(value) : null)}
+                      value={formData.jobsiteId?.toString() || "none"}
+                      onValueChange={(value) => handleSelectChange('jobsiteId', value !== "none" ? parseInt(value) : null)}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select jobsite" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Not Assigned</SelectItem>
+                        <SelectItem value="none">Not Assigned</SelectItem>
                         {jobsites.map((jobsite: any) => (
                           <SelectItem key={jobsite.id} value={jobsite.id.toString()}>
                             {jobsite.name}
@@ -931,13 +854,13 @@ const CrewPage: React.FC = () => {
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="edit-status">Status</Label>
+                    <Label htmlFor="status">Status</Label>
                     <Select
                       value={formData.status}
                       onValueChange={(value) => handleSelectChange('status', value)}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select status" />
+                        <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="active">Active</SelectItem>
@@ -947,209 +870,168 @@ const CrewPage: React.FC = () => {
                     </Select>
                   </div>
                 </div>
-
-                {selectedCrewMember?.latitude && selectedCrewMember?.longitude && (
-                  <div className="mt-2">
-                    <div className="bg-gray-50 p-4 rounded-md">
-                      <h4 className="text-sm font-medium flex items-center mb-2">
-                        <MapPin className="h-4 w-4 mr-1 text-gray-500" />
-                        Last Known Location
-                      </h4>
-                      <div className="text-sm text-gray-600">
-                        {selectedCrewMember.locationName && (
-                          <div className="mb-1">{selectedCrewMember.locationName}</div>
-                        )}
-                        <div className="text-xs text-gray-500">
-                          Coordinates: {selectedCrewMember.latitude}, {selectedCrewMember.longitude}
-                        </div>
-                        {selectedCrewMember.lastCheckIn && (
-                          <div className="text-xs text-gray-500 mt-1">
-                            Checked in: {new Date(selectedCrewMember.lastCheckIn).toLocaleString()}
-                          </div>
-                        )}
-                      </div>
-                    </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="experienceYears">Years of Experience</Label>
+                    <Input
+                      id="experienceYears"
+                      name="experienceYears"
+                      type="number"
+                      min="0"
+                      max="50"
+                      value={formData.experienceYears}
+                      onChange={handleInputChange}
+                    />
                   </div>
-                )}
-              </TabsContent>
-              
-              <TabsContent value="qualifications" className="space-y-4 mt-4">
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="emergencyContact">Emergency Contact</Label>
+                    <Input
+                      id="emergencyContact"
+                      name="emergencyContact"
+                      value={formData.emergencyContact}
+                      onChange={handleInputChange}
+                      placeholder="Name: (XXX) XXX-XXXX"
+                    />
+                  </div>
+                </div>
+                
                 <div className="space-y-2">
                   <Label>Certifications</Label>
-                  <div className="flex space-x-2">
+                  <div className="flex gap-2">
                     <Input
-                      placeholder="Add certification..."
                       value={newCertification}
                       onChange={(e) => setNewCertification(e.target.value)}
+                      placeholder="Add certification"
                       className="flex-1"
                     />
                     <Button 
-                      type="button"
+                      type="button" 
+                      variant="outline" 
                       onClick={handleAddCertification}
                       disabled={!newCertification.trim()}
                     >
                       Add
                     </Button>
                   </div>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {formData.certifications.map((cert, index) => (
-                      <Badge key={index} variant="secondary" className="flex items-center space-x-1 py-1.5 pl-2">
-                        <span>{cert}</span>
-                        <Button 
-                          type="button"
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-4 w-4 rounded-full ml-1"
-                          onClick={() => handleRemoveCertification(cert)}
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </Badge>
-                    ))}
-                  </div>
+                  {formData.certifications.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {formData.certifications.map((cert, idx) => (
+                        <Badge key={idx} variant="secondary" className="flex items-center gap-1 py-1">
+                          <Shield className="h-3 w-3" />
+                          <span>{cert}</span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            onClick={() => handleRemoveCertification(cert)}
+                            className="h-4 w-4 p-0 ml-1"
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
                 </div>
-
+                
                 <div className="space-y-2">
                   <Label>Languages</Label>
-                  <div className="flex space-x-2">
+                  <div className="flex gap-2">
                     <Input
-                      placeholder="Add language..."
                       value={newLanguage}
                       onChange={(e) => setNewLanguage(e.target.value)}
+                      placeholder="Add language"
                       className="flex-1"
                     />
                     <Button 
-                      type="button"
+                      type="button" 
+                      variant="outline" 
                       onClick={handleAddLanguage}
                       disabled={!newLanguage.trim()}
                     >
                       Add
                     </Button>
                   </div>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {formData.languages.map((lang, index) => (
-                      <Badge key={index} variant="secondary" className="flex items-center space-x-1 py-1.5 pl-2">
-                        <span>{lang}</span>
-                        <Button 
-                          type="button"
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-4 w-4 rounded-full ml-1"
-                          onClick={() => handleRemoveLanguage(lang)}
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </Badge>
-                    ))}
-                  </div>
+                  {formData.languages.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {formData.languages.map((lang, idx) => (
+                        <Badge key={idx} variant="secondary" className="flex items-center gap-1 py-1">
+                          <Languages className="h-3 w-3" />
+                          <span>{lang}</span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            onClick={() => handleRemoveLanguage(lang)}
+                            className="h-4 w-4 p-0 ml-1"
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              </TabsContent>
-              
-              <TabsContent value="additional" className="space-y-4 mt-4">
+                
                 <div className="space-y-2">
-                  <Label htmlFor="edit-emergencyContact">Emergency Contact</Label>
-                  <Input
-                    id="edit-emergencyContact"
-                    name="emergencyContact"
-                    placeholder="Name: Jane Doe, Phone: (555) 987-6543"
-                    value={formData.emergencyContact}
-                    onChange={handleInputChange}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="edit-profileImage">Profile Image URL</Label>
-                  <Input
-                    id="edit-profileImage"
-                    name="profileImage"
-                    placeholder="https://example.com/profile.jpg"
-                    value={formData.profileImage || ''}
-                    onChange={handleInputChange}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="edit-notes">Notes</Label>
+                  <Label htmlFor="notes">Notes</Label>
                   <Textarea
-                    id="edit-notes"
+                    id="notes"
                     name="notes"
-                    placeholder="Additional information about this crew member..."
-                    rows={4}
                     value={formData.notes}
                     onChange={handleInputChange}
+                    placeholder="Additional information about this crew member..."
+                    className="min-h-[100px]"
                   />
                 </div>
-              </TabsContent>
-            </Tabs>
-
-            <DialogFooter>
+              </div>
+            </div>
+            
+            <DialogFooter className="mt-6">
               <Button 
                 type="button" 
                 variant="outline" 
-                onClick={() => {
-                  setIsEditDialogOpen(false);
-                  setSelectedCrewMember(null);
-                }}
+                onClick={() => setIsEditDialogOpen(false)}
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={updateCrewMutation.isPending}>
-                {updateCrewMutation.isPending ? (
-                  <>
-                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Saving...
-                  </>
-                ) : 'Save Changes'}
+              <Button 
+                type="submit" 
+                disabled={!formData.name || !formData.role || updateCrewMutation.isPending}
+              >
+                {updateCrewMutation.isPending ? 'Saving...' : 'Save Changes'}
               </Button>
             </DialogFooter>
           </form>
         </DialogContent>
-        )}
       </Dialog>
-
+      
       {/* Delete Confirmation Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        {isDeleteDialogOpen && (
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Confirm Deletion</DialogTitle>
-              <DialogDescription>
-                Are you sure you want to delete {selectedCrewMember?.name}? This action cannot be undone.
-              </DialogDescription>
-            </DialogHeader>
-          <DialogFooter className="gap-2 sm:gap-0">
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Confirm Deletion</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete {selectedCrewMember?.name}? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <DialogFooter className="mt-4">
             <Button 
-              type="button" 
               variant="outline" 
-              onClick={() => {
-                setIsDeleteDialogOpen(false);
-                setSelectedCrewMember(null);
-              }}
+              onClick={() => setIsDeleteDialogOpen(false)}
             >
               Cancel
             </Button>
             <Button 
-              type="button" 
               variant="destructive" 
               onClick={() => selectedCrewMember && deleteCrewMutation.mutate(selectedCrewMember.id)}
               disabled={deleteCrewMutation.isPending}
             >
-              {deleteCrewMutation.isPending ? (
-                <>
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Deleting...
-                </>
-              ) : 'Delete'}
+              {deleteCrewMutation.isPending ? 'Deleting...' : 'Delete'}
             </Button>
           </DialogFooter>
         </DialogContent>
-        )}
       </Dialog>
     </div>
   );

@@ -1,5 +1,5 @@
 import React from 'react';
-import BossManCharacter from './BossManCharacter.tsx';
+import BossManCharacter from "./BossManCharacter";
 import { Button } from '@/components/ui/button';
 import { MapPin } from 'lucide-react';
 import { Command } from '../types';

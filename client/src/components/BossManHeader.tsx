@@ -1,6 +1,6 @@
 import React from 'react';
 import { Mic, MicOff, UserCircle, ChevronLeft } from 'lucide-react';
-import BossManCharacter from './BossManCharacter.tsx';
+import BossManCharacter from "./BossManCharacter";
 import { Button } from './ui/button';
 import { Switch } from './ui/switch';
 import { Label } from './ui/label';
