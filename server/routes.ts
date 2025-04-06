@@ -1098,6 +1098,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  app.post('/api/jobsites', async (req, res) => {
+    try {
+      const { name, address, status, startDate, endDate, description, progress, location } = req.body;
+      
+      if (!name || !address || !status || !startDate) {
+        return res.status(400).json({ 
+          error: 'Missing required fields: name, address, status, and startDate are required' 
+        });
+      }
+      
+      console.log('Creating new jobsite:', req.body);
+      
+      // Convert dates to Date objects
+      const jobsiteData = {
+        name,
+        address,
+        status,
+        description: description || null,
+        progress: progress || 0,
+        time: new Date().toISOString(),
+        startDate: new Date(startDate),
+        endDate: endDate ? new Date(endDate) : null,
+        location: location || null
+      };
+      
+      const newJobsite = await storage.createJobsite(jobsiteData);
+      
+      console.log('Created jobsite:', newJobsite);
+      res.status(201).json(newJobsite);
+    } catch (error) {
+      console.error('Error creating jobsite:', error);
+      res.status(500).json({ 
+        error: 'Failed to create jobsite',
+        message: error.message
+      });
+    }
+  });
+  
   app.get('/api/jobsites', async (req, res) => {
     const jobsites = await storage.getJobsites();
     res.json(jobsites);

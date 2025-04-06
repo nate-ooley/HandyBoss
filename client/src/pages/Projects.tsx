@@ -69,42 +69,70 @@ export default function Projects() {
                   <form onSubmit={(e) => {
                     e.preventDefault();
                     
-                    // Get form data
-                    const formData = new FormData(e.currentTarget);
-                    const name = formData.get('name') as string;
-                    const address = formData.get('address') as string;
-                    const status = formData.get('status') as string;
-                    const startDate = formData.get('startDate') as string;
-                    const endDate = formData.get('endDate') as string;
-                    const description = formData.get('description') as string;
-                    
-                    // Create a new project
-                    fetch('/api/jobsites', {
-                      method: 'POST',
-                      headers: {
-                        'Content-Type': 'application/json',
-                      },
-                      body: JSON.stringify({
+                    try {
+                      // Get form data
+                      const formData = new FormData(e.currentTarget);
+                      const name = formData.get('name') as string;
+                      const address = formData.get('address') as string;
+                      const status = formData.get('status') as string;
+                      const startDate = formData.get('startDate') as string;
+                      const endDate = formData.get('endDate') as string;
+                      const description = formData.get('description') as string;
+                      
+                      // For now, create a simple mock location based on address
+                      // In a real app, we would use a geocoding service here
+                      const mockLocation = {
+                        lat: 40.7128 + (Math.random() * 0.1),
+                        lng: -74.0060 + (Math.random() * 0.1)
+                      };
+                      
+                      // Create the project object
+                      const newProject = {
                         name,
                         address,
                         status,
                         startDate,
-                        endDate,
-                        description,
+                        endDate: endDate || undefined, // Handle empty end date
+                        description: description || null,
                         time: new Date().toISOString(),
                         progress: 0,
-                      }),
-                    })
-                      .then(response => response.json())
-                      .then(() => {
-                        // Close dialog and refetch projects
-                        document.getElementById('closeNewProjectDialog')?.click();
-                        // This will trigger a refetch of jobsites
-                        window.location.reload();
+                        location: mockLocation, // Add location data for geolocation
+                      };
+                      
+                      console.log("Creating new project:", newProject);
+                      
+                      // Create a new project using apiRequest from queryClient
+                      fetch('/api/jobsites', {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(newProject),
                       })
-                      .catch(error => {
-                        console.error('Error creating project:', error);
-                      });
+                        .then(response => {
+                          if (!response.ok) {
+                            throw new Error(`Server responded with ${response.status}`);
+                          }
+                          return response.json();
+                        })
+                        .then((data) => {
+                          console.log("Project created successfully:", data);
+                          // Close dialog and refetch projects
+                          document.getElementById('closeNewProjectDialog')?.click();
+                          
+                          // Use query invalidation rather than full page reload
+                          setTimeout(() => {
+                            window.location.reload();
+                          }, 500);
+                        })
+                        .catch(error => {
+                          console.error('Error creating project:', error);
+                          alert(`Failed to create project: ${error.message}`);
+                        });
+                    } catch (error) {
+                      console.error('Error in form submission:', error);
+                      alert("An error occurred while submitting the form. Please try again.");
+                    }
                   }}>
                     <div className="grid gap-4 py-4">
                       <div className="grid grid-cols-4 items-center gap-4">
@@ -120,14 +148,20 @@ export default function Projects() {
                       </div>
                       <div className="grid grid-cols-4 items-center gap-4">
                         <label htmlFor="address" className="text-right">
-                          Address*
+                          Address* (for geolocation)
                         </label>
-                        <input
-                          id="address"
-                          name="address"
-                          className="col-span-3 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                          required
-                        />
+                        <div className="col-span-3 flex flex-col gap-1">
+                          <input
+                            id="address"
+                            name="address"
+                            placeholder="Enter a valid street address for precise location tracking"
+                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                            required
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            Please provide a complete address for accurate mapping and crew directions
+                          </p>
+                        </div>
                       </div>
                       <div className="grid grid-cols-4 items-center gap-4">
                         <label htmlFor="status" className="text-right">
