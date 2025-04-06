@@ -586,7 +586,7 @@ export default function Calendar() {
                                       {format(day, 'MMMM do, yyyy')}
                                     </CardDescription>
                                   </CardHeader>
-                                  <CardContent className="p-4 pt-2 max-h-[55vh] overflow-y-auto">
+                                  <CardContent className="p-4 pt-2 pb-6 max-h-[55vh] overflow-y-auto">
                                     <div className="space-y-3">
                                       {isLoading ? (
                                         <div className="flex justify-center py-8">
@@ -652,7 +652,7 @@ export default function Calendar() {
                     <div className="mt-4">
                       <Tabs value={view}>
                         <TabsContent value="month" className="space-y-3 sm:space-y-4">
-                          <div className="max-h-[60vh] overflow-y-auto pr-1">
+                          <div className="max-h-[60vh] overflow-y-auto pr-1 pb-4">
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
                               {filteredEvents.map(event => (
                                 <Card 
@@ -702,7 +702,7 @@ export default function Calendar() {
                         </TabsContent>
 
                         <TabsContent value="list" className="space-y-2 sm:space-y-4">
-                          <div className="space-y-2 sm:space-y-4 max-h-[60vh] overflow-y-auto pr-1">
+                          <div className="space-y-2 sm:space-y-4 max-h-[60vh] overflow-y-auto pr-1 pb-4">
                             {filteredEvents.length > 0 ? (
                               filteredEvents
                                 .sort((a, b) => a.date.getTime() - b.date.getTime())

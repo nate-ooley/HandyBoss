@@ -176,7 +176,7 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* Floating Security Incident Button */}
-      <div className="fixed bottom-20 right-6 sm:bottom-6 z-30">
+      <div className="fixed bottom-20 right-6 sm:bottom-6 z-50">
         <button 
           onClick={() => {
             // Call the Socket WebSocket API with a command
@@ -198,7 +198,7 @@ const Dashboard: React.FC = () => {
               alert('Security incident reported. The boss has been notified.');
             };
           }}
-          className="bg-red-600 hover:bg-red-700 text-white rounded-full w-16 h-16 flex items-center justify-center shadow-lg"
+          className="bg-red-600 hover:bg-red-700 text-white rounded-full w-16 h-16 flex items-center justify-center shadow-lg animate-pulse hover:animate-none"
           title="Report Security Incident"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
