@@ -56,6 +56,9 @@ interface ProjectMember {
 export default function Projects() {
   const [selectedTab, setSelectedTab] = useState<string>('active');
   const [isAddCrewDialogOpen, setIsAddCrewDialogOpen] = useState(false);
+  const [isNewProjectDialogOpen, setIsNewProjectDialogOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isAddingCrewMember, setIsAddingCrewMember] = useState(false);
   const [selectedCrewMember, setSelectedCrewMember] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const queryClient = useQueryClient();
@@ -175,13 +178,20 @@ export default function Projects() {
   
   // Handle adding crew member to project
   const handleAddCrewToProject = () => {
-    if (!projectId || !selectedCrewMember) return;
+    if (!projectId || !selectedCrewMember || isAddingCrewMember) return;
     
-    addCrewToProjectMutation.mutate({
-      projectId,
-      crewMemberId: selectedCrewMember,
-      role: "crew-member" // Default role
-    });
+    try {
+      setIsAddingCrewMember(true);
+      addCrewToProjectMutation.mutate({
+        projectId,
+        crewMemberId: selectedCrewMember,
+        role: "crew-member" // Default role
+      });
+    } finally {
+      // The mutation callbacks will handle success/error states
+      // This ensures the button state is reset regardless
+      setIsAddingCrewMember(false);
+    }
   };
   
   // Filter crew members that are not already assigned to the project
@@ -465,9 +475,9 @@ export default function Projects() {
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold tracking-tight">Projects</h1>
             <div className="flex items-center gap-4">
-              <Dialog>
+              <Dialog open={isNewProjectDialogOpen} onOpenChange={setIsNewProjectDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button className="gap-1">
+                  <Button className="gap-1" onClick={() => setIsNewProjectDialogOpen(true)}>
                     <span>New Project</span>
                   </Button>
                 </DialogTrigger>
@@ -481,10 +491,15 @@ export default function Projects() {
                   <form 
                     onSubmit={async (e) => {
                       e.preventDefault();
-                      const formData = new FormData(e.target as HTMLFormElement);
-                      const formValues = Object.fromEntries(formData.entries());
+                      
+                      // Prevent multiple form submissions
+                      if (isSubmitting) return;
                       
                       try {
+                        setIsSubmitting(true);
+                        const formData = new FormData(e.target as HTMLFormElement);
+                        const formValues = Object.fromEntries(formData.entries());
+                        
                         const response = await apiRequest("POST", "/api/jobsites", formValues);
                         if (!response.ok) {
                           const errorData = await response.json();
@@ -496,11 +511,8 @@ export default function Projects() {
                         // Reset form and close the dialog
                         (e.target as HTMLFormElement).reset();
                         
-                        // Use the Radix UI way to close the dialog
-                        const closeButton = document.querySelector('[data-radix-collection-item]');
-                        if (closeButton instanceof HTMLElement) {
-                          closeButton.click();
-                        }
+                        // Close the dialog programmatically without using DOM manipulation
+                        setIsNewProjectDialogOpen(false);
                         
                         // Invalidate queries to refresh data
                         queryClient.invalidateQueries({ queryKey: ['/api/jobsites'] });
@@ -518,6 +530,8 @@ export default function Projects() {
                           description: error.message || "Failed to create project",
                           variant: "destructive",
                         });
+                      } finally {
+                        setIsSubmitting(false);
                       }
                     }}
                     className="space-y-6"
@@ -606,7 +620,7 @@ export default function Projects() {
                         id="closeNewProjectDialog" 
                         type="button" 
                         variant="outline"
-                        onClick={() => setLocation("projects")}
+                        onClick={() => setIsNewProjectDialogOpen(false)}
                       >
                         Cancel
                       </Button>
