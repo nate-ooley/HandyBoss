@@ -1,110 +1,159 @@
-import React from 'react';
-import { Link, useLocation } from 'wouter';
-import { LayoutDashboard, Building, HardHat, Package, Drill, Calendar, Mic, Globe, Languages, Trophy, Award, CreditCard, DollarSign } from 'lucide-react';
+import { useLocation } from "wouter";
+import { useEffect, useState } from "react";
+import { 
+  Home, 
+  Briefcase, 
+  Users, 
+  Calendar, 
+  MessageSquare,
+  Mic,
+  Settings,
+  HardHat,
+  LogOut,
+  ChevronRight,
+  ChevronLeft
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
-interface NavItem {
-  href: string;
-  icon: React.ReactNode;
-  label: string;
-  featured?: boolean;
-}
+export const SideNavigation = () => {
+  const [location, setLocation] = useLocation();
+  const [collapsed, setCollapsed] = useState(false);
 
-export const SideNavigation: React.FC<React.PropsWithChildren> = ({ children }) => {
-  const [location] = useLocation();
+  // Handle navigation
+  const navigate = (to: string) => {
+    setLocation(to);
+  };
 
-  const navItems: NavItem[] = [
-    {
-      href: '/dashboard',
-      icon: <LayoutDashboard className="h-5 w-5" />,
-      label: 'Dashboard'
+  // Check if route is active
+  const isActive = (path: string) => {
+    if (path === "/dashboard" && location === "/") return true;
+    return location.startsWith(path);
+  };
+
+  const navItems = [
+    { 
+      label: "Dashboard", 
+      icon: <Home className="h-5 w-5" />, 
+      path: "/dashboard" 
     },
-    {
-      href: '/translate',
-      icon: <Languages className="h-5 w-5" />,
-      label: 'Translator',
-      featured: true
+    { 
+      label: "Projects", 
+      icon: <Briefcase className="h-5 w-5" />, 
+      path: "/projects" 
     },
-    {
-      href: '/team-progress',
-      icon: <Trophy className="h-5 w-5" />,
-      label: 'Team Progress',
-      featured: true
+    { 
+      label: "Crew", 
+      icon: <Users className="h-5 w-5" />, 
+      path: "/crew" 
     },
-    {
-      href: '/calendar',
-      icon: <Calendar className="h-5 w-5" />,
-      label: 'Calendar'
+    { 
+      label: "Calendar", 
+      icon: <Calendar className="h-5 w-5" />, 
+      path: "/calendar" 
     },
-    {
-      href: '/boss-demo',
-      icon: <Mic className="h-5 w-5" />,
-      label: 'BossMan Demo'
+    { 
+      label: "Chat", 
+      icon: <MessageSquare className="h-5 w-5" />, 
+      path: "/translate" 
     },
-    {
-      href: '/jobsites',
-      icon: <Building className="h-5 w-5" />,
-      label: 'Jobsites'
+    { 
+      label: "Voice Commands", 
+      icon: <Mic className="h-5 w-5" />, 
+      path: "/voice-commands" 
     },
-    {
-      href: '/crew',
-      icon: <HardHat className="h-5 w-5" />,
-      label: 'Crew'
-    },
-    {
-      href: '/materials',
-      icon: <Package className="h-5 w-5" />,
-      label: 'Materials'
-    },
-    {
-      href: '/equipment',
-      icon: <Drill className="h-5 w-5" />,
-      label: 'Equipment'
-    },
-    {
-      href: '/checkout',
-      icon: <CreditCard className="h-5 w-5" />,
-      label: 'One-time Payment'
-    },
-    {
-      href: '/subscribe',
-      icon: <DollarSign className="h-5 w-5" />,
-      label: 'Subscription',
-      featured: true
+    { 
+      label: "Settings", 
+      icon: <Settings className="h-5 w-5" />, 
+      path: "/settings" 
     }
   ];
 
   return (
-    <div className="w-64 border-r border-gray-200 min-h-screen">
-      <nav className="p-4">
-        <ul className="space-y-2">
+    <div 
+      className={cn(
+        "h-screen bg-gray-900 text-white transition-all duration-300 flex flex-col", 
+        collapsed ? "w-16" : "w-64"
+      )}
+    >
+      <div className="p-4 flex items-center justify-between border-b border-gray-800">
+        {!collapsed && (
+          <div className="flex items-center gap-2">
+            <HardHat className="h-6 w-6 text-primary" />
+            <h1 className="text-xl font-bold">BossMan</h1>
+          </div>
+        )}
+        
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className={cn(
+            "text-gray-400 hover:text-white hover:bg-gray-800 p-1", 
+            collapsed && "mx-auto"
+          )}
+          onClick={() => setCollapsed(!collapsed)}
+        >
+          {collapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
+        </Button>
+      </div>
+      
+      <div className="flex-1 py-6 flex flex-col gap-2">
+        <TooltipProvider delayDuration={0}>
           {navItems.map((item) => (
-            <li key={item.href}>
-              <Link href={item.href} 
-                className={`
-                  flex items-center space-x-3 p-3 rounded-xl 
-                  ${location === item.href ? 'bg-primary text-white' : item.featured ? 'bg-primary/10 text-primary border border-primary/20' : 'text-dark hover:bg-gray-100'}
-                  ${item.featured ? 'relative overflow-hidden' : ''}
-                `}>
-                  {item.icon}
-                  <span>{item.label}</span>
-                  
-                  {item.featured && (
-                    <span className="ml-2 text-xs px-1.5 py-0.5 bg-primary text-white rounded-full font-bold uppercase">
-                      New
-                    </span>
+            <Tooltip key={item.path}>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="lg"
+                  className={cn(
+                    "w-full justify-start px-4 gap-3 rounded-none hover:bg-gray-800 relative h-12",
+                    isActive(item.path) && "bg-gray-800 font-medium"
                   )}
-                  
-                  {item.featured && (
-                    <span className="absolute -right-6 -bottom-6 opacity-10">
-                      <Globe className="h-12 w-12" />
-                    </span>
+                  onClick={() => navigate(item.path)}
+                >
+                  {isActive(item.path) && (
+                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary" />
                   )}
-              </Link>
-            </li>
+                  <span>{item.icon}</span>
+                  {!collapsed && <span>{item.label}</span>}
+                </Button>
+              </TooltipTrigger>
+              {collapsed && (
+                <TooltipContent side="right">
+                  {item.label}
+                </TooltipContent>
+              )}
+            </Tooltip>
           ))}
-        </ul>
-      </nav>
-      {children}
+        </TooltipProvider>
+      </div>
+      
+      <div className="p-4 border-t border-gray-800">
+        <TooltipProvider delayDuration={0}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="lg"
+                className="w-full justify-start px-4 gap-3 rounded-none hover:bg-gray-800"
+                onClick={() => {
+                  // Handle logout logic
+                  console.log("Logging out...");
+                }}
+              >
+                <LogOut className="h-5 w-5" />
+                {!collapsed && <span>Logout</span>}
+              </Button>
+            </TooltipTrigger>
+            {collapsed && (
+              <TooltipContent side="right">
+                Logout
+              </TooltipContent>
+            )}
+          </Tooltip>
+        </TooltipProvider>
+      </div>
     </div>
   );
 };
