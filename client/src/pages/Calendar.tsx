@@ -586,7 +586,7 @@ export default function Calendar() {
                                       {format(day, 'MMMM do, yyyy')}
                                     </CardDescription>
                                   </CardHeader>
-                                  <CardContent className="p-4 pt-2">
+                                  <CardContent className="p-4 pt-2 max-h-[55vh] overflow-y-auto">
                                     <div className="space-y-3">
                                       {isLoading ? (
                                         <div className="flex justify-center py-8">
@@ -652,34 +652,35 @@ export default function Calendar() {
                     <div className="mt-4">
                       <Tabs value={view}>
                         <TabsContent value="month" className="space-y-3 sm:space-y-4">
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
-                            {filteredEvents.map(event => (
-                              <Card 
-                                key={`${event.type}-${event.id}`} 
-                                className="cursor-pointer hover:shadow-md transition-shadow"
-                                onClick={() => handleSelectEvent(event)}
-                              >
-                                <CardHeader className="p-3 sm:p-4">
-                                  <div className="flex items-start justify-between">
-                                    <CardTitle className="text-sm sm:text-base">
-                                      {event.title}
-                                    </CardTitle>
-                                    <Badge 
-                                      variant={event.type === 'jobsite' ? 'default' : 'outline'}
-                                      className={`text-xs ${event.type === 'jobsite' ? 'bg-indigo-500' : 'bg-green-500 text-white'}`}
-                                    >
-                                      {event.type === 'jobsite' ? 'Project' : 'Message'}
-                                    </Badge>
-                                  </div>
-                                  <CardDescription className="flex items-center mt-1 text-xs sm:text-sm">
-                                    <Clock className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1" />
-                                    {format(event.date, 'MMM do, h:mm a')}
-                                  </CardDescription>
-                                </CardHeader>
-                              </Card>
-                            ))}
-                            
-                            {filteredEvents.length === 0 && !isLoading && (
+                          <div className="max-h-[60vh] overflow-y-auto pr-1">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
+                              {filteredEvents.map(event => (
+                                <Card 
+                                  key={`${event.type}-${event.id}`} 
+                                  className="cursor-pointer hover:shadow-md transition-shadow"
+                                  onClick={() => handleSelectEvent(event)}
+                                >
+                                  <CardHeader className="p-3 sm:p-4">
+                                    <div className="flex items-start justify-between">
+                                      <CardTitle className="text-sm sm:text-base">
+                                        {event.title}
+                                      </CardTitle>
+                                      <Badge 
+                                        variant={event.type === 'jobsite' ? 'default' : 'outline'}
+                                        className={`text-xs ${event.type === 'jobsite' ? 'bg-indigo-500' : 'bg-green-500 text-white'}`}
+                                      >
+                                        {event.type === 'jobsite' ? 'Project' : 'Message'}
+                                      </Badge>
+                                    </div>
+                                    <CardDescription className="flex items-center mt-1 text-xs sm:text-sm">
+                                      <Clock className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1" />
+                                      {format(event.date, 'MMM do, h:mm a')}
+                                    </CardDescription>
+                                  </CardHeader>
+                                </Card>
+                              ))}
+                              
+                              {filteredEvents.length === 0 && !isLoading && (
                               <div className="col-span-3 flex flex-col items-center justify-center p-4 sm:p-8 text-center">
                                 <BossManImage mood="angry" size="sm" className="sm:hidden" />
                                 <BossManImage mood="angry" size="md" className="hidden sm:block" />
@@ -700,7 +701,7 @@ export default function Calendar() {
                         </TabsContent>
 
                         <TabsContent value="list" className="space-y-2 sm:space-y-4">
-                          <div className="space-y-2 sm:space-y-4">
+                          <div className="space-y-2 sm:space-y-4 max-h-[60vh] overflow-y-auto pr-1">
                             {filteredEvents.length > 0 ? (
                               filteredEvents
                                 .sort((a, b) => a.date.getTime() - b.date.getTime())
