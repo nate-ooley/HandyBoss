@@ -586,7 +586,7 @@ export default function Calendar() {
                                       {format(day, 'MMMM do, yyyy')}
                                     </CardDescription>
                                   </CardHeader>
-                                  <CardContent className="p-4 pt-2 pb-6 max-h-[55vh] overflow-y-auto">
+                                  <CardContent className="p-4 pt-2 pb-12 max-h-[50vh] overflow-y-auto">
                                     <div className="space-y-3">
                                       {isLoading ? (
                                         <div className="flex justify-center py-8">
@@ -623,7 +623,7 @@ export default function Calendar() {
                                           </div>
                                         ))
                                       ) : (
-                                        <div className="py-8 text-center">
+                                        <div className="py-6 pb-8 text-center">
                                           <MessageSquare className="h-8 w-8 mx-auto text-gray-400" />
                                           <p className="mt-2 text-gray-500">No events for this day</p>
                                         </div>
@@ -636,13 +636,13 @@ export default function Calendar() {
                           </div>
                         </div>
                         
-                        {/* Mobile carousel controls */}
-                        <div className="flex justify-between mt-4 md:hidden">
-                          <Button variant="outline" size="sm" onClick={goToPreviousDay}>
-                            <MoveLeft className="h-4 w-4" />
+                        {/* Mobile carousel controls - Fixed position buttons that stay in view */}
+                        <div className="fixed bottom-24 left-0 right-0 z-50 flex justify-between px-4 md:hidden">
+                          <Button variant="outline" size="sm" onClick={goToPreviousDay} className="bg-white shadow-md h-10 w-10 rounded-full p-0">
+                            <MoveLeft className="h-5 w-5" />
                           </Button>
-                          <Button variant="outline" size="sm" onClick={goToNextDay}>
-                            <MoveRight className="h-4 w-4" />
+                          <Button variant="outline" size="sm" onClick={goToNextDay} className="bg-white shadow-md h-10 w-10 rounded-full p-0">
+                            <MoveRight className="h-5 w-5" />
                           </Button>
                         </div>
                       </div>
