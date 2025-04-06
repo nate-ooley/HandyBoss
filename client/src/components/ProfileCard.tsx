@@ -8,7 +8,7 @@ interface ProfileCardProps {
 
 export const ProfileCard: React.FC<ProfileCardProps> = ({ user }) => {
   return (
-    <div className="mt-auto p-4 bg-accent bg-opacity-20 m-4 rounded-xl">
+    <div className="bg-accent bg-opacity-20 rounded-xl p-3">
       <div className="flex items-center space-x-3">
         <Avatar>
           <AvatarImage src={user.avatar} alt={user.name} />

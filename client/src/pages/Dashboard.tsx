@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { BossManHeader } from '../components/BossManHeader';
 import { SideNavigation } from '../components/SideNavigation';
+import { MobileNavigation } from '../components/MobileNavigation';
 import { ProfileCard } from '../components/ProfileCard';
 import { WeatherAlerts } from '../components/WeatherAlerts';
 import { RecentCommands } from '../components/RecentCommands';
@@ -53,34 +54,37 @@ const Dashboard: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white pb-16 sm:pb-0">
       <BossManHeader 
         title="Boss-Man Jobsite Manager" 
         onMicClick={handleMicClick}
       />
       
       <div className="flex">
-        <SideNavigation>
-          {user && <ProfileCard user={user} />}
-        </SideNavigation>
+        {/* Only hide SideNavigation on very small screens (phones), show on sm and larger (iPad and web) */}
+        <div className="hidden sm:block">
+          <SideNavigation>
+            {user && <ProfileCard user={user} />}
+          </SideNavigation>
+        </div>
         
-        <div className="flex-1 p-6">
+        <div className="flex-1 p-4 md:p-6 w-full">
           {/* Featured translation app banner */}
           <div className="bg-gradient-to-r from-primary/20 to-primary/5 p-4 mb-6 rounded-lg border border-primary/20 shadow-sm">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div>
-                <h2 className="text-xl font-bold mb-2 flex items-center">
+                <h2 className="text-lg sm:text-xl font-bold mb-2 flex items-center">
                   <span role="img" aria-label="Globe">🌎</span>
                   <span className="ml-2">English-Spanish Voice Translation</span>
                 </h2>
-                <p className="text-sm text-muted-foreground max-w-2xl">
+                <p className="text-xs sm:text-sm text-muted-foreground max-w-2xl">
                   Break language barriers on your jobsites! Speak in English and your workers hear Spanish. 
                   They reply in Spanish and you hear English. Try our new voice-first translation tool.
                 </p>
               </div>
               <a 
                 href="/translate" 
-                className="bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-lg flex items-center gap-2 font-medium whitespace-nowrap"
+                className="bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-lg flex items-center gap-2 font-medium whitespace-nowrap text-sm sm:text-base w-full sm:w-auto justify-center"
               >
                 Open Translator <span role="img" aria-label="Microphone">🎤</span>
               </a>
@@ -88,57 +92,57 @@ const Dashboard: React.FC = () => {
           </div>
           
           {/* Feature Options */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-6">
             <div className="bg-white rounded-lg border shadow-sm p-4">
-              <h3 className="text-lg font-semibold mb-2 flex items-center">
+              <h3 className="text-base md:text-lg font-semibold mb-2 flex items-center">
                 <span role="img" aria-label="Speech" className="mr-2">🗣️</span>
                 Voice Commands
               </h3>
-              <p className="text-sm text-muted-foreground mb-4">
+              <p className="text-xs md:text-sm text-muted-foreground mb-3 md:mb-4">
                 Control your jobsite with advanced voice commands. Create tasks, send alerts, or get information instantly.
               </p>
               <a 
                 href="/voice-commands" 
-                className="bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-lg inline-block font-medium"
+                className="bg-primary text-primary-foreground hover:bg-primary/90 px-3 py-1.5 md:px-4 md:py-2 rounded-lg inline-block font-medium text-sm md:text-base w-full text-center"
               >
                 Try Voice Commands
               </a>
             </div>
             
             <div className="bg-white rounded-lg border shadow-sm p-4">
-              <h3 className="text-lg font-semibold mb-2 flex items-center">
+              <h3 className="text-base md:text-lg font-semibold mb-2 flex items-center">
                 <span role="img" aria-label="Money" className="mr-2">💵</span>
                 Single Job Payment
               </h3>
-              <p className="text-sm text-muted-foreground mb-4">
+              <p className="text-xs md:text-sm text-muted-foreground mb-3 md:mb-4">
                 Need to process a quick payment for a completed job? Use our secure one-time payment processor.
               </p>
               <a 
                 href="/checkout" 
-                className="bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-lg inline-block font-medium"
+                className="bg-primary text-primary-foreground hover:bg-primary/90 px-3 py-1.5 md:px-4 md:py-2 rounded-lg inline-block font-medium text-sm md:text-base w-full text-center"
               >
                 Process Payment
               </a>
             </div>
             
             <div className="bg-white rounded-lg border shadow-sm p-4">
-              <h3 className="text-lg font-semibold mb-2 flex items-center">
+              <h3 className="text-base md:text-lg font-semibold mb-2 flex items-center">
                 <span role="img" aria-label="Calendar" className="mr-2">📅</span>
                 Subscription Plans
               </h3>
-              <p className="text-sm text-muted-foreground mb-4">
+              <p className="text-xs md:text-sm text-muted-foreground mb-3 md:mb-4">
                 Get full access to all features with our flexible subscription plans designed for teams of all sizes.
               </p>
               <a 
                 href="/subscribe" 
-                className="bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-lg inline-block font-medium"
+                className="bg-primary text-primary-foreground hover:bg-primary/90 px-3 py-1.5 md:px-4 md:py-2 rounded-lg inline-block font-medium text-sm md:text-base w-full text-center"
               >
                 View Plans
               </a>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
             {weatherAlerts && (
               <WeatherAlerts 
                 weatherAlerts={weatherAlerts} 
@@ -154,10 +158,21 @@ const Dashboard: React.FC = () => {
             )}
           </div>
           
-          <VoiceChatbot />
+          <div className="mt-4 md:mt-6">
+            <VoiceChatbot />
+          </div>
           
-          {(showMap || jobsites) && <JobsiteMap jobsites={jobsites || []} />}
+          {(showMap || jobsites) && 
+            <div className="mt-4 md:mt-6">
+              <JobsiteMap jobsites={jobsites || []} />
+            </div>
+          }
         </div>
+      </div>
+      
+      {/* Mobile Navigation - only visible on small mobile phones */}
+      <div className="sm:hidden">
+        <MobileNavigation />
       </div>
     </div>
   );

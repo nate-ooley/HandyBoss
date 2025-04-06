@@ -1,5 +1,5 @@
 import { useLocation } from "wouter";
-import { useState } from "react";
+import { useState, ReactNode } from "react";
 import { 
   Home, 
   Briefcase, 
@@ -16,7 +16,11 @@ import {
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
-export const SideNavigation = () => {
+interface SideNavigationProps {
+  children?: ReactNode;
+}
+
+export const SideNavigation = ({ children }: SideNavigationProps) => {
   const [location, setLocation] = useLocation();
   const [collapsed, setCollapsed] = useState(false);
 
@@ -99,7 +103,14 @@ export const SideNavigation = () => {
         </Button>
       </div>
       
-      <div className="flex-1 py-6 flex flex-col gap-2">
+      {/* Render children at the top of the sidebar, if provided */}
+      {children && (
+        <div className={cn("px-4 py-3", collapsed && "hidden")}>
+          {children}
+        </div>
+      )}
+      
+      <div className="flex-1 py-3 flex flex-col gap-2">
         {navItems.map((item) => (
           <Button
             key={item.path}
