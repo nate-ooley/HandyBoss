@@ -3,6 +3,7 @@ import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BossManImage } from '@/components/BossManImage';
 import { Badge } from '@/components/ui/badge';
@@ -56,6 +57,9 @@ export default function Calendar() {
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [filteredEvents, setFilteredEvents] = useState<CalendarEvent[]>([]);
+  const [datePickerOpen, setDatePickerOpen] = useState<boolean>(false);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [addProjectOpen, setAddProjectOpen] = useState<boolean>(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { sendMessage, lastMessage } = useWebSocket();
@@ -255,6 +259,19 @@ export default function Calendar() {
 
   const goToToday = () => {
     setDate(new Date());
+  };
+  
+  // Handle jumping to a specific date
+  const handleDateSelect = (selectedDate: Date | undefined) => {
+    if (selectedDate) {
+      setDate(selectedDate);
+      setDatePickerOpen(false);
+      
+      toast({
+        title: "Date changed",
+        description: `Viewing ${format(selectedDate, 'MMMM do, yyyy')}`,
+      });
+    }
   };
 
   // Generate iCalendar file for export
@@ -661,30 +678,58 @@ export default function Calendar() {
                             <MoveLeft className="h-5 w-5" />
                           </Button>
                           
-                          {/* Center action button */}
-                          <Button 
-                            className="bg-primary text-white shadow-lg h-12 w-12 rounded-full p-0 flex items-center justify-center animate-pulse hover:animate-none transition-all hover:scale-105"
-                            onClick={() => {
-                              // Check if there are events for this day
-                              const dayEvents = getEventsForDate(days[dayViewIndex]);
-                              if (dayEvents.length > 0) {
-                                // If there are events, select the first one
-                                handleSelectEvent(dayEvents[0]);
-                              } else {
-                                // Show today's date
-                                goToToday();
-                                toast({
-                                  title: "Jumped to today",
-                                  description: "You're now viewing today's events",
-                                });
-                              }
-                            }}
-                          >
-                            <CalendarIcon className="h-5 w-5" />
-                          </Button>
+                          {/* Center calendar button - Opens date picker */}
+                          <Dialog open={datePickerOpen} onOpenChange={setDatePickerOpen}>
+                            <DialogTrigger asChild>
+                              <Button 
+                                className="bg-primary text-white shadow-lg h-12 w-12 rounded-full p-0 flex items-center justify-center animate-pulse hover:animate-none transition-all hover:scale-105"
+                              >
+                                <CalendarIcon className="h-5 w-5" />
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="sm:max-w-md p-0">
+                              <DialogHeader className="px-4 pt-4 pb-2">
+                                <DialogTitle>Select Date</DialogTitle>
+                              </DialogHeader>
+                              <div className="p-4 pt-0">
+                                <CalendarComponent
+                                  mode="single"
+                                  selected={selectedDate}
+                                  onSelect={setSelectedDate}
+                                  className="rounded-md border shadow"
+                                />
+                              </div>
+                              <DialogFooter className="px-4 pb-4">
+                                <Button 
+                                  variant="outline" 
+                                  onClick={() => setDatePickerOpen(false)}
+                                  className="w-full sm:w-auto"
+                                >
+                                  Cancel
+                                </Button>
+                                <Button 
+                                  onClick={() => handleDateSelect(selectedDate)}
+                                  className="w-full sm:w-auto"
+                                  disabled={!selectedDate}
+                                >
+                                  Go to Date
+                                </Button>
+                              </DialogFooter>
+                            </DialogContent>
+                          </Dialog>
                           
                           <Button variant="outline" size="sm" onClick={goToNextDay} className="bg-white shadow-md h-10 w-10 rounded-full p-0">
                             <MoveRight className="h-5 w-5" />
+                          </Button>
+                        </div>
+                        
+                        {/* Fixed bottom right add project button */}
+                        <div className="fixed bottom-24 right-4 z-50">
+                          <Button 
+                            className="bg-green-500 hover:bg-green-600 text-white shadow-lg h-12 w-12 rounded-full p-0 transition-all hover:scale-105"
+                            onClick={() => window.location.href = "/projects/add"}
+                          >
+                            <span className="text-2xl font-bold">+</span>
                           </Button>
                         </div>
                       </div>
