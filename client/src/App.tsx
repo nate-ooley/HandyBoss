@@ -13,6 +13,7 @@ import TeamProgress from "@/pages/TeamProgress";
 import Checkout from "@/pages/Checkout";
 import Subscribe from "@/pages/Subscribe";
 import VoiceCommands from "@/pages/VoiceCommands";
+import Projects from "@/pages/Projects";
 import { CrewPage as Crew } from "@/pages/Crew";
 import { VoiceProvider } from "@/contexts/VoiceContext";
 import { WebSocketProvider } from "@/contexts/WebSocketContext";
@@ -42,6 +43,7 @@ function AppRoutes() {
       <Route path="/checkout" component={Checkout} />
       <Route path="/subscribe" component={Subscribe} />
       <Route path="/voice-commands" component={VoiceCommands} />
+      <Route path="/projects" component={Projects} />
       <Route path="/crew" component={Crew} />
       <Route path="/crew/:id" component={Crew} />
       <Route path="/payment-success" component={Checkout} />

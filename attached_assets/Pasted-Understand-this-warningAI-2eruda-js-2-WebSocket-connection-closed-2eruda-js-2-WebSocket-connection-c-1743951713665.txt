@@ -1,0 +1,127 @@
+Understand this warningAI
+2eruda.js:2 WebSocket connection closed
+2eruda.js:2 WebSocket connection closed
+_app-732d0c53af9d63f4.js:13 Invalid href 'https://aa13a213-2d56-4489-903b-8448a73cccbf-00-1x1k7ctkun7ag.riker.replit.dev//' passed to next/router in page: '/replEnvironmentDesktop'. Repeated forward-slashes (//) or backslashes \ are not valid in the href.
+(anonymous) @ _app-732d0c53af9d63f4.js:13
+d @ main-761539f03c2abb8e.js:1
+(anonymous) @ _app-732d0c53af9d63f4.js:29
+useMemo @ framework-ad82a733f67f8526.js:1
+t.useMemo @ framework-ad82a733f67f8526.js:1
+(anonymous) @ _app-732d0c53af9d63f4.js:29
+ld @ framework-ad82a733f67f8526.js:1
+ou @ framework-ad82a733f67f8526.js:1
+i @ framework-ad82a733f67f8526.js:1
+uI @ framework-ad82a733f67f8526.js:1
+(anonymous) @ framework-ad82a733f67f8526.js:1
+uM @ framework-ad82a733f67f8526.js:1
+uS @ framework-ad82a733f67f8526.js:1
+C @ framework-ad82a733f67f8526.js:1
+z @ framework-ad82a733f67f8526.js:1Understand this errorAI
+eruda.js:2 WebSocket connection to 'wss://aa13a213-2d56-4489-903b-8448a73cccbf-00-1x1k7ctkun7ag.riker.replit.dev/?token=6ljybi92LOXI' failed: 
+t @ VM13 eruda.js:2
+setupWebSocket @ VM36 client:536
+(anonymous) @ VM36 client:531Understand this errorAI
+eruda.js:2 Uncaught (in promise) SyntaxError: Failed to construct 'WebSocket': The URL 'wss://localhost:undefined/?token=6ljybi92LOXI' is invalid.
+    at new t (eruda.js:2:218737)
+    at setupWebSocket (client:536:19)
+    at fallback (client:509:16)
+    at WebSocket.<anonymous> (client:555:7)
+t @ VM13 eruda.js:2
+setupWebSocket @ VM36 client:536
+fallback @ VM36 client:509
+(anonymous) @ VM36 client:555Understand this errorAI
+2eruda.js:2 WebSocket connection established
+_app-732d0c53af9d63f4.js:13 Invalid href 'https://aa13a213-2d56-4489-903b-8448a73cccbf-00-1x1k7ctkun7ag.riker.replit.dev//dashboard' passed to next/router in page: '/replEnvironmentDesktop'. Repeated forward-slashes (//) or backslashes \ are not valid in the href.
+(anonymous) @ _app-732d0c53af9d63f4.js:13
+d @ main-761539f03c2abb8e.js:1
+(anonymous) @ _app-732d0c53af9d63f4.js:29
+lU @ framework-ad82a733f67f8526.js:1
+t.useMemo @ framework-ad82a733f67f8526.js:1
+(anonymous) @ _app-732d0c53af9d63f4.js:29
+ld @ framework-ad82a733f67f8526.js:1
+ou @ framework-ad82a733f67f8526.js:1
+i @ framework-ad82a733f67f8526.js:1
+uI @ framework-ad82a733f67f8526.js:1
+(anonymous) @ framework-ad82a733f67f8526.js:1
+uM @ framework-ad82a733f67f8526.js:1
+uS @ framework-ad82a733f67f8526.js:1
+C @ framework-ad82a733f67f8526.js:1
+z @ framework-ad82a733f67f8526.js:1Understand this errorAI
+2eruda.js:2 WebSocket connection closed
+2_app-732d0c53af9d63f4.js:13 Invalid href 'https://aa13a213-2d56-4489-903b-8448a73cccbf-00-1x1k7ctkun7ag.riker.replit.dev//' passed to next/router in page: '/replEnvironmentDesktop'. Repeated forward-slashes (//) or backslashes \ are not valid in the href.
+(anonymous) @ _app-732d0c53af9d63f4.js:13
+d @ main-761539f03c2abb8e.js:1
+(anonymous) @ _app-732d0c53af9d63f4.js:29
+useMemo @ framework-ad82a733f67f8526.js:1
+t.useMemo @ framework-ad82a733f67f8526.js:1
+(anonymous) @ _app-732d0c53af9d63f4.js:29
+ld @ framework-ad82a733f67f8526.js:1
+ou @ framework-ad82a733f67f8526.js:1
+i @ framework-ad82a733f67f8526.js:1
+uI @ framework-ad82a733f67f8526.js:1
+(anonymous) @ framework-ad82a733f67f8526.js:1
+uM @ framework-ad82a733f67f8526.js:1
+uS @ framework-ad82a733f67f8526.js:1
+C @ framework-ad82a733f67f8526.js:1
+z @ framework-ad82a733f67f8526.js:1Understand this errorAI
+client:536 WebSocket connection to 'wss://aa13a213-2d56-4489-903b-8448a73cccbf-00-1x1k7ctkun7ag.riker.replit.dev/?token=nrfom5zVqyng' failed: 
+t @ Network.js:227
+setupWebSocket @ client:536
+(anonymous) @ client:531Understand this errorAI
+Network.js:227 Uncaught (in promise) SyntaxError: Failed to construct 'WebSocket': The URL 'wss://localhost:undefined/?token=nrfom5zVqyng' is invalid.
+    at new t (Network.js:227:18)
+    at setupWebSocket (client:536:19)
+    at fallback (client:509:16)
+    at WebSocket.<anonymous> (client:555:7)
+t @ Network.js:227
+setupWebSocket @ client:536
+fallback @ client:509
+(anonymous) @ client:555Understand this errorAI
+client:536 WebSocket connection to 'wss://aa13a213-2d56-4489-903b-8448a73cccbf-00-1x1k7ctkun7ag.riker.replit.dev/?token=nrfom5zVqyng' failed: 
+t @ Network.js:227
+setupWebSocket @ client:536
+(anonymous) @ client:531Understand this errorAI
+Network.js:227 Uncaught (in promise) SyntaxError: Failed to construct 'WebSocket': The URL 'wss://localhost:undefined/?token=nrfom5zVqyng' is invalid.
+    at new t (Network.js:227:18)
+    at setupWebSocket (client:536:19)
+    at fallback (client:509:16)
+    at WebSocket.<anonymous> (client:555:7)
+t @ Network.js:227
+setupWebSocket @ client:536
+fallback @ client:509
+(anonymous) @ client:555Understand this errorAI
+2Console.js:61 WebSocket connection established
+_app-732d0c53af9d63f4.js:13 Invalid href 'https://aa13a213-2d56-4489-903b-8448a73cccbf-00-1x1k7ctkun7ag.riker.replit.dev//dashboard' passed to next/router in page: '/replEnvironmentDesktop'. Repeated forward-slashes (//) or backslashes \ are not valid in the href.
+(anonymous) @ _app-732d0c53af9d63f4.js:13
+d @ main-761539f03c2abb8e.js:1
+(anonymous) @ _app-732d0c53af9d63f4.js:29
+lU @ framework-ad82a733f67f8526.js:1
+t.useMemo @ framework-ad82a733f67f8526.js:1
+(anonymous) @ _app-732d0c53af9d63f4.js:29
+ld @ framework-ad82a733f67f8526.js:1
+ou @ framework-ad82a733f67f8526.js:1
+i @ framework-ad82a733f67f8526.js:1
+uI @ framework-ad82a733f67f8526.js:1
+(anonymous) @ framework-ad82a733f67f8526.js:1
+uM @ framework-ad82a733f67f8526.js:1
+uS @ framework-ad82a733f67f8526.js:1
+C @ framework-ad82a733f67f8526.js:1
+z @ framework-ad82a733f67f8526.js:1Understand this errorAI
+Console.js:61 WebSocket connection established
+_app-732d0c53af9d63f4.js:13 Invalid href 'https://aa13a213-2d56-4489-903b-8448a73cccbf-00-1x1k7ctkun7ag.riker.replit.dev//dashboard' passed to next/router in page: '/replEnvironmentDesktop'. Repeated forward-slashes (//) or backslashes \ are not valid in the href.
+(anonymous) @ _app-732d0c53af9d63f4.js:13
+d @ main-761539f03c2abb8e.js:1
+(anonymous) @ _app-732d0c53af9d63f4.js:29
+lU @ framework-ad82a733f67f8526.js:1
+t.useMemo @ framework-ad82a733f67f8526.js:1
+(anonymous) @ _app-732d0c53af9d63f4.js:29
+ld @ framework-ad82a733f67f8526.js:1
+ou @ framework-ad82a733f67f8526.js:1
+i @ framework-ad82a733f67f8526.js:1
+uI @ framework-ad82a733f67f8526.js:1
+(anonymous) @ framework-ad82a733f67f8526.js:1
+uM @ framework-ad82a733f67f8526.js:1
+uS @ framework-ad82a733f67f8526.js:1
+C @ framework-ad82a733f67f8526.js:1
+z @ framework-ad82a733f67f8526.js:1Understand this errorAI
+Console.js:61 WebSocket connection established
