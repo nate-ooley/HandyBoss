@@ -291,35 +291,41 @@ export default function Calendar() {
         daysArray.push(addDays(date, i));
       }
       setDays(daysArray);
-      
-      // Only set day view index once when initializing
-      // This prevents the infinite update loop
-      if (emblaApi) {
-        // The Embla API doesn't have canScrollTo, we just use scrollTo directly
-        emblaApi.scrollTo(3);
-        setDayViewIndex(3); // Middle day is the selected date
-      }
     }
-  }, [date, view]); // Remove emblaApi from dependencies
+  }, [date, view]);
+  
+  // Handle scrolling to center day when view changes or emblaApi is initialized
+  useEffect(() => {
+    if (emblaApi && view === 'day' && !daysChanging.current) {
+      // The middle index (3) should be the selected date
+      emblaApi.scrollTo(3);
+      setDayViewIndex(3);
+    }
+  }, [emblaApi, view]);
   
   // Listen for carousel slide changes
   useEffect(() => {
     if (!emblaApi || view !== 'day') return;
     
     const onSelect = () => {
+      // Get the current index
       const index = emblaApi.selectedScrollSnap();
-      // Only update if the index has actually changed to prevent update loops
+      
+      // Only update if the index has actually changed to prevent loops
       if (index !== dayViewIndex) {
         setDayViewIndex(index);
-        const newDate = days[index];
-        // We need a ref to track if this was user-initiated to avoid loops
-        if (newDate && !daysChanging.current) {
+        
+        // Only update the date if this wasn't triggered by a date change
+        if (!daysChanging.current && days[index]) {
           daysChanging.current = true;
-          setDate(newDate);
-          // Reset the flag after a short delay to prevent update loops
+          // Using setTimeout to break the potential infinite loop
           setTimeout(() => {
-            daysChanging.current = false;
-          }, 50);
+            setDate(days[index]);
+            // Reset flag after a delay to prevent update loops
+            setTimeout(() => {
+              daysChanging.current = false;
+            }, 100);
+          }, 0);
         }
       }
     };
@@ -328,7 +334,7 @@ export default function Calendar() {
     return () => {
       emblaApi.off('select', onSelect);
     };
-  }, [emblaApi, days, view, dayViewIndex]);
+  }, [emblaApi, days, dayViewIndex, view]);
   
   // Navigation for day view
   const goToPreviousDay = useCallback(() => {
@@ -459,50 +465,9 @@ export default function Calendar() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <Tabs defaultValue="day" value={view} onValueChange={(value) => setView(value as any)}>
-                    <TabsContent value="month" className="space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {filteredEvents.map(event => (
-                          <Card 
-                            key={`${event.type}-${event.id}`} 
-                            className="cursor-pointer hover:shadow-md transition-shadow"
-                            onClick={() => handleSelectEvent(event)}
-                          >
-                            <CardHeader className="p-4">
-                              <div className="flex items-start justify-between">
-                                <CardTitle className="text-base">
-                                  {event.title}
-                                </CardTitle>
-                                <Badge 
-                                  variant={event.type === 'jobsite' ? 'default' : 'outline'}
-                                  className={event.type === 'jobsite' ? 'bg-indigo-500' : 'bg-green-500 text-white'}
-                                >
-                                  {event.type === 'jobsite' ? 'Project' : 'Message'}
-                                </Badge>
-                              </div>
-                              <CardDescription className="flex items-center mt-1">
-                                <Clock className="h-3.5 w-3.5 mr-1" />
-                                {format(event.date, 'MMM do, h:mm a')}
-                              </CardDescription>
-                            </CardHeader>
-                          </Card>
-                        ))}
-                        
-                        {filteredEvents.length === 0 && !isLoading && (
-                          <div className="col-span-3 flex flex-col items-center justify-center p-8 text-center">
-                            <BossManImage mood="angry" size="md" />
-                            <h3 className="mt-4 text-lg font-semibold">No events found</h3>
-                            <p className="text-muted-foreground">
-                              {searchQuery 
-                                ? "Try changing your search criteria" 
-                                : "No events scheduled for this month"}
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    </TabsContent>
-
-                    <TabsContent value="day" className="space-y-4">
+                  {/* Start with Day carousel at top */}
+                  {view === 'day' && (
+                    <div className="space-y-4 mb-6">
                       {/* Day navigation bar */}
                       <div className="flex items-center justify-between mb-4">
                         <Button 
@@ -611,7 +576,62 @@ export default function Calendar() {
                           />
                         ))}
                       </div>
-                      
+                    </div>
+                  )}
+                  
+                  {/* Tabs below the carousel */}
+                  <Tabs defaultValue="day" value={view} onValueChange={(value) => setView(value as any)}>
+                    <TabsList className="w-full mb-4">
+                      <TabsTrigger value="day">Day</TabsTrigger>
+                      <TabsTrigger value="month">Month</TabsTrigger>
+                      <TabsTrigger value="list">List</TabsTrigger>
+                    </TabsList>
+
+                    <TabsContent value="month" className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {filteredEvents.map(event => (
+                          <Card 
+                            key={`${event.type}-${event.id}`} 
+                            className="cursor-pointer hover:shadow-md transition-shadow"
+                            onClick={() => handleSelectEvent(event)}
+                          >
+                            <CardHeader className="p-4">
+                              <div className="flex items-start justify-between">
+                                <CardTitle className="text-base">
+                                  {event.title}
+                                </CardTitle>
+                                <Badge 
+                                  variant={event.type === 'jobsite' ? 'default' : 'outline'}
+                                  className={event.type === 'jobsite' ? 'bg-indigo-500' : 'bg-green-500 text-white'}
+                                >
+                                  {event.type === 'jobsite' ? 'Project' : 'Message'}
+                                </Badge>
+                              </div>
+                              <CardDescription className="flex items-center mt-1">
+                                <Clock className="h-3.5 w-3.5 mr-1" />
+                                {format(event.date, 'MMM do, h:mm a')}
+                              </CardDescription>
+                            </CardHeader>
+                          </Card>
+                        ))}
+                        
+                        {filteredEvents.length === 0 && !isLoading && (
+                          <div className="col-span-3 flex flex-col items-center justify-center p-8 text-center">
+                            <BossManImage mood="angry" size="md" />
+                            <h3 className="mt-4 text-lg font-semibold">No events found</h3>
+                            <p className="text-muted-foreground">
+                              {searchQuery 
+                                ? "Try changing your search criteria" 
+                                : "No events scheduled for this month"}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </TabsContent>
+
+                    <TabsContent value="day">
+                      {/* Day view content is above the tabs, outside TabsContent */}
+                      {/* This is just a placeholder to make the tab navigation work */}
                     </TabsContent>
 
                     <TabsContent value="list" className="space-y-4">
