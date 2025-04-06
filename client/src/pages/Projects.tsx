@@ -218,23 +218,28 @@ export default function Projects() {
     // PROJECT DETAIL VIEW
     return (
       <div className="flex min-h-screen bg-background">
-        <SideNavigation />
+        <div className="hidden md:block">
+          <SideNavigation />
+        </div>
         <div className="flex-1 flex flex-col">
-          <header className="border-b px-8 py-4">
-            <div className="flex items-center justify-between">
+          <header className="border-b px-3 sm:px-6 md:px-8 py-3 md:py-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
               <div className="flex items-center">
                 <Button 
                   variant="outline" 
-                  className="mr-4"
+                  size="sm"
+                  className="mr-2 sm:mr-4 h-8 px-2 sm:h-10 sm:px-4"
                   onClick={() => setLocation("/projects")}
                 >
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back to Projects
+                  <ArrowLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Back to Projects</span>
                 </Button>
-                <h1 className="text-2xl font-bold tracking-tight">{selectedProject.name}</h1>
+                <h1 className="text-lg sm:text-xl md:text-2xl font-bold tracking-tight truncate max-w-[200px] sm:max-w-md">
+                  {selectedProject.name}
+                </h1>
               </div>
               <Badge 
-                className={`px-3 py-1 ${
+                className={`px-2 py-0.5 sm:px-3 sm:py-1 text-xs sm:text-sm ${
                   selectedProject.status === 'active' ? 'bg-green-100 text-green-800' : 
                   selectedProject.status === 'completed' ? 'bg-blue-100 text-blue-800' : 
                   selectedProject.status === 'scheduled' ? 'bg-amber-100 text-amber-800' :
@@ -246,41 +251,41 @@ export default function Projects() {
             </div>
           </header>
           
-          <main className="flex-1 p-8">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <div className="lg:col-span-2 space-y-6">
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle>Project Details</CardTitle>
+          <main className="flex-1 p-3 sm:p-6 md:p-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
+              <div className="lg:col-span-2 space-y-4 md:space-y-6">
+                <Card className="shadow-sm">
+                  <CardHeader className="pb-2 p-4 sm:p-6">
+                    <CardTitle className="text-base sm:text-lg">Project Details</CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                       <div>
-                        <h4 className="text-sm font-medium text-gray-500">Address</h4>
-                        <p>{selectedProject.address}</p>
+                        <h4 className="text-xs sm:text-sm font-medium text-gray-500">Address</h4>
+                        <p className="text-sm sm:text-base break-words">{selectedProject.address}</p>
                       </div>
                       <div>
-                        <h4 className="text-sm font-medium text-gray-500">Status</h4>
-                        <p>{selectedProject.status.charAt(0).toUpperCase() + selectedProject.status.slice(1)}</p>
+                        <h4 className="text-xs sm:text-sm font-medium text-gray-500">Status</h4>
+                        <p className="text-sm sm:text-base">{selectedProject.status.charAt(0).toUpperCase() + selectedProject.status.slice(1)}</p>
                       </div>
                       <div>
-                        <h4 className="text-sm font-medium text-gray-500">Start Date</h4>
-                        <p>{formatDate(selectedProject.startDate)}</p>
+                        <h4 className="text-xs sm:text-sm font-medium text-gray-500">Start Date</h4>
+                        <p className="text-sm sm:text-base">{formatDate(selectedProject.startDate)}</p>
                       </div>
                       <div>
-                        <h4 className="text-sm font-medium text-gray-500">End Date</h4>
-                        <p>{formatDate(selectedProject.endDate)}</p>
+                        <h4 className="text-xs sm:text-sm font-medium text-gray-500">End Date</h4>
+                        <p className="text-sm sm:text-base">{formatDate(selectedProject.endDate)}</p>
                       </div>
                       
                       {selectedProject.description && (
-                        <div className="md:col-span-2">
-                          <h4 className="text-sm font-medium text-gray-500">Description</h4>
-                          <p>{selectedProject.description}</p>
+                        <div className="sm:col-span-2">
+                          <h4 className="text-xs sm:text-sm font-medium text-gray-500">Description</h4>
+                          <p className="text-sm sm:text-base break-words">{selectedProject.description}</p>
                         </div>
                       )}
                       
-                      <div className="md:col-span-2">
-                        <h4 className="text-sm font-medium text-gray-500 mb-2">Progress</h4>
+                      <div className="sm:col-span-2">
+                        <h4 className="text-xs sm:text-sm font-medium text-gray-500 mb-1 sm:mb-2">Progress</h4>
                         <div className="w-full">
                           <div className="flex justify-between text-xs mb-1">
                             <span>Completion</span>
@@ -293,39 +298,40 @@ export default function Projects() {
                   </CardContent>
                 </Card>
                 
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <CardTitle>Project Team</CardTitle>
+                <Card className="shadow-sm">
+                  <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-2 p-4 sm:p-6">
+                    <CardTitle className="text-base sm:text-lg mb-2 sm:mb-0">Project Team</CardTitle>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => setIsAddCrewDialogOpen(true)}
+                      className="w-full sm:w-auto h-8 sm:h-9"
                     >
-                      <UserPlus className="h-4 w-4 mr-2" />
+                      <UserPlus className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
                       Add Crew Member
                     </Button>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0">
                     {isLoadingProjectMembers ? (
                       <div className="flex justify-center py-6">
                         <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full"></div>
                       </div>
                     ) : projectMembers.length === 0 ? (
-                      <div className="text-center py-8">
-                        <UserPlus className="h-12 w-12 mx-auto text-gray-400 mb-3" />
-                        <h3 className="text-lg font-medium mb-2">No crew members assigned</h3>
-                        <p className="text-gray-500 mb-4">Assign crew members to this project to get started.</p>
+                      <div className="text-center py-4 sm:py-8">
+                        <UserPlus className="h-10 w-10 sm:h-12 sm:w-12 mx-auto text-gray-400 mb-2 sm:mb-3" />
+                        <h3 className="text-base sm:text-lg font-medium mb-1 sm:mb-2">No crew members assigned</h3>
+                        <p className="text-sm text-gray-500 mb-3 sm:mb-4 px-4">Assign crew members to this project to get started.</p>
                       </div>
                     ) : (
-                      <div className="space-y-4">
+                      <div className="space-y-3 sm:space-y-4">
                         {projectMembers.map((member: any) => {
                           const crewMember = allCrewMembers.find(c => c.id === member.crewMemberId);
                           if (!crewMember) return null;
                           
                           return (
-                            <div key={member.id} className="flex items-center justify-between p-3 border rounded-md">
+                            <div key={member.id} className="flex items-center justify-between p-2 sm:p-3 border rounded-md">
                               <div className="flex items-center">
-                                <Avatar className="h-10 w-10 mr-3">
+                                <Avatar className="h-8 w-8 sm:h-10 sm:w-10 mr-2 sm:mr-3">
                                   {crewMember.profileImage ? (
                                     <AvatarImage src={crewMember.profileImage} alt={crewMember.name} />
                                   ) : (
@@ -334,9 +340,9 @@ export default function Projects() {
                                     </AvatarFallback>
                                   )}
                                 </Avatar>
-                                <div>
-                                  <h4 className="font-medium">{crewMember.name}</h4>
-                                  <p className="text-sm text-gray-500">
+                                <div className="min-w-0 flex-1">
+                                  <h4 className="font-medium text-sm sm:text-base truncate">{crewMember.name}</h4>
+                                  <p className="text-xs sm:text-sm text-gray-500 truncate">
                                     {crewMember.role}
                                     {crewMember.specialization && ` • ${crewMember.specialization}`}
                                   </p>
@@ -347,16 +353,17 @@ export default function Projects() {
                                   variant="ghost" 
                                   size="sm"
                                   onClick={() => setLocation(`/crew/${crewMember.id}`)}
+                                  className="h-7 w-7 sm:h-8 sm:w-8 p-0"
                                 >
-                                  <ChevronRight className="h-4 w-4" />
+                                  <ChevronRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                                 </Button>
                                 <Button 
                                   variant="ghost" 
                                   size="sm" 
-                                  className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                                  className="text-red-500 hover:text-red-700 hover:bg-red-50 h-7 w-7 sm:h-8 sm:w-8 p-0"
                                   onClick={() => removeCrewFromProject(crewMember.id)}
                                 >
-                                  <Trash2 className="h-4 w-4" />
+                                  <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                                 </Button>
                               </div>
                             </div>
@@ -368,7 +375,7 @@ export default function Projects() {
                 </Card>
               </div>
               
-              <div className="space-y-6">
+              <div className="space-y-4 md:space-y-6">
                 {/* Additional project management features could go here */}
               </div>
             </div>
@@ -496,12 +503,14 @@ export default function Projects() {
   // PROJECTS LIST VIEW
   return (
     <div className="flex min-h-screen bg-background">
-      <SideNavigation />
+      <div className="hidden md:block">
+        <SideNavigation />
+      </div>
       <div className="flex-1 flex flex-col">
-        <header className="border-b px-8 py-4">
-          <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold tracking-tight">Projects</h1>
-            <div className="flex items-center gap-4">
+        <header className="border-b px-4 sm:px-6 md:px-8 py-3 md:py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
+            <h1 className="text-xl md:text-2xl font-bold tracking-tight">Projects</h1>
+            <div className="flex items-center sm:gap-4">
               <Dialog 
                 open={isNewProjectDialogOpen} 
                 onOpenChange={(open) => {
@@ -514,7 +523,7 @@ export default function Projects() {
                 }}
               >
                 <DialogTrigger asChild>
-                  <Button className="gap-1">
+                  <Button className="gap-1 w-full sm:w-auto">
                     <span>New Project</span>
                   </Button>
                 </DialogTrigger>
@@ -670,10 +679,10 @@ export default function Projects() {
           </div>
         </header>
         
-        <main className="flex-1 p-8">
+        <main className="flex-1 p-3 sm:p-6 md:p-8">
           <Tabs defaultValue="active" className="w-full" onValueChange={setSelectedTab}>
-            <TabsList className="mb-8">
-              <TabsTrigger value="active">Active Projects</TabsTrigger>
+            <TabsList className="mb-4 sm:mb-6 md:mb-8 w-full overflow-x-auto whitespace-nowrap">
+              <TabsTrigger value="active">Active</TabsTrigger>
               <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
               <TabsTrigger value="completed">Completed</TabsTrigger>
               <TabsTrigger value="all">All Projects</TabsTrigger>
@@ -790,36 +799,38 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, progress }) => {
   const daysInfo = getDaysRemaining();
   
   return (
-    <Card className="overflow-hidden flex flex-col">
-      <CardHeader className="pb-2">
+    <Card className="overflow-hidden flex flex-col h-full">
+      <CardHeader className="pb-2 p-3 sm:p-4 md:p-6">
         <div className="flex justify-between items-start">
           <div>
             <Badge 
-              className={`${getStatusColor(project.status)} text-white mb-2`}
+              className={`${getStatusColor(project.status)} text-white mb-1.5 sm:mb-2 text-xs sm:text-sm`}
             >
               {project.status.charAt(0).toUpperCase() + project.status.slice(1)}
             </Badge>
-            <CardTitle className="text-xl">{project.name}</CardTitle>
-            <CardDescription className="mt-1 flex items-center">
-              <MapPin className="h-3.5 w-3.5 mr-1 opacity-70" />
-              {project.address || (project.location ? `${project.location.lat.toFixed(4)}, ${project.location.lng.toFixed(4)}` : 'No location set')}
+            <CardTitle className="text-base sm:text-lg md:text-xl line-clamp-1">{project.name}</CardTitle>
+            <CardDescription className="mt-1 flex items-center text-xs sm:text-sm line-clamp-1">
+              <MapPin className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1 opacity-70 flex-shrink-0" />
+              <span className="truncate">
+                {project.address || (project.location ? `${project.location.lat.toFixed(4)}, ${project.location.lng.toFixed(4)}` : 'No location set')}
+              </span>
             </CardDescription>
           </div>
         </div>
       </CardHeader>
       
-      <CardContent className="pb-2 flex-1">
-        <div className="flex items-center justify-between mb-2 text-sm">
+      <CardContent className="pb-2 flex-1 p-3 sm:p-4 md:p-6 pt-0 sm:pt-0 md:pt-0">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5 sm:gap-0 mb-2 text-xs sm:text-sm">
           <div className="flex items-center">
-            <Calendar className="h-4 w-4 mr-1 opacity-70" />
-            <span>
+            <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 opacity-70 flex-shrink-0" />
+            <span className="truncate">
               {formatDate(project.startDate?.toString())}
               {project.endDate && ` - ${formatDate(project.endDate.toString())}`}
             </span>
           </div>
           
           <div className={`flex items-center ${daysInfo.overdue ? 'text-red-500' : ''}`}>
-            <Clock className="h-4 w-4 mr-1 opacity-70" />
+            <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 opacity-70 flex-shrink-0" />
             <span>
               {daysInfo.overdue 
                 ? `${daysInfo.days} day${daysInfo.days !== 1 ? 's' : ''} overdue` 
@@ -830,38 +841,38 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, progress }) => {
           </div>
         </div>
         
-        <div className="mt-4">
-          <div className="flex justify-between mb-1 text-sm">
+        <div className="mt-3 sm:mt-4">
+          <div className="flex justify-between mb-1 text-xs sm:text-sm">
             <span>Progress</span>
             <span>{progress}%</span>
           </div>
-          <Progress value={progress} className="h-2" />
+          <Progress value={progress} className="h-1.5 sm:h-2" />
         </div>
         
-        <div className="mt-4 grid grid-cols-3 gap-2 text-xs">
-          <div className="flex flex-col items-center p-2 bg-muted rounded-md">
-            <Users className="h-4 w-4 mb-1" />
-            <span>Crew: {(project.id % 5) + 2}</span>
+        <div className="mt-3 sm:mt-4 grid grid-cols-3 gap-1 sm:gap-2 text-[10px] sm:text-xs">
+          <div className="flex flex-col items-center p-1.5 sm:p-2 bg-muted rounded-md">
+            <Users className="h-3 w-3 sm:h-4 sm:w-4 mb-0.5 sm:mb-1" />
+            <span className="text-center">Crew: {(project.id % 5) + 2}</span>
           </div>
-          <div className="flex flex-col items-center p-2 bg-muted rounded-md">
-            <Package className="h-4 w-4 mb-1" />
-            <span>Materials: {project.status === 'completed' ? 'Complete' : 'In Progress'}</span>
+          <div className="flex flex-col items-center p-1.5 sm:p-2 bg-muted rounded-md">
+            <Package className="h-3 w-3 sm:h-4 sm:w-4 mb-0.5 sm:mb-1" />
+            <span className="text-center">{project.status === 'completed' ? 'Complete' : 'In Progress'}</span>
           </div>
-          <div className="flex flex-col items-center p-2 bg-muted rounded-md">
-            <Wrench className="h-4 w-4 mb-1" />
-            <span>Tasks: {progress}%</span>
+          <div className="flex flex-col items-center p-1.5 sm:p-2 bg-muted rounded-md">
+            <Wrench className="h-3 w-3 sm:h-4 sm:w-4 mb-0.5 sm:mb-1" />
+            <span className="text-center">Tasks: {progress}%</span>
           </div>
         </div>
       </CardContent>
       
-      <CardFooter className="pt-2 border-t mt-auto">
+      <CardFooter className="pt-1 sm:pt-2 border-t mt-auto p-3 sm:p-4 md:p-6">
         <Button 
           variant="ghost" 
           size="sm" 
-          className="ml-auto flex items-center"
+          className="ml-auto flex items-center h-8 text-xs sm:text-sm"
           onClick={navigateToProjectDetail}
         >
-          View Details <ChevronRight className="h-4 w-4 ml-1" />
+          <span>View Details</span> <ChevronRight className="h-3.5 w-3.5 sm:h-4 sm:w-4 ml-1" />
         </Button>
       </CardFooter>
     </Card>
