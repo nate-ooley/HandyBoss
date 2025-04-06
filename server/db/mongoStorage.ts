@@ -1,8 +1,8 @@
 import { IStorage } from '../storage';
 import mongoose from 'mongoose';
 import { 
-  User, Jobsite, WeatherAlert, Command, ChatMessage, MessageReaction,
-  IUser, IJobsite, IWeatherAlert, ICommand, IChatMessage, IMessageReaction
+  User, Jobsite, WeatherAlert, Command, ChatMessage, MessageReaction, CrewMember,
+  IUser, IJobsite, IWeatherAlert, ICommand, IChatMessage, IMessageReaction, ICrewMember
 } from './models';
 import { connectToDatabase } from './connection';
 import { 
@@ -12,12 +12,14 @@ import {
   Command as CommandType,
   ChatMessage as ChatMessageType,
   MessageReaction as MessageReactionType,
+  CrewMember as CrewMemberType,
   InsertUser,
   InsertJobsite,
   InsertWeatherAlert,
   InsertCommand,
   InsertChatMessage,
-  InsertMessageReaction
+  InsertMessageReaction,
+  InsertCrewMember
 } from '../../shared/schema';
 import { log } from '../vite';
 
@@ -406,6 +408,101 @@ export class MongoStorage implements IStorage {
     }
   }
 
+  // Crew member methods
+  async getCrewMembers(): Promise<CrewMemberType[]> {
+    try {
+      const crewMembers = await CrewMember.find().sort({ name: 1 });
+      return crewMembers.map(documentToObject);
+    } catch (error) {
+      log(`Error getting crew members: ${getErrorMessage(error)}`, 'mongodb');
+      return [];
+    }
+  }
+
+  async getCrewMembersByJobsite(jobsiteId: number): Promise<CrewMemberType[]> {
+    try {
+      const crewMembers = await CrewMember.find({ jobsiteId }).sort({ name: 1 });
+      return crewMembers.map(documentToObject);
+    } catch (error) {
+      log(`Error getting crew members by jobsite: ${getErrorMessage(error)}`, 'mongodb');
+      return [];
+    }
+  }
+
+  async getCrewMember(id: number): Promise<CrewMemberType | undefined> {
+    try {
+      const crewMember = await CrewMember.findById(id);
+      return crewMember ? documentToObject(crewMember) : undefined;
+    } catch (error) {
+      log(`Error getting crew member: ${getErrorMessage(error)}`, 'mongodb');
+      return undefined;
+    }
+  }
+
+  async createCrewMember(crewMember: InsertCrewMember): Promise<CrewMemberType> {
+    try {
+      const newCrewMember = new CrewMember(crewMember);
+      const savedCrewMember = await newCrewMember.save();
+      return documentToObject(savedCrewMember);
+    } catch (error) {
+      log(`Error creating crew member: ${getErrorMessage(error)}`, 'mongodb');
+      throw error;
+    }
+  }
+
+  async updateCrewMember(id: number, data: Partial<InsertCrewMember>): Promise<CrewMemberType | undefined> {
+    try {
+      const crewMember = await CrewMember.findByIdAndUpdate(
+        id,
+        data,
+        { new: true }
+      );
+      return crewMember ? documentToObject(crewMember) : undefined;
+    } catch (error) {
+      log(`Error updating crew member: ${getErrorMessage(error)}`, 'mongodb');
+      return undefined;
+    }
+  }
+
+  async updateCrewMemberLocation(
+    id: number, 
+    latitude: number, 
+    longitude: number, 
+    locationName?: string
+  ): Promise<CrewMemberType | undefined> {
+    try {
+      const updateData: any = { 
+        latitude, 
+        longitude,
+        lastCheckIn: new Date()
+      };
+      
+      if (locationName) {
+        updateData.locationName = locationName;
+      }
+      
+      const crewMember = await CrewMember.findByIdAndUpdate(
+        id,
+        updateData,
+        { new: true }
+      );
+      return crewMember ? documentToObject(crewMember) : undefined;
+    } catch (error) {
+      log(`Error updating crew member location: ${getErrorMessage(error)}`, 'mongodb');
+      return undefined;
+    }
+  }
+
+  async deleteCrewMember(id: number): Promise<boolean> {
+    try {
+      const result = await CrewMember.deleteOne({ _id: id });
+      return result.deletedCount > 0;
+    } catch (error) {
+      log(`Error deleting crew member: ${getErrorMessage(error)}`, 'mongodb');
+      return false;
+    }
+  }
+
   // Initialize sample data
   private async initSampleData() {
     try {
@@ -460,6 +557,36 @@ export class MongoStorage implements IStorage {
         jobsite1.save(),
         jobsite2.save(),
         jobsite3.save()
+      ]);
+      
+      // Create sample crew members
+      const crewMember1 = new CrewMember({
+        name: "Carlos Rodriguez",
+        role: "worker",
+        phone: "+1-555-234-5678",
+        email: "carlos@construction.com",
+        jobsiteId: jobsite1._id,
+        specialization: "Carpenter", 
+        experienceYears: 8,
+        status: "active",
+        languages: ["es", "en"]
+      });
+      
+      const crewMember2 = new CrewMember({
+        name: "Maria Sanchez",
+        role: "worker",
+        phone: "+1-555-345-6789",
+        email: "maria@construction.com",
+        jobsiteId: jobsite1._id,
+        specialization: "Electrician", 
+        experienceYears: 5,
+        status: "active",
+        languages: ["es"]
+      });
+      
+      await Promise.all([
+        crewMember1.save(),
+        crewMember2.save()
       ]);
       
       // Create weather alert

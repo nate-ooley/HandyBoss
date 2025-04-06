@@ -132,6 +132,49 @@ const messageReactionSchema = new Schema<IMessageReaction>({
   emoji: { type: String, required: true },
 }, { timestamps: true });
 
+// Crew Member model
+export interface ICrewMember extends Document {
+  name: string;
+  role: string;
+  phone?: string;
+  email?: string;
+  jobsiteId?: mongoose.Types.ObjectId;
+  specialization?: string;
+  experienceYears?: number;
+  status?: string;
+  latitude?: number;
+  longitude?: number;
+  locationName?: string;
+  lastCheckIn?: Date;
+  profileImage?: string;
+  certifications?: string[];
+  languages?: string[];
+  emergencyContact?: string;
+  notes?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const crewMemberSchema = new Schema<ICrewMember>({
+  name: { type: String, required: true },
+  role: { type: String, required: true },
+  phone: { type: String },
+  email: { type: String },
+  jobsiteId: { type: Schema.Types.ObjectId, ref: 'Jobsite' },
+  specialization: { type: String },
+  experienceYears: { type: Number },
+  status: { type: String, default: 'active' },
+  latitude: { type: Number },
+  longitude: { type: Number },
+  locationName: { type: String },
+  lastCheckIn: { type: Date },
+  profileImage: { type: String },
+  certifications: [{ type: String }],
+  languages: [{ type: String }],
+  emergencyContact: { type: String },
+  notes: { type: String },
+}, { timestamps: true });
+
 // Create models
 export const User = mongoose.models.User || mongoose.model<IUser>('User', userSchema);
 export const Jobsite = mongoose.models.Jobsite || mongoose.model<IJobsite>('Jobsite', jobsiteSchema);
@@ -139,3 +182,4 @@ export const WeatherAlert = mongoose.models.WeatherAlert || mongoose.model<IWeat
 export const Command = mongoose.models.Command || mongoose.model<ICommand>('Command', commandSchema);
 export const ChatMessage = mongoose.models.ChatMessage || mongoose.model<IChatMessage>('ChatMessage', chatMessageSchema);
 export const MessageReaction = mongoose.models.MessageReaction || mongoose.model<IMessageReaction>('MessageReaction', messageReactionSchema);
+export const CrewMember = mongoose.models.CrewMember || mongoose.model<ICrewMember>('CrewMember', crewMemberSchema);
