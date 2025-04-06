@@ -339,7 +339,7 @@ export function VoiceCommandInterface({
       <div className={cn("flex flex-col items-center", className)}>
         <Button
           className={cn(
-            "w-16 h-16 rounded-full flex items-center justify-center transition-all p-0",
+            "w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center transition-all p-0",
             buttonAppearance.color,
             isRecordingPulsing && "animate-pulse shadow-lg shadow-primary/50"
           )}
@@ -350,9 +350,9 @@ export function VoiceCommandInterface({
         >
           {buttonAppearance.icon}
         </Button>
-        <p className="text-sm mt-2">{getButtonLabel()}</p>
+        <p className="text-xs sm:text-sm mt-2">{getButtonLabel()}</p>
         {errorMessage && (
-          <p className="text-red-500 text-sm mt-1">{errorMessage}</p>
+          <p className="text-red-500 text-xs sm:text-sm mt-1">{errorMessage}</p>
         )}
       </div>
     );
@@ -360,12 +360,14 @@ export function VoiceCommandInterface({
   
   // Full version with recent commands
   return (
-    <Card className={cn("w-full max-w-md mx-auto", className)}>
-      <CardHeader>
+    <Card className={cn("w-full mx-auto", className)}>
+      <CardHeader className="pb-3 px-4 pt-4 sm:p-6">
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle>{language === 'en' ? 'Voice Commands' : 'Comandos de Voz'}</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-base sm:text-lg">
+              {language === 'en' ? 'Voice Commands' : 'Comandos de Voz'}
+            </CardTitle>
+            <CardDescription className="text-xs sm:text-sm">
               {language === 'en' 
                 ? 'Speak commands to control BossMan' 
                 : 'Habla para controlar BossMan'}
@@ -374,15 +376,16 @@ export function VoiceCommandInterface({
           <BossManCharacter 
             mood={recordingState === 'recording' ? 'happy' : 
                  recordingState === 'error' ? 'concerned' : 'neutral'} 
-            size="sm" 
+            size="xs" 
+            className="w-10 h-10 sm:w-12 sm:h-12"
           />
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="flex flex-col items-center justify-center py-4">
+      <CardContent className="space-y-3 sm:space-y-4 px-4 pb-4 sm:px-6 sm:pb-6">
+        <div className="flex flex-col items-center justify-center py-2 sm:py-4">
           <Button
             className={cn(
-              "w-24 h-24 rounded-full flex flex-col items-center justify-center transition-all p-0",
+              "w-20 h-20 sm:w-24 sm:h-24 rounded-full flex flex-col items-center justify-center transition-all p-0",
               buttonAppearance.color,
               isRecordingPulsing && "animate-pulse shadow-lg shadow-primary/50"
             )}
@@ -393,14 +396,14 @@ export function VoiceCommandInterface({
           >
             {buttonAppearance.icon}
           </Button>
-          <p className="text-base font-medium mt-3">{getButtonLabel()}</p>
+          <p className="text-sm sm:text-base font-medium mt-2 sm:mt-3">{getButtonLabel()}</p>
           
           {transcribedText && recordingState !== 'idle' && (
-            <div className="mt-4 p-3 bg-muted rounded-md w-full">
-              <p className="text-sm font-medium">{language === 'en' ? 'Recognized:' : 'Reconocido:'}</p>
-              <p className="text-base">{transcribedText}</p>
+            <div className="mt-3 sm:mt-4 p-2 sm:p-3 bg-muted rounded-md w-full">
+              <p className="text-xs sm:text-sm font-medium">{language === 'en' ? 'Recognized:' : 'Reconocido:'}</p>
+              <p className="text-sm sm:text-base">{transcribedText}</p>
               {recognizedIntent && (
-                <Badge className={cn("mt-2", getIntentLabel(recognizedIntent).color)}>
+                <Badge className={cn("mt-2 text-xs", getIntentLabel(recognizedIntent).color)}>
                   {getIntentLabel(recognizedIntent).text}
                 </Badge>
               )}
@@ -408,8 +411,8 @@ export function VoiceCommandInterface({
           )}
           
           {errorMessage && (
-            <div className="mt-4 p-3 bg-red-50 text-red-600 rounded-md w-full">
-              <p className="text-sm">{errorMessage}</p>
+            <div className="mt-3 sm:mt-4 p-2 sm:p-3 bg-red-50 text-red-600 rounded-md w-full">
+              <p className="text-xs sm:text-sm">{errorMessage}</p>
             </div>
           )}
         </div>
@@ -418,19 +421,19 @@ export function VoiceCommandInterface({
           <>
             <Separator />
             <div>
-              <h3 className="text-sm font-medium mb-2">
+              <h3 className="text-xs sm:text-sm font-medium mb-2">
                 {language === 'en' ? 'Recent Commands' : 'Comandos Recientes'}
               </h3>
               <ul className="space-y-2">
                 {recentCommands.map((command) => (
                   <li key={command.id} className="p-2 bg-muted/50 rounded-md">
-                    <div className="flex justify-between items-start">
-                      <p className="text-sm">{command.text}</p>
-                      <Badge className={cn("ml-2", getIntentLabel(command.intent).color)}>
+                    <div className="flex justify-between items-start gap-2">
+                      <p className="text-xs sm:text-sm line-clamp-2">{command.text}</p>
+                      <Badge className={cn("ml-1 shrink-0 text-xs", getIntentLabel(command.intent).color)}>
                         {getIntentLabel(command.intent).text}
                       </Badge>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1">
+                    <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">
                       {new Date(command.timestamp).toLocaleString()}
                     </p>
                   </li>
@@ -443,8 +446,8 @@ export function VoiceCommandInterface({
         {/* Hidden audio player for playback */}
         <audio ref={audioPlayerRef} style={{ display: 'none' }} controls />
       </CardContent>
-      <CardFooter className="flex justify-between">
-        <p className="text-xs text-muted-foreground">
+      <CardFooter className="flex justify-center sm:justify-between px-4 pt-0 pb-4 sm:px-6 sm:pb-6">
+        <p className="text-[10px] sm:text-xs text-center sm:text-left text-muted-foreground">
           {language === 'en' 
             ? 'Press and hold the button, then speak your command' 
             : 'Mantén presionado el botón y habla tu comando'}
