@@ -439,116 +439,109 @@ export default function Calendar() {
                             </Button>
                           )}
                         </div>
-                        
-                        {/* Export button */}
-                        <Button variant="ghost" size="sm" onClick={generateICalFile}>
-                          <Download className="h-4 w-4 mr-1" />
-                          Export
-                        </Button>
                       </div>
                     </div>
-                    
-                    {/* Navigation buttons */}
-                    <div className="flex justify-between items-center mt-2">
-                      <div className="flex items-center space-x-2">
-                        {view === 'month' && (
-                          <>
-                            <Button variant="outline" size="sm" onClick={goToPreviousMonth}>
-                              <ChevronLeft className="h-4 w-4 mr-1" />
-                              Previous
-                            </Button>
-                            <Button variant="outline" size="sm" onClick={goToNextMonth}>
-                              Next
-                              <ChevronRight className="h-4 w-4 ml-1" />
-                            </Button>
-                          </>
-                        )}
-                        {view === 'day' && (
-                          <>
-                            <Button variant="outline" size="sm" onClick={goToPreviousDay}>
-                              <ChevronLeft className="h-4 w-4 mr-1" />
-                              Previous Day
-                            </Button>
-                            <Button variant="outline" size="sm" onClick={goToNextDay}>
-                              Next Day
-                              <ChevronRight className="h-4 w-4 ml-1" />
-                            </Button>
-                          </>
-                        )}
-                        <Button variant="ghost" size="sm" onClick={goToToday}>
-                          Today
-                        </Button>
-                      </div>
-                    </div>
+                    <CardDescription>
+                      {isLoading 
+                        ? 'Loading events...' 
+                        : searchQuery
+                          ? `${filteredEvents.length} events found`
+                          : `${events.length} events in ${format(date, 'MMMM')}`
+                      }
+                    </CardDescription>
                   </CardHeader>
-                  
                   <CardContent>
-                    {/* Day view carousel */}
+                    {/* Day carousel at top (only shown in day view) */}
                     {view === 'day' && (
-                      <div className="mx-auto max-w-3xl">
-                        <div className="overflow-hidden" ref={emblaRef}>
-                          <div className="flex select-none -ml-4">
-                            {days.map((day, i) => (
+                      <div className="space-y-4 mb-6">
+                        {/* Day navigation bar */}
+                        <div className="flex items-center justify-between mb-4">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={goToPreviousDay} 
+                            className="flex items-center space-x-1"
+                          >
+                            <MoveLeft className="h-4 w-4" />
+                            <span>Previous Day</span>
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={goToNextDay}
+                            className="flex items-center space-x-1"
+                          >
+                            <span>Next Day</span>
+                            <MoveRight className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        
+                        {/* Carousel view */}
+                        <div className="embla" ref={emblaRef}>
+                          <div className="embla__container">
+                            {days.map((day, index) => (
                               <div 
-                                key={day.toISOString()} 
-                                className="min-w-0 flex-[0_0_100%] pl-4"
-                                role="group"
-                                aria-roledescription="slide"
+                                key={format(day, 'yyyy-MM-dd')} 
+                                className="embla__slide"
                               >
-                                <Card className={`
-                                  border-2 h-full
-                                  ${isToday(day) ? 'border-primary' : 'border-transparent'}
-                                  ${dayViewIndex === i ? 'shadow-md' : ''}
-                                `}>
-                                  <CardHeader className="p-4 pb-2">
-                                    <CardTitle className="text-xl">
+                                <Card className="border shadow-sm h-full">
+                                  <CardHeader className="pb-2">
+                                    <CardTitle className="text-lg font-semibold text-center">
                                       {format(day, 'EEEE')}
+                                      <span className="block text-sm font-normal text-muted-foreground">
+                                        {format(day, 'MMMM d, yyyy')}
+                                      </span>
                                     </CardTitle>
-                                    <CardDescription className="text-sm flex items-center">
-                                      <CalendarIcon className="h-3.5 w-3.5 mr-1" />
-                                      {format(day, 'MMMM do, yyyy')}
-                                    </CardDescription>
                                   </CardHeader>
-                                  <CardContent className="p-4 pt-2">
+                                  <CardContent>
                                     <div className="space-y-3">
-                                      {isLoading ? (
-                                        <div className="flex justify-center py-8">
-                                          <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
-                                        </div>
-                                      ) : getEventsForDate(day).length > 0 ? (
+                                      {getEventsForDate(day).length > 0 ? (
                                         getEventsForDate(day).map(event => (
-                                          <div 
-                                            key={`${event.type}-${event.id}`}
-                                            className="p-3 rounded-md cursor-pointer hover:bg-gray-100"
+                                          <Card 
+                                            key={`${event.type}-${event.id}`} 
+                                            className="calendar-event-card cursor-pointer"
+                                            style={{ borderLeftColor: event.color }}
                                             onClick={() => handleSelectEvent(event)}
                                           >
-                                            <div className="flex items-start justify-between">
-                                              <div className="flex-1">
-                                                <h4 className="font-medium">{event.title}</h4>
-                                                <div className="flex items-center text-sm text-gray-500">
-                                                  <Clock className="h-3.5 w-3.5 mr-1" />
-                                                  {format(event.date, 'h:mm a')}
-                                                </div>
-                                                {event.type === 'jobsite' && event.address && (
-                                                  <div className="flex items-center text-sm text-gray-500 mt-1">
-                                                    <MapPin className="h-3.5 w-3.5 mr-1" />
-                                                    {event.address}
-                                                  </div>
-                                                )}
+                                            <CardHeader className="py-2.5 px-3">
+                                              <div className="flex items-start justify-between">
+                                                <CardTitle className="text-base">
+                                                  {event.title}
+                                                </CardTitle>
+                                                <Badge 
+                                                  variant={event.type === 'jobsite' ? 'default' : 'outline'}
+                                                  className={event.type === 'jobsite' ? 'bg-indigo-500' : 'bg-green-500 text-white'}
+                                                >
+                                                  {event.type === 'jobsite' ? 'Project' : 'Message'}
+                                                </Badge>
                                               </div>
-                                              <Badge 
-                                                variant={event.type === 'jobsite' ? 'default' : 'outline'}
-                                                className={event.type === 'jobsite' ? 'bg-indigo-500' : 'bg-green-500 text-white'}
-                                              >
-                                                {event.type === 'jobsite' ? 'Project' : 'Message'}
-                                              </Badge>
-                                            </div>
-                                          </div>
+                                            </CardHeader>
+                                            <CardContent className="py-1.5 px-3 border-t">
+                                              <div className="flex items-center text-sm text-muted-foreground">
+                                                <Clock className="h-3.5 w-3.5 mr-1" />
+                                                {format(event.date, 'h:mm a')}
+                                                {event.endDate && ` - ${format(event.endDate, 'h:mm a')}`}
+                                              </div>
+                                              {'address' in event && event.address && (
+                                                <div className="flex items-center mt-1.5 text-sm text-muted-foreground">
+                                                  <MapPin className="h-3.5 w-3.5 mr-1" />
+                                                  {event.address}
+                                                </div>
+                                              )}
+                                              {'text' in event && (
+                                                <div className="mt-1.5 text-sm">
+                                                  <MessageSquare className="h-3.5 w-3.5 mr-1 inline-block" />
+                                                  <span className="line-clamp-2">{event.text}</span>
+                                                </div>
+                                              )}
+                                            </CardContent>
+                                          </Card>
                                         ))
                                       ) : (
-                                        <div className="py-8 text-center">
-                                          <MessageSquare className="h-8 w-8 mx-auto text-gray-400" />
-                                          <p className="mt-2 text-gray-500">No events for this day</p>
+                                        <div className="flex flex-col items-center justify-center py-10 text-center">
+                                          <BossManImage mood="angry" size="sm" />
+                                          <h3 className="mt-3 text-base font-semibold">No events for this day</h3>
+                                          <p className="text-sm text-muted-foreground">Swipe to check other days</p>
                                         </div>
                                       )}
                                     </div>
@@ -559,13 +552,41 @@ export default function Calendar() {
                           </div>
                         </div>
                         
-                        {/* Mobile carousel controls */}
-                        <div className="flex justify-between mt-4 md:hidden">
-                          <Button variant="outline" size="sm" onClick={goToPreviousDay}>
-                            <MoveLeft className="h-4 w-4" />
+                        {/* Day indicators - circles at bottom showing which day we're viewing */}
+                        <div className="flex justify-center mt-4 space-x-1">
+                          {days.map((day, index) => (
+                            <div 
+                              key={`indicator-${index}`}
+                              className={`day-indicator h-2 w-2 rounded-full ${index === dayViewIndex ? 'active bg-primary' : 'bg-gray-300'}`}
+                              onClick={() => emblaApi?.scrollTo(index)}
+                            />
+                          ))}
+                        </div>
+                        
+                        {/* Event type filter for day view */}
+                        <div className="flex justify-center mt-4 space-x-2">
+                          <Button 
+                            size="sm" 
+                            variant={eventTypeFilter === 'all' ? 'default' : 'outline'}
+                            onClick={() => setEventTypeFilter('all')}
+                          >
+                            All
                           </Button>
-                          <Button variant="outline" size="sm" onClick={goToNextDay}>
-                            <MoveRight className="h-4 w-4" />
+                          <Button 
+                            size="sm" 
+                            variant={eventTypeFilter === 'jobsite' ? 'default' : 'outline'}
+                            className={eventTypeFilter === 'jobsite' ? 'bg-indigo-500' : ''}
+                            onClick={() => setEventTypeFilter('jobsite')}
+                          >
+                            Projects
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant={eventTypeFilter === 'message' ? 'default' : 'outline'}
+                            className={eventTypeFilter === 'message' ? 'bg-green-500 text-white' : ''}
+                            onClick={() => setEventTypeFilter('message')}
+                          >
+                            Messages
                           </Button>
                         </div>
                       </div>
@@ -575,18 +596,73 @@ export default function Calendar() {
                     <div className="mt-4">
                       <Tabs value={view}>
                         <TabsContent value="month" className="space-y-4">
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {filteredEvents.map(event => (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {filteredEvents.map(event => (
+                          <Card 
+                            key={`${event.type}-${event.id}`} 
+                            className="cursor-pointer hover:shadow-md transition-shadow"
+                            onClick={() => handleSelectEvent(event)}
+                          >
+                            <CardHeader className="p-4">
+                              <div className="flex items-start justify-between">
+                                <CardTitle className="text-base">
+                                  {event.title}
+                                </CardTitle>
+                                <Badge 
+                                  variant={event.type === 'jobsite' ? 'default' : 'outline'}
+                                  className={event.type === 'jobsite' ? 'bg-indigo-500' : 'bg-green-500 text-white'}
+                                >
+                                  {event.type === 'jobsite' ? 'Project' : 'Message'}
+                                </Badge>
+                              </div>
+                              <CardDescription className="flex items-center mt-1">
+                                <Clock className="h-3.5 w-3.5 mr-1" />
+                                {format(event.date, 'MMM do, h:mm a')}
+                              </CardDescription>
+                            </CardHeader>
+                          </Card>
+                        ))}
+                        
+                        {filteredEvents.length === 0 && !isLoading && (
+                          <div className="col-span-3 flex flex-col items-center justify-center p-8 text-center">
+                            <BossManImage mood="angry" size="md" />
+                            <h3 className="mt-4 text-lg font-semibold">No events found</h3>
+                            <p className="text-muted-foreground">
+                              {searchQuery 
+                                ? "Try changing your search criteria" 
+                                : "No events scheduled for this month"}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </TabsContent>
+
+                    <TabsContent value="day">
+                      {/* Day view content is above the tabs, outside TabsContent */}
+                      {/* This is just a placeholder to make the tab navigation work */}
+                    </TabsContent>
+
+                    <TabsContent value="list" className="space-y-4">
+                      <div className="space-y-4">
+                        {filteredEvents.length > 0 ? (
+                          filteredEvents
+                            .sort((a, b) => a.date.getTime() - b.date.getTime())
+                            .map(event => (
                               <Card 
                                 key={`${event.type}-${event.id}`} 
                                 className="cursor-pointer hover:shadow-md transition-shadow"
                                 onClick={() => handleSelectEvent(event)}
                               >
-                                <CardHeader className="p-4">
-                                  <div className="flex items-start justify-between">
-                                    <CardTitle className="text-base">
-                                      {event.title}
-                                    </CardTitle>
+                                <CardHeader className="py-3 px-4">
+                                  <div className="flex items-center justify-between">
+                                    <div>
+                                      <CardTitle className="text-base">
+                                        {event.title}
+                                      </CardTitle>
+                                      <CardDescription>
+                                        {format(event.date, 'EEE, MMM do')}
+                                      </CardDescription>
+                                    </div>
                                     <Badge 
                                       variant={event.type === 'jobsite' ? 'default' : 'outline'}
                                       className={event.type === 'jobsite' ? 'bg-indigo-500' : 'bg-green-500 text-white'}
@@ -594,180 +670,124 @@ export default function Calendar() {
                                       {event.type === 'jobsite' ? 'Project' : 'Message'}
                                     </Badge>
                                   </div>
-                                  <CardDescription className="flex items-center mt-1">
-                                    <Clock className="h-3.5 w-3.5 mr-1" />
-                                    {format(event.date, 'MMM do, h:mm a')}
-                                  </CardDescription>
                                 </CardHeader>
                               </Card>
-                            ))}
-                            
-                            {filteredEvents.length === 0 && !isLoading && (
-                              <div className="col-span-3 flex flex-col items-center justify-center p-8 text-center">
-                                <BossManImage mood="angry" size="md" />
-                                <h3 className="mt-4 text-lg font-semibold">No events found</h3>
-                                <p className="text-muted-foreground">
-                                  {searchQuery 
-                                    ? "Try changing your search criteria" 
-                                    : "No events scheduled for this month"}
-                                </p>
-                              </div>
-                            )}
+                            ))
+                        ) : (
+                          <div className="flex flex-col items-center justify-center p-8 text-center">
+                            <BossManImage mood="angry" size="md" />
+                            <h3 className="mt-4 text-lg font-semibold">No events found</h3>
+                            <p className="text-muted-foreground">
+                              {searchQuery 
+                                ? "Try changing your search criteria" 
+                                : "Try changing the selected month"}
+                            </p>
                           </div>
-                        </TabsContent>
-
-                        <TabsContent value="day">
-                          {/* Day view content is above the tabs, outside TabsContent */}
-                          {/* This is just a placeholder to make the tab navigation work */}
-                        </TabsContent>
-
-                        <TabsContent value="list" className="space-y-4">
-                          <div className="space-y-4">
-                            {filteredEvents.length > 0 ? (
-                              filteredEvents
-                                .sort((a, b) => a.date.getTime() - b.date.getTime())
-                                .map(event => (
-                                  <Card 
-                                    key={`${event.type}-${event.id}`} 
-                                    className="cursor-pointer hover:shadow-md transition-shadow"
-                                    onClick={() => handleSelectEvent(event)}
-                                  >
-                                    <CardHeader className="py-3 px-4">
-                                      <div className="flex items-center justify-between">
-                                        <div>
-                                          <CardTitle className="text-base">
-                                            {event.title}
-                                          </CardTitle>
-                                          <CardDescription>
-                                            {format(event.date, 'EEE, MMM do')}
-                                          </CardDescription>
-                                        </div>
-                                        <Badge 
-                                          variant={event.type === 'jobsite' ? 'default' : 'outline'}
-                                          className={event.type === 'jobsite' ? 'bg-indigo-500' : 'bg-green-500 text-white'}
-                                        >
-                                          {event.type === 'jobsite' ? 'Project' : 'Message'}
-                                        </Badge>
-                                      </div>
-                                    </CardHeader>
-                                  </Card>
-                                ))
-                            ) : (
-                              <div className="flex flex-col items-center justify-center p-8 text-center">
-                                <BossManImage mood="angry" size="md" />
-                                <h3 className="mt-4 text-lg font-semibold">No events found</h3>
-                                <p className="text-muted-foreground">
-                                  {searchQuery 
-                                    ? "Try changing your search criteria" 
-                                    : "Try changing the selected month"}
-                                </p>
-                              </div>
-                            )}
-                          </div>
-                        </TabsContent>
-                      </Tabs>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Event details panel - shown when an event is selected */}
-              {selectedEvent && (
-                <div className="w-full md:w-80">
-                  <Card>
-                    <CardHeader>
-                      <div className="flex justify-between items-start">
-                        <CardTitle>{selectedEvent.title}</CardTitle>
-                        <Button variant="ghost" size="sm" onClick={() => setSelectedEvent(null)}>
-                          <X className="h-4 w-4" />
-                        </Button>
+                        )}
                       </div>
-                      <CardDescription>
-                        {selectedEvent.type === 'jobsite' ? 'Project Details' : 'Message Details'}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
-                        <div>
-                          <h4 className="text-sm font-medium mb-1">Date & Time</h4>
-                          <div className="flex items-center text-sm">
-                            <Clock className="h-3.5 w-3.5 mr-1 text-muted-foreground" />
-                            {format(selectedEvent.date, 'EEEE, MMMM do, yyyy')}
+                    </TabsContent>
+                  </Tabs>
+                    </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Event details panel - shown when an event is selected */}
+            {selectedEvent && (
+              <div className="w-full md:w-80">
+                <Card>
+                  <CardHeader>
+                    <div className="flex justify-between items-start">
+                      <CardTitle>{selectedEvent.title}</CardTitle>
+                      <Button variant="ghost" size="sm" onClick={() => setSelectedEvent(null)}>
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <CardDescription>
+                      {selectedEvent.type === 'jobsite' ? 'Project Details' : 'Message Details'}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div>
+                        <h4 className="text-sm font-medium mb-1">Date & Time</h4>
+                        <div className="flex items-center text-sm">
+                          <Clock className="h-3.5 w-3.5 mr-1 text-muted-foreground" />
+                          {format(selectedEvent.date, 'EEEE, MMMM do, yyyy')}
+                        </div>
+                        <div className="text-sm ml-5">
+                          {format(selectedEvent.date, 'h:mm a')}
+                          {selectedEvent.endDate && ` - ${format(selectedEvent.endDate, 'h:mm a')}`}
+                        </div>
+                      </div>
+                      
+                      {selectedEvent.type === 'jobsite' && (
+                        <>
+                          <div>
+                            <h4 className="text-sm font-medium mb-1">Address</h4>
+                            <div className="flex items-center text-sm">
+                              <MapPin className="h-3.5 w-3.5 mr-1 text-muted-foreground" />
+                              {selectedEvent.address || 'No address provided'}
+                            </div>
                           </div>
-                          <div className="text-sm ml-5">
-                            {format(selectedEvent.date, 'h:mm a')}
-                            {selectedEvent.endDate && ` - ${format(selectedEvent.endDate, 'h:mm a')}`}
+                          
+                          {selectedEvent.status && (
+                            <div>
+                              <h4 className="text-sm font-medium mb-1">Status</h4>
+                              <Badge>{selectedEvent.status}</Badge>
+                            </div>
+                          )}
+                          
+                          {selectedEvent.description && (
+                            <div>
+                              <h4 className="text-sm font-medium mb-1">Description</h4>
+                              <p className="text-sm">{selectedEvent.description}</p>
+                            </div>
+                          )}
+                          
+                          {selectedEvent.progress !== undefined && (
+                            <div>
+                              <h4 className="text-sm font-medium mb-1">Progress</h4>
+                              <div className="w-full bg-gray-200 rounded-full h-2.5">
+                                <div 
+                                  className="bg-primary h-2.5 rounded-full" 
+                                  style={{ width: `${selectedEvent.progress}%` }}
+                                ></div>
+                              </div>
+                              <p className="text-xs text-right mt-1">{selectedEvent.progress}%</p>
+                            </div>
+                          )}
+                        </>
+                      )}
+                      
+                      {selectedEvent.type === 'message' && (
+                        <div>
+                          <h4 className="text-sm font-medium mb-1">Message</h4>
+                          <div className="border rounded-md p-3 bg-slate-50">
+                            <p className="text-sm">{selectedEvent.text}</p>
+                            {selectedEvent.translatedText && (
+                              <>
+                                <Separator className="my-2" />
+                                <p className="text-sm text-muted-foreground italic">
+                                  {selectedEvent.translatedText}
+                                </p>
+                              </>
+                            )}
                           </div>
                         </div>
-                        
-                        {selectedEvent.type === 'jobsite' && (
-                          <>
-                            <div>
-                              <h4 className="text-sm font-medium mb-1">Address</h4>
-                              <div className="flex items-center text-sm">
-                                <MapPin className="h-3.5 w-3.5 mr-1 text-muted-foreground" />
-                                {selectedEvent.address || 'No address provided'}
-                              </div>
-                            </div>
-                            
-                            {selectedEvent.status && (
-                              <div>
-                                <h4 className="text-sm font-medium mb-1">Status</h4>
-                                <Badge>{selectedEvent.status}</Badge>
-                              </div>
-                            )}
-                            
-                            {selectedEvent.description && (
-                              <div>
-                                <h4 className="text-sm font-medium mb-1">Description</h4>
-                                <p className="text-sm">{selectedEvent.description}</p>
-                              </div>
-                            )}
-                            
-                            {selectedEvent.progress !== undefined && (
-                              <div>
-                                <h4 className="text-sm font-medium mb-1">Progress</h4>
-                                <div className="w-full bg-gray-200 rounded-full h-2.5">
-                                  <div 
-                                    className="bg-primary h-2.5 rounded-full" 
-                                    style={{ width: `${selectedEvent.progress}%` }}
-                                  ></div>
-                                </div>
-                                <p className="text-xs text-right mt-1">{selectedEvent.progress}%</p>
-                              </div>
-                            )}
-                          </>
-                        )}
-                        
-                        {selectedEvent.type === 'message' && (
-                          <div>
-                            <h4 className="text-sm font-medium mb-1">Message</h4>
-                            <div className="border rounded-md p-3 bg-slate-50">
-                              <p className="text-sm">{selectedEvent.text}</p>
-                              {selectedEvent.translatedText && (
-                                <>
-                                  <Separator className="my-2" />
-                                  <p className="text-sm text-muted-foreground italic">
-                                    {selectedEvent.translatedText}
-                                  </p>
-                                </>
-                              )}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </CardContent>
-                    <CardFooter>
-                      {selectedEvent.type === 'jobsite' && (
-                        <Button className="w-full" variant="outline">
-                          View Project Details
-                        </Button>
                       )}
-                    </CardFooter>
-                  </Card>
-                </div>
-              )}
-            </div>
+                    </div>
+                  </CardContent>
+                  <CardFooter>
+                    {selectedEvent.type === 'jobsite' && (
+                      <Button className="w-full" variant="outline">
+                        View Project Details
+                      </Button>
+                    )}
+                  </CardFooter>
+                </Card>
+              </div>
+            )}
           </div>
         </div>
       </div>
