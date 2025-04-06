@@ -5,7 +5,9 @@ import {
   Command, InsertCommand, commands,
   ChatMessage, InsertChatMessage, chatMessages,
   MessageReaction, InsertMessageReaction, messageReactions,
-  CrewMember, InsertCrewMember, crewMembers
+  CrewMember, InsertCrewMember, crewMembers,
+  ProjectMember, InsertProjectMember, projectMembers,
+  ProjectCommunication, InsertProjectCommunication, projectCommunications
 } from "@shared/schema";
 
 export interface IStorage {
@@ -14,12 +16,31 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
 
-  // Jobsite methods
+  // Jobsite/Project methods
   getJobsites(): Promise<Jobsite[]>;
   getJobsite(id: number): Promise<Jobsite | undefined>;
+  getJobsitesByManager(managerId: number): Promise<Jobsite[]>;
   createJobsite(jobsite: InsertJobsite): Promise<Jobsite>;
+  updateJobsite(id: number, data: Partial<InsertJobsite>): Promise<Jobsite | undefined>;
   updateJobsiteStatus(id: number, status: string): Promise<Jobsite | undefined>;
   updateJobsiteDates(id: number, startDate: Date, endDate?: Date): Promise<Jobsite | undefined>;
+  updateJobsiteProgress(id: number, progress: number): Promise<Jobsite | undefined>;
+  deleteJobsite(id: number): Promise<boolean>;
+
+  // Project members methods
+  getProjectMembers(projectId: number): Promise<ProjectMember[]>;
+  getProjectMember(id: number): Promise<ProjectMember | undefined>;
+  getProjectsByCrewMember(crewMemberId: number): Promise<Jobsite[]>;
+  addProjectMember(projectMember: InsertProjectMember): Promise<ProjectMember>;
+  updateProjectMember(id: number, data: Partial<InsertProjectMember>): Promise<ProjectMember | undefined>;
+  removeProjectMember(id: number): Promise<boolean>;
+
+  // Project communications methods
+  getProjectCommunications(projectId: number, limit?: number): Promise<ProjectCommunication[]>;
+  createProjectCommunication(communication: InsertProjectCommunication): Promise<ProjectCommunication>;
+  markCommunicationAsRead(communicationId: number, userId: number): Promise<ProjectCommunication | undefined>;
+  addReactionToProjectCommunication(communicationId: number, userId: number, emoji: string): Promise<ProjectCommunication | undefined>;
+  removeReactionFromProjectCommunication(communicationId: number, userId: number, emoji: string): Promise<ProjectCommunication | undefined>;
 
   // Weather alert methods
   getWeatherAlerts(): Promise<WeatherAlert[]>;
@@ -61,6 +82,8 @@ export class MemStorage implements IStorage {
   private chatMessages: Map<number, ChatMessage>;
   private messageReactions: Map<number, MessageReaction>;
   private crewMembers: Map<number, CrewMember>;
+  private projectMembers: Map<number, ProjectMember>;
+  private projectCommunications: Map<number, ProjectCommunication>;
   
   private userCurrentId: number;
   private jobsiteCurrentId: number;
@@ -69,6 +92,8 @@ export class MemStorage implements IStorage {
   private chatMessageCurrentId: number;
   private messageReactionCurrentId: number;
   private crewMemberCurrentId: number;
+  private projectMemberCurrentId: number;
+  private projectCommunicationCurrentId: number;
 
   constructor() {
     this.users = new Map();
@@ -78,6 +103,8 @@ export class MemStorage implements IStorage {
     this.chatMessages = new Map();
     this.messageReactions = new Map();
     this.crewMembers = new Map();
+    this.projectMembers = new Map();
+    this.projectCommunications = new Map();
     
     this.userCurrentId = 1;
     this.jobsiteCurrentId = 1;
@@ -86,6 +113,8 @@ export class MemStorage implements IStorage {
     this.chatMessageCurrentId = 1;
     this.messageReactionCurrentId = 1;
     this.crewMemberCurrentId = 1;
+    this.projectMemberCurrentId = 1;
+    this.projectCommunicationCurrentId = 1;
 
     // Initialize with sample data
     this.initSampleData();
@@ -375,6 +404,185 @@ export class MemStorage implements IStorage {
     return this.crewMembers.delete(id);
   }
   
+  // Additional Jobsite/Project methods
+  async getJobsitesByManager(managerId: number): Promise<Jobsite[]> {
+    return Array.from(this.jobsites.values())
+      .filter(jobsite => jobsite.managerId === managerId);
+  }
+  
+  async updateJobsite(id: number, data: Partial<InsertJobsite>): Promise<Jobsite | undefined> {
+    const jobsite = this.jobsites.get(id);
+    if (!jobsite) return undefined;
+    
+    const updatedJobsite = { 
+      ...jobsite, 
+      ...data,
+      updatedAt: new Date()
+    };
+    this.jobsites.set(id, updatedJobsite);
+    return updatedJobsite;
+  }
+  
+  async updateJobsiteProgress(id: number, progress: number): Promise<Jobsite | undefined> {
+    const jobsite = this.jobsites.get(id);
+    if (!jobsite) return undefined;
+    
+    const updatedJobsite = { 
+      ...jobsite, 
+      progress,
+      updatedAt: new Date()
+    };
+    this.jobsites.set(id, updatedJobsite);
+    return updatedJobsite;
+  }
+  
+  async deleteJobsite(id: number): Promise<boolean> {
+    if (!this.jobsites.has(id)) {
+      return false;
+    }
+    
+    // Delete all associated project members
+    const projectMembersToDelete = Array.from(this.projectMembers.values())
+      .filter(member => member.projectId === id)
+      .map(member => member.id);
+    
+    projectMembersToDelete.forEach(memberId => this.projectMembers.delete(memberId));
+    
+    // Delete all associated communications
+    const communicationsToDelete = Array.from(this.projectCommunications.values())
+      .filter(comm => comm.projectId === id)
+      .map(comm => comm.id);
+    
+    communicationsToDelete.forEach(commId => this.projectCommunications.delete(commId));
+    
+    return this.jobsites.delete(id);
+  }
+  
+  // Project members methods
+  async getProjectMembers(projectId: number): Promise<ProjectMember[]> {
+    return Array.from(this.projectMembers.values())
+      .filter(member => member.projectId === projectId);
+  }
+  
+  async getProjectMember(id: number): Promise<ProjectMember | undefined> {
+    return this.projectMembers.get(id);
+  }
+  
+  async getProjectsByCrewMember(crewMemberId: number): Promise<Jobsite[]> {
+    // Find all project IDs that this crew member is part of
+    const projectIds = Array.from(this.projectMembers.values())
+      .filter(member => member.crewMemberId === crewMemberId)
+      .map(member => member.projectId);
+    
+    // Return all jobsites/projects that match these IDs
+    return Array.from(this.jobsites.values())
+      .filter(jobsite => projectIds.includes(jobsite.id));
+  }
+  
+  async addProjectMember(projectMember: InsertProjectMember): Promise<ProjectMember> {
+    const id = this.projectMemberCurrentId++;
+    const newProjectMember: ProjectMember = { 
+      ...projectMember, 
+      id,
+      assignedAt: new Date()
+    };
+    this.projectMembers.set(id, newProjectMember);
+    return newProjectMember;
+  }
+  
+  async updateProjectMember(id: number, data: Partial<InsertProjectMember>): Promise<ProjectMember | undefined> {
+    const projectMember = this.projectMembers.get(id);
+    if (!projectMember) return undefined;
+    
+    const updatedProjectMember = { ...projectMember, ...data };
+    this.projectMembers.set(id, updatedProjectMember);
+    return updatedProjectMember;
+  }
+  
+  async removeProjectMember(id: number): Promise<boolean> {
+    if (!this.projectMembers.has(id)) {
+      return false;
+    }
+    return this.projectMembers.delete(id);
+  }
+  
+  // Project communications methods
+  async getProjectCommunications(projectId: number, limit: number = 50): Promise<ProjectCommunication[]> {
+    return Array.from(this.projectCommunications.values())
+      .filter(comm => comm.projectId === projectId)
+      .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+      .slice(0, limit);
+  }
+  
+  async createProjectCommunication(communication: InsertProjectCommunication): Promise<ProjectCommunication> {
+    const id = this.projectCommunicationCurrentId++;
+    const newCommunication: ProjectCommunication = {
+      ...communication,
+      id,
+      timestamp: new Date(),
+      readBy: []
+    };
+    this.projectCommunications.set(id, newCommunication);
+    return newCommunication;
+  }
+  
+  async markCommunicationAsRead(communicationId: number, userId: number): Promise<ProjectCommunication | undefined> {
+    const communication = this.projectCommunications.get(communicationId);
+    if (!communication) return undefined;
+    
+    // Add userId to readBy array if not already there
+    if (!communication.readBy.includes(userId)) {
+      const updatedReadBy = [...communication.readBy, userId];
+      const updatedCommunication = { ...communication, readBy: updatedReadBy };
+      this.projectCommunications.set(communicationId, updatedCommunication);
+      return updatedCommunication;
+    }
+    
+    return communication;
+  }
+  
+  async addReactionToProjectCommunication(communicationId: number, userId: number, emoji: string): Promise<ProjectCommunication | undefined> {
+    const communication = this.projectCommunications.get(communicationId);
+    if (!communication) return undefined;
+    
+    // Update the communication's reactions
+    const reactions = communication.reactions || {};
+    const userArray = reactions[emoji] || [];
+    
+    // Check if user already added this reaction
+    if (!userArray.includes(userId.toString())) {
+      reactions[emoji] = [...userArray, userId.toString()];
+    }
+    
+    const updatedCommunication = { ...communication, reactions };
+    this.projectCommunications.set(communicationId, updatedCommunication);
+    
+    return updatedCommunication;
+  }
+  
+  async removeReactionFromProjectCommunication(communicationId: number, userId: number, emoji: string): Promise<ProjectCommunication | undefined> {
+    const communication = this.projectCommunications.get(communicationId);
+    if (!communication || !communication.reactions) return undefined;
+    
+    const reactions = { ...communication.reactions };
+    const userArray = reactions[emoji] || [];
+    
+    // Filter out this user's reaction for this emoji
+    const updatedUserArray = userArray.filter(id => id !== userId.toString());
+    
+    // If there are still users with this reaction, update the array, otherwise remove the emoji key
+    if (updatedUserArray.length > 0) {
+      reactions[emoji] = updatedUserArray;
+    } else {
+      delete reactions[emoji];
+    }
+    
+    const updatedCommunication = { ...communication, reactions };
+    this.projectCommunications.set(communicationId, updatedCommunication);
+    
+    return updatedCommunication;
+  }
+  
   // Initialize with sample data
   private initSampleData() {
     // Sample user
@@ -630,6 +838,103 @@ export class MemStorage implements IStorage {
     ];
     
     crewMembers.forEach(member => this.crewMembers.set(member.id, member));
+    
+    // Sample project members (assigning crew members to projects)
+    const projectMembers = [
+      {
+        id: this.projectMemberCurrentId++,
+        projectId: jobsite1.id,
+        crewMemberId: crewMembers[0].id, // Carlos to Westside Project
+        role: 'electrician',
+        permissions: 'member',
+        assignedAt: new Date()
+      },
+      {
+        id: this.projectMemberCurrentId++,
+        projectId: jobsite1.id,
+        crewMemberId: crewMembers[3].id, // James to Westside Project
+        role: 'plumber',
+        permissions: 'member',
+        assignedAt: new Date()
+      },
+      {
+        id: this.projectMemberCurrentId++,
+        projectId: jobsite2.id,
+        crewMemberId: crewMembers[1].id, // Sarah to Downtown Renovation
+        role: 'manager',
+        permissions: 'admin',
+        assignedAt: new Date()
+      },
+      {
+        id: this.projectMemberCurrentId++,
+        projectId: jobsite2.id,
+        crewMemberId: crewMembers[4].id, // Elena to Downtown Renovation
+        role: 'hvac-tech',
+        permissions: 'member',
+        assignedAt: new Date()
+      },
+      {
+        id: this.projectMemberCurrentId++,
+        projectId: jobsite3.id,
+        crewMemberId: crewMembers[2].id, // Miguel to Eastside Construction
+        role: 'concrete-specialist',
+        permissions: 'member',
+        assignedAt: new Date()
+      }
+    ];
+    
+    projectMembers.forEach(member => this.projectMembers.set(member.id, member));
+    
+    // Sample project communications
+    const projectCommunications = [
+      {
+        id: this.projectCommunicationCurrentId++,
+        projectId: jobsite1.id,
+        senderId: user.id,
+        content: "Team, please ensure all electrical wiring is completed by end of day.",
+        translatedContent: "Equipo, asegúrese de que todo el cableado eléctrico esté terminado al final del día.",
+        language: "en",
+        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2), // 2 hours ago
+        readBy: [user.id],
+        reactions: { "👍": [crewMembers[0].id.toString()] }
+      },
+      {
+        id: this.projectCommunicationCurrentId++,
+        projectId: jobsite1.id,
+        senderId: crewMembers[0].id,
+        content: "Entendido, jefe. Estamos a tiempo con el cronograma de cableado.",
+        translatedContent: "Understood, boss. We're on schedule with the wiring timeline.",
+        language: "es",
+        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 1.5), // 1.5 hours ago
+        readBy: [user.id, crewMembers[0].id],
+        reactions: {}
+      },
+      {
+        id: this.projectCommunicationCurrentId++,
+        projectId: jobsite2.id,
+        senderId: user.id,
+        content: "Be aware of the weather warning. All exterior work is postponed until tomorrow.",
+        translatedContent: "Tenga en cuenta la advertencia meteorológica. Todo el trabajo exterior se pospone hasta mañana.",
+        language: "en",
+        timestamp: new Date(Date.now() - 1000 * 60 * 30), // 30 minutes ago
+        isAnnouncement: true,
+        readBy: [user.id, crewMembers[1].id],
+        reactions: { "👍": [crewMembers[1].id.toString(), crewMembers[4].id.toString()] }
+      },
+      {
+        id: this.projectCommunicationCurrentId++,
+        projectId: jobsite3.id,
+        senderId: crewMembers[2].id,
+        content: "Necesitamos más cemento para completar la fundación este de mañana.",
+        translatedContent: "We need more cement to complete the east foundation tomorrow.",
+        language: "es",
+        timestamp: new Date(Date.now() - 1000 * 60 * 15), // 15 minutes ago
+        readBy: [crewMembers[2].id],
+        reactions: {}
+      }
+    ];
+    
+    projectCommunications.forEach(comm => this.projectCommunications.set(comm.id, comm));
   }
 }
 

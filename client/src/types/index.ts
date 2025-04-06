@@ -68,9 +68,59 @@ export interface WebSocketMessageEvent {
   [key: string]: any;
 }
 
+export interface ProjectMember {
+  id: number;
+  projectId: number;
+  crewMemberId: number;
+  role: string;
+  notes: string | null;
+  assignedBy: number;
+  assignedAt: string;
+  hourlyRate: number | null;
+}
+
+export interface ProjectCommunication {
+  id: number;
+  projectId: number;
+  senderId: number;
+  content: string;
+  translatedContent: string | null;
+  language: string;
+  timestamp: string;
+  attachmentUrl: string | null;
+  attachmentType: string | null;
+  isAnnouncement: boolean | null;
+  readBy: number[] | null;
+  reactions: Record<string, string[]> | null;
+}
+
+export interface CrewMember {
+  id: number;
+  name: string;
+  role: string;
+  specialization: string | null;
+  phone: string | null;
+  email: string | null;
+  experienceYears: number | null;
+  jobsiteId: number | null;
+  status: string | null;
+  hourlyRate: number | null;
+  availability: string | null;
+  skills: string[] | null;
+  certification: string[] | null;
+  profileImage: string | null;
+  notes: string | null;
+  languages: string[] | null;
+  address: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 declare global {
   interface Window {
-    SpeechRecognition?: typeof SpeechRecognition;
-    webkitSpeechRecognition?: typeof SpeechRecognition;
+    SpeechRecognition?: any;
+    webkitSpeechRecognition?: any;
   }
 }

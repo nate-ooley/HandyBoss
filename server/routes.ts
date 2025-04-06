@@ -4,7 +4,12 @@ import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { z } from "zod";
 import { log } from "./vite";
-import { insertCommandSchema, insertChatMessageSchema } from "@shared/schema";
+import { 
+  insertCommandSchema, 
+  insertChatMessageSchema,
+  insertProjectMemberSchema,
+  insertProjectCommunicationSchema
+} from "@shared/schema";
 import { translateWithOpenAI, detectLanguageWithOpenAI } from "./openai";
 import { sendEmail, sendSMS, sendBulkNotifications } from "./services/sendgrid";
 import { createPaymentIntent, createCustomer, createSubscription, getCustomer, getSubscription } from "./services/stripe";
@@ -1109,6 +1114,364 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(jobsite);
     } else {
       res.status(404).json({ message: 'Jobsite not found' });
+    }
+  });
+  
+  app.get('/api/jobsites/manager/:managerId', async (req, res) => {
+    try {
+      const managerId = parseInt(req.params.managerId);
+      if (isNaN(managerId)) {
+        return res.status(400).json({ message: 'Invalid manager ID' });
+      }
+      
+      const jobsites = await storage.getJobsitesByManager(managerId);
+      res.json(jobsites);
+    } catch (error) {
+      console.error('Error fetching manager jobsites:', error);
+      res.status(500).json({ error: 'Failed to fetch jobsites for manager' });
+    }
+  });
+  
+  app.put('/api/jobsites/:id', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid jobsite ID' });
+      }
+      
+      const data = req.body;
+      const jobsite = await storage.updateJobsite(id, data);
+      
+      if (!jobsite) {
+        return res.status(404).json({ error: 'Jobsite not found' });
+      }
+      
+      res.json(jobsite);
+    } catch (error) {
+      console.error('Error updating jobsite:', error);
+      res.status(500).json({ error: 'Failed to update jobsite' });
+    }
+  });
+  
+  app.patch('/api/jobsites/:id/progress', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid jobsite ID' });
+      }
+      
+      const { progress } = req.body;
+      
+      if (typeof progress !== 'number' || progress < 0 || progress > 100) {
+        return res.status(400).json({ error: 'Progress must be a number between 0 and 100' });
+      }
+      
+      const jobsite = await storage.updateJobsiteProgress(id, progress);
+      
+      if (!jobsite) {
+        return res.status(404).json({ error: 'Jobsite not found' });
+      }
+      
+      res.json(jobsite);
+    } catch (error) {
+      console.error('Error updating jobsite progress:', error);
+      res.status(500).json({ error: 'Failed to update jobsite progress' });
+    }
+  });
+  
+  app.delete('/api/jobsites/:id', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid jobsite ID' });
+      }
+      
+      const success = await storage.deleteJobsite(id);
+      
+      if (!success) {
+        return res.status(404).json({ error: 'Jobsite not found' });
+      }
+      
+      res.status(204).send();
+    } catch (error) {
+      console.error('Error deleting jobsite:', error);
+      res.status(500).json({ error: 'Failed to delete jobsite' });
+    }
+  });
+  
+  // Project members API endpoints
+  app.get('/api/projects/:projectId/members', async (req, res) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      if (isNaN(projectId)) {
+        return res.status(400).json({ message: 'Invalid project ID' });
+      }
+      
+      const members = await storage.getProjectMembers(projectId);
+      res.json(members);
+    } catch (error) {
+      console.error('Error fetching project members:', error);
+      res.status(500).json({ error: 'Failed to fetch project members' });
+    }
+  });
+  
+  app.get('/api/projects/member/:id', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid member ID' });
+      }
+      
+      const member = await storage.getProjectMember(id);
+      
+      if (!member) {
+        return res.status(404).json({ error: 'Project member not found' });
+      }
+      
+      res.json(member);
+    } catch (error) {
+      console.error('Error fetching project member:', error);
+      res.status(500).json({ error: 'Failed to fetch project member' });
+    }
+  });
+  
+  app.get('/api/crew/:crewMemberId/projects', async (req, res) => {
+    try {
+      const crewMemberId = parseInt(req.params.crewMemberId);
+      if (isNaN(crewMemberId)) {
+        return res.status(400).json({ message: 'Invalid crew member ID' });
+      }
+      
+      const projects = await storage.getProjectsByCrewMember(crewMemberId);
+      res.json(projects);
+    } catch (error) {
+      console.error('Error fetching crew member projects:', error);
+      res.status(500).json({ error: 'Failed to fetch projects for crew member' });
+    }
+  });
+  
+  app.post('/api/projects/:projectId/members', async (req, res) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      if (isNaN(projectId)) {
+        return res.status(400).json({ message: 'Invalid project ID' });
+      }
+      
+      const data = req.body;
+      
+      // Validate the input data
+      try {
+        const validatedData = insertProjectMemberSchema.parse({
+          ...data,
+          projectId
+        });
+        
+        const member = await storage.addProjectMember(validatedData);
+        res.status(201).json(member);
+      } catch (validationError: any) {
+        return res.status(400).json({ 
+          error: 'Invalid project member data', 
+          details: validationError.errors 
+        });
+      }
+    } catch (error) {
+      console.error('Error adding project member:', error);
+      res.status(500).json({ error: 'Failed to add project member' });
+    }
+  });
+  
+  app.put('/api/projects/member/:id', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid member ID' });
+      }
+      
+      const data = req.body;
+      const member = await storage.updateProjectMember(id, data);
+      
+      if (!member) {
+        return res.status(404).json({ error: 'Project member not found' });
+      }
+      
+      res.json(member);
+    } catch (error) {
+      console.error('Error updating project member:', error);
+      res.status(500).json({ error: 'Failed to update project member' });
+    }
+  });
+  
+  app.delete('/api/projects/member/:id', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid member ID' });
+      }
+      
+      const success = await storage.removeProjectMember(id);
+      
+      if (!success) {
+        return res.status(404).json({ error: 'Project member not found' });
+      }
+      
+      res.status(204).send();
+    } catch (error) {
+      console.error('Error removing project member:', error);
+      res.status(500).json({ error: 'Failed to remove project member' });
+    }
+  });
+  
+  // Project communications API endpoints
+  app.get('/api/projects/:projectId/communications', async (req, res) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      if (isNaN(projectId)) {
+        return res.status(400).json({ message: 'Invalid project ID' });
+      }
+      
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
+      const communications = await storage.getProjectCommunications(projectId, limit);
+      res.json(communications);
+    } catch (error) {
+      console.error('Error fetching project communications:', error);
+      res.status(500).json({ error: 'Failed to fetch project communications' });
+    }
+  });
+  
+  app.post('/api/projects/:projectId/communications', async (req, res) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      if (isNaN(projectId)) {
+        return res.status(400).json({ message: 'Invalid project ID' });
+      }
+      
+      const data = req.body;
+      
+      // Validate the input data
+      try {
+        const validatedData = insertProjectCommunicationSchema.parse({
+          ...data,
+          projectId
+        });
+        
+        const communication = await storage.createProjectCommunication(validatedData);
+        res.status(201).json(communication);
+        
+        // Broadcast to all connected clients via WebSocket
+        broadcast({
+          type: 'project-communication',
+          action: 'create',
+          projectId,
+          communication,
+          timestamp: new Date().toISOString()
+        });
+      } catch (validationError: any) {
+        return res.status(400).json({ 
+          error: 'Invalid project communication data', 
+          details: validationError.errors 
+        });
+      }
+    } catch (error) {
+      console.error('Error creating project communication:', error);
+      res.status(500).json({ error: 'Failed to create project communication' });
+    }
+  });
+  
+  app.post('/api/projects/communications/:id/read', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid communication ID' });
+      }
+      
+      const { userId } = req.body;
+      
+      if (!userId) {
+        return res.status(400).json({ error: 'User ID is required' });
+      }
+      
+      const communication = await storage.markCommunicationAsRead(id, userId);
+      
+      if (!communication) {
+        return res.status(404).json({ error: 'Communication not found' });
+      }
+      
+      res.json(communication);
+    } catch (error) {
+      console.error('Error marking communication as read:', error);
+      res.status(500).json({ error: 'Failed to mark communication as read' });
+    }
+  });
+  
+  app.post('/api/projects/communications/:id/reactions', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid communication ID' });
+      }
+      
+      const { userId, emoji } = req.body;
+      
+      if (!userId || !emoji) {
+        return res.status(400).json({ error: 'User ID and emoji are required' });
+      }
+      
+      const communication = await storage.addReactionToProjectCommunication(id, userId, emoji);
+      
+      if (!communication) {
+        return res.status(404).json({ error: 'Communication not found' });
+      }
+      
+      res.json(communication);
+      
+      // Broadcast reaction update
+      broadcast({
+        type: 'project-communication-reaction',
+        action: 'add',
+        communicationId: id,
+        userId,
+        emoji,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Error adding reaction to communication:', error);
+      res.status(500).json({ error: 'Failed to add reaction' });
+    }
+  });
+  
+  app.delete('/api/projects/communications/:id/reactions', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid communication ID' });
+      }
+      
+      const { userId, emoji } = req.body;
+      
+      if (!userId || !emoji) {
+        return res.status(400).json({ error: 'User ID and emoji are required' });
+      }
+      
+      const communication = await storage.removeReactionFromProjectCommunication(id, userId, emoji);
+      
+      if (!communication) {
+        return res.status(404).json({ error: 'Communication not found' });
+      }
+      
+      res.json(communication);
+      
+      // Broadcast reaction update
+      broadcast({
+        type: 'project-communication-reaction',
+        action: 'remove',
+        communicationId: id,
+        userId,
+        emoji,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Error removing reaction from communication:', error);
+      res.status(500).json({ error: 'Failed to remove reaction' });
     }
   });
   

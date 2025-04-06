@@ -18,11 +18,19 @@ export const jobsites = pgTable("jobsites", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   address: text("address").notNull(),
-  status: text("status").notNull(),
+  status: text("status").notNull(), // active, completed, on-hold, scheduled
   time: text("time").notNull(),
   startDate: timestamp("start_date"),
   endDate: timestamp("end_date"),
   location: json("location").$type<{ lat: number; lng: number }>(),
+  description: text("description"),
+  clientName: text("client_name"),
+  budget: real("budget"),
+  managerId: integer("manager_id").references(() => users.id),
+  progress: integer("progress").default(0), // 0-100
+  tags: text("tags").array(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export const weatherAlerts = pgTable("weather_alerts", {
@@ -134,3 +142,48 @@ export const insertCrewMemberSchema = createInsertSchema(crewMembers).omit({
 
 export type InsertCrewMember = z.infer<typeof insertCrewMemberSchema>;
 export type CrewMember = typeof crewMembers.$inferSelect;
+
+// Project members schema - tracks which crew members are assigned to which projects
+export const projectMembers = pgTable("project_members", {
+  id: serial("id").primaryKey(),
+  projectId: integer("project_id").references(() => jobsites.id).notNull(),
+  crewMemberId: integer("crew_member_id").references(() => crewMembers.id).notNull(),
+  role: text("role").notNull(), // foreman, worker, specialist, etc.
+  assignedBy: integer("assigned_by").references(() => users.id).notNull(), // Which manager assigned this worker
+  assignedAt: timestamp("assigned_at").defaultNow().notNull(),
+  hourlyRate: real("hourly_rate"),
+  notes: text("notes"),
+});
+
+export const insertProjectMemberSchema = createInsertSchema(projectMembers).omit({
+  id: true,
+  assignedAt: true,
+});
+
+export type InsertProjectMember = z.infer<typeof insertProjectMemberSchema>;
+export type ProjectMember = typeof projectMembers.$inferSelect;
+
+// Project communications schema - dedicated to project-specific communications
+export const projectCommunications = pgTable("project_communications", {
+  id: serial("id").primaryKey(),
+  projectId: integer("project_id").references(() => jobsites.id).notNull(),
+  senderId: integer("sender_id").references(() => users.id).notNull(),
+  content: text("content").notNull(),
+  translatedContent: text("translated_content"),
+  language: text("language").notNull().default("en"), // en or es
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+  attachmentUrl: text("attachment_url"),
+  attachmentType: text("attachment_type"), // image, document, audio, etc.
+  isAnnouncement: boolean("is_announcement").default(false),
+  readBy: integer("read_by").array(), // Array of user IDs who've read the message
+  reactions: json("reactions").$type<Record<string, string[]>>(), // Emoji reactions
+});
+
+export const insertProjectCommunicationSchema = createInsertSchema(projectCommunications).omit({
+  id: true,
+  timestamp: true,
+  readBy: true,
+});
+
+export type InsertProjectCommunication = z.infer<typeof insertProjectCommunicationSchema>;
+export type ProjectCommunication = typeof projectCommunications.$inferSelect;
