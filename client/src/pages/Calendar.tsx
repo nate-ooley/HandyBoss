@@ -668,7 +668,7 @@ export default function Calendar() {
                         </div>
                         
                         {/* Mobile carousel controls - Fixed position buttons that stay in view */}
-                        <div className="fixed bottom-24 left-0 right-0 z-50 flex justify-between items-center px-4 md:hidden">
+                        <div className="fixed bottom-24 left-0 right-0 z-50 flex justify-center items-center gap-16 md:hidden">
                           <Button variant="outline" size="sm" onClick={goToPreviousDay} className="bg-white shadow-md h-10 w-10 rounded-full p-0">
                             <MoveLeft className="h-5 w-5" />
                           </Button>
@@ -719,7 +719,7 @@ export default function Calendar() {
                         </div>
                         
                         {/* Fixed bottom right add project button */}
-                        <div className="fixed bottom-24 right-4 z-50">
+                        <div className="fixed bottom-6 right-4 z-50">
                           <Button 
                             className="bg-green-500 hover:bg-green-600 text-white shadow-lg h-12 w-12 rounded-full p-0 transition-all hover:scale-105"
                             onClick={() => window.location.href = "/projects/add"}
