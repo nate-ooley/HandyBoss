@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -48,7 +48,7 @@ type CalendarEvent = {
 export default function Calendar() {
   // State
   const [date, setDate] = useState<Date>(new Date());
-  const [view, setView] = useState<'month' | 'day' | 'list'>('month');
+  const [view, setView] = useState<'month' | 'day' | 'list'>('day');
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [filteredEvents, setFilteredEvents] = useState<CalendarEvent[]>([]);
@@ -58,6 +58,7 @@ export default function Calendar() {
   
   // Embla carousel for day view
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: false });
+  const daysChanging = useRef<boolean>(false); // Ref to prevent infinite loops
   const [dayViewIndex, setDayViewIndex] = useState(0);
   const [days, setDays] = useState<Date[]>([]);
 
@@ -290,14 +291,16 @@ export default function Calendar() {
         daysArray.push(addDays(date, i));
       }
       setDays(daysArray);
-      setDayViewIndex(3); // Middle day is the selected date
       
-      // Reset the Embla carousel
+      // Only set day view index once when initializing
+      // This prevents the infinite update loop
       if (emblaApi) {
+        // The Embla API doesn't have canScrollTo, we just use scrollTo directly
         emblaApi.scrollTo(3);
+        setDayViewIndex(3); // Middle day is the selected date
       }
     }
-  }, [date, view, emblaApi]);
+  }, [date, view]); // Remove emblaApi from dependencies
   
   // Listen for carousel slide changes
   useEffect(() => {
@@ -305,10 +308,19 @@ export default function Calendar() {
     
     const onSelect = () => {
       const index = emblaApi.selectedScrollSnap();
-      setDayViewIndex(index);
-      const newDate = days[index];
-      if (newDate) {
-        setDate(newDate);
+      // Only update if the index has actually changed to prevent update loops
+      if (index !== dayViewIndex) {
+        setDayViewIndex(index);
+        const newDate = days[index];
+        // We need a ref to track if this was user-initiated to avoid loops
+        if (newDate && !daysChanging.current) {
+          daysChanging.current = true;
+          setDate(newDate);
+          // Reset the flag after a short delay to prevent update loops
+          setTimeout(() => {
+            daysChanging.current = false;
+          }, 50);
+        }
       }
     };
     
@@ -316,7 +328,7 @@ export default function Calendar() {
     return () => {
       emblaApi.off('select', onSelect);
     };
-  }, [emblaApi, days, view]);
+  }, [emblaApi, days, view, dayViewIndex]);
   
   // Navigation for day view
   const goToPreviousDay = useCallback(() => {
@@ -351,7 +363,7 @@ export default function Calendar() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <Tabs defaultValue="month" onValueChange={(value) => setView(value as any)}>
+                  <Tabs defaultValue="day" onValueChange={(value) => setView(value as any)}>
                     <TabsList className="grid w-full grid-cols-3">
                       <TabsTrigger value="month">Month</TabsTrigger>
                       <TabsTrigger value="day">Day</TabsTrigger>
@@ -447,7 +459,7 @@ export default function Calendar() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <Tabs defaultValue={view} onValueChange={(value) => setView(value as any)}>
+                  <Tabs defaultValue="day" value={view} onValueChange={(value) => setView(value as any)}>
                     <TabsContent value="month" className="space-y-4">
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {filteredEvents.map(event => (
