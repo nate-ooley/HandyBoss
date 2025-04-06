@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import BossManCharacter from "./BossManCharacter"';
+import BossManCharacter from "../components/BossManCharacter";
 import { Button } from '@/components/ui/button';
 import { 
   Card, 
