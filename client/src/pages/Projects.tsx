@@ -18,6 +18,7 @@ import { Input } from '@/components/ui/input';
 import { apiRequest } from '@/lib/queryClient';
 import { toast } from '@/hooks/use-toast';
 import { ProjectAIAssistant } from '@/components/ProjectAIAssistant';
+import { MapPlaceholder } from '@/assets/map-placeholder';
 
 // Types
 interface Jobsite {
@@ -224,8 +225,8 @@ export default function Projects() {
           <SideNavigation />
         </div>
         <div className="flex-1 flex flex-col">
-          <header className="border-b px-3 sm:px-6 md:px-8 py-3 md:py-4">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
+          <header className="border-b px-3 sm:px-6 md:px-8 py-4 md:py-6 bg-gradient-to-r from-primary/10 to-primary/5">
+            <div className="flex flex-col gap-2 sm:gap-3">
               <div className="flex items-center">
                 <Button 
                   variant="outline" 
@@ -236,20 +237,31 @@ export default function Projects() {
                   <ArrowLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4 sm:mr-2" />
                   <span className="hidden sm:inline">Back to Projects</span>
                 </Button>
-                <h1 className="text-lg sm:text-xl md:text-2xl font-bold tracking-tight truncate max-w-[200px] sm:max-w-md">
-                  {selectedProject.name}
-                </h1>
               </div>
-              <Badge 
-                className={`px-2 py-0.5 sm:px-3 sm:py-1 text-xs sm:text-sm ${
-                  selectedProject.status === 'active' ? 'bg-green-100 text-green-800' : 
-                  selectedProject.status === 'completed' ? 'bg-blue-100 text-blue-800' : 
-                  selectedProject.status === 'scheduled' ? 'bg-amber-100 text-amber-800' :
-                  'bg-red-100 text-red-800'
-                }`}
-              >
-                {selectedProject.status.charAt(0).toUpperCase() + selectedProject.status.slice(1)}
-              </Badge>
+              
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between">
+                <div className="flex-1">
+                  <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-primary">
+                    {selectedProject.name}
+                  </h1>
+                  <div className="flex items-center mt-1 sm:mt-2 text-sm text-gray-500">
+                    <MapPin className="h-4 w-4 mr-1" />
+                    <span className="truncate max-w-[250px] sm:max-w-md">{selectedProject.address}</span>
+                  </div>
+                </div>
+                <div className="mt-2 sm:mt-0">
+                  <Badge 
+                    className={`px-3 py-1 sm:px-4 sm:py-1.5 text-sm sm:text-base ${
+                      selectedProject.status === 'active' ? 'bg-green-100 text-green-800' : 
+                      selectedProject.status === 'completed' ? 'bg-blue-100 text-blue-800' : 
+                      selectedProject.status === 'scheduled' ? 'bg-amber-100 text-amber-800' :
+                      'bg-red-100 text-red-800'
+                    }`}
+                  >
+                    {selectedProject.status.charAt(0).toUpperCase() + selectedProject.status.slice(1)}
+                  </Badge>
+                </div>
+              </div>
             </div>
           </header>
           
@@ -262,21 +274,49 @@ export default function Projects() {
                   </CardHeader>
                   <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                      {/* Project location map */}
+                      <div className="sm:col-span-2 mb-3">
+                        <h4 className="text-xs sm:text-sm font-medium text-gray-500 mb-2">Location</h4>
+                        <MapPlaceholder 
+                          lat={selectedProject.location?.lat || 34.0522}
+                          lng={selectedProject.location?.lng || -118.2437}
+                          address={selectedProject.address}
+                          className="h-48 sm:h-64 w-full"
+                        />
+                      </div>
+                      
+                      <div>
+                        <h4 className="text-xs sm:text-sm font-medium text-gray-500">Status</h4>
+                        <p className="text-sm sm:text-base flex items-center">
+                          <span className={`h-2 w-2 rounded-full mr-2 ${
+                            selectedProject.status === 'active' ? 'bg-green-500' : 
+                            selectedProject.status === 'completed' ? 'bg-blue-500' : 
+                            selectedProject.status === 'scheduled' ? 'bg-amber-500' :
+                            'bg-red-500'
+                          }`}></span>
+                          {selectedProject.status.charAt(0).toUpperCase() + selectedProject.status.slice(1)}
+                        </p>
+                      </div>
+                      
                       <div>
                         <h4 className="text-xs sm:text-sm font-medium text-gray-500">Address</h4>
                         <p className="text-sm sm:text-base break-words">{selectedProject.address}</p>
                       </div>
-                      <div>
-                        <h4 className="text-xs sm:text-sm font-medium text-gray-500">Status</h4>
-                        <p className="text-sm sm:text-base">{selectedProject.status.charAt(0).toUpperCase() + selectedProject.status.slice(1)}</p>
-                      </div>
+                      
                       <div>
                         <h4 className="text-xs sm:text-sm font-medium text-gray-500">Start Date</h4>
-                        <p className="text-sm sm:text-base">{formatDate(selectedProject.startDate)}</p>
+                        <p className="text-sm sm:text-base flex items-center">
+                          <Calendar className="h-3.5 w-3.5 mr-1.5 text-gray-400" />
+                          {formatDate(selectedProject.startDate)}
+                        </p>
                       </div>
+                      
                       <div>
                         <h4 className="text-xs sm:text-sm font-medium text-gray-500">End Date</h4>
-                        <p className="text-sm sm:text-base">{formatDate(selectedProject.endDate)}</p>
+                        <p className="text-sm sm:text-base flex items-center">
+                          <Calendar className="h-3.5 w-3.5 mr-1.5 text-gray-400" />
+                          {formatDate(selectedProject.endDate)}
+                        </p>
                       </div>
                       
                       {selectedProject.description && (
@@ -286,14 +326,14 @@ export default function Projects() {
                         </div>
                       )}
                       
-                      <div className="sm:col-span-2">
+                      <div className="sm:col-span-2 mt-2">
                         <h4 className="text-xs sm:text-sm font-medium text-gray-500 mb-1 sm:mb-2">Progress</h4>
                         <div className="w-full">
                           <div className="flex justify-between text-xs mb-1">
-                            <span>Completion</span>
-                            <span>{selectedProject.progress || calculateProgress(selectedProject)}%</span>
+                            <span className="font-medium">Completion</span>
+                            <span className="font-bold text-primary">{selectedProject.progress || calculateProgress(selectedProject)}%</span>
                           </div>
-                          <Progress value={selectedProject.progress || calculateProgress(selectedProject)} className="h-2" />
+                          <Progress value={selectedProject.progress || calculateProgress(selectedProject)} className="h-3" />
                         </div>
                       </div>
                     </div>
