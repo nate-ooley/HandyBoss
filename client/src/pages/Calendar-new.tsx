@@ -169,45 +169,66 @@ export default function Calendar() {
           </div>
         ) : currentEvents.length > 0 ? (
           <div>
-            {currentEvents.map(event => (
-              <div 
-                key={event.id} 
-                className="bg-white rounded-lg shadow-sm overflow-hidden mb-4"
-              >
-                <div className="flex">
-                  {/* Left blue bar */}
-                  <div className="w-1.5 bg-blue-400 flex-shrink-0"></div>
-                  
-                  {/* Content */}
-                  <div className="flex-grow p-4">
-                    <div className="flex justify-between items-start mb-2">
-                      {event.type === 'project' ? (
-                        <Link href={`/projects/${event.jobsiteId}`} className="font-bold text-xl hover:text-blue-700 transition-colors">
-                          {event.title}
-                        </Link>
-                      ) : (
-                        <h3 className="font-bold text-xl">{event.title}</h3>
-                      )}
-                      <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded">
-                        {event.type === 'project' ? 'Project' : 'Message'}
-                      </span>
-                    </div>
-                    
-                    <div className="flex items-center text-gray-600 mb-2">
-                      <Clock className="h-4 w-4 mr-2" />
-                      <span>{event.time}</span>
-                    </div>
-                    
-                    {event.location && (
-                      <div className="flex items-center text-gray-600">
-                        <MapPin className="h-4 w-4 mr-2" />
-                        <span>{event.location}</span>
+            {currentEvents.map(event => {
+              if (event.type === 'project') {
+                return (
+                  <Link href={`/projects/${event.jobsiteId}`} key={event.id} className="block mb-4">
+                    <div className="bg-white rounded-lg shadow-sm overflow-hidden cursor-pointer hover:shadow-md transition-shadow">
+                      <div className="flex">
+                        {/* Left blue bar */}
+                        <div className="w-1.5 bg-blue-400 flex-shrink-0"></div>
+                        
+                        {/* Content */}
+                        <div className="flex-grow p-4">
+                          <div className="flex justify-between items-start mb-2">
+                            <h3 className="font-bold text-xl text-blue-700">{event.title}</h3>
+                            <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded">
+                              Project
+                            </span>
+                          </div>
+                          
+                          <div className="flex items-center text-gray-600 mb-2">
+                            <Clock className="h-4 w-4 mr-2" />
+                            <span>{event.time}</span>
+                          </div>
+                          
+                          {event.location && (
+                            <div className="flex items-center text-gray-600">
+                              <MapPin className="h-4 w-4 mr-2" />
+                              <span>{event.location}</span>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    )}
+                    </div>
+                  </Link>
+                );
+              } else {
+                return (
+                  <div key={event.id} className="bg-white rounded-lg shadow-sm overflow-hidden mb-4">
+                    <div className="flex">
+                      {/* Left blue bar */}
+                      <div className="w-1.5 bg-blue-400 flex-shrink-0"></div>
+                      
+                      {/* Content */}
+                      <div className="flex-grow p-4">
+                        <div className="flex justify-between items-start mb-2">
+                          <h3 className="font-bold text-xl">{event.title}</h3>
+                          <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded">
+                            Message
+                          </span>
+                        </div>
+                        
+                        <div className="flex items-center text-gray-600 mb-2">
+                          <Clock className="h-4 w-4 mr-2" />
+                          <span>{event.time}</span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-            ))}
+                );
+              }
+            })}
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center h-60 text-center">
