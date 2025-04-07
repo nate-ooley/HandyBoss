@@ -7,7 +7,7 @@ import Dashboard from "@/pages/Dashboard";
 import MobileApp from "@/pages/MobileApp";
 import BossManDemo from "@/pages/BossManDemo";
 import TranslationChat from "@/pages/TranslationChat";
-import Calendar from "@/pages/Calendar";
+import Calendar from "@/pages/Calendar-new";
 import SocketTest from "@/pages/SocketTest";
 import TeamProgress from "@/pages/TeamProgress";
 import Checkout from "@/pages/Checkout";

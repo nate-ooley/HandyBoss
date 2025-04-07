@@ -1,17 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { format, addDays, subDays, startOfMonth, endOfMonth, setHours, isToday } from 'date-fns';
-import { 
-  Search, Plus, Calendar as CalendarIcon, Clock, MapPin, X, MessageCircle, 
-  ChevronLeft, ChevronRight 
-} from 'lucide-react';
-import { 
-  Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription,
-  Button, Badge, Tabs, TabsContent, TabsList, TabsTrigger, Separator,
-  Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger
-} from '@/components/ui';
-import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { Calendar as CalendarIcon, Clock, MapPin, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
-import { BossManImage } from '@/components/BossManImage';
 import { useToast } from '@/hooks/use-toast';
 import { Loading } from '@/components/Loading';
 import { useMobile } from '@/hooks/use-mobile';
