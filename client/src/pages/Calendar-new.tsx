@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock, MapPin } from 'lucide-react';
 import { format, addDays, subDays, isSameDay } from 'date-fns';
 import { apiRequest } from '@/lib/queryClient';
+import { Link } from 'wouter';
 
 // Types based on actual API response
 interface JobsiteEvent {
@@ -37,10 +38,12 @@ type ApiEvent = JobsiteEvent | MessageEvent;
 // Simplified interface for our UI
 interface CalendarEventDisplay {
   id: string; // Make unique by adding a prefix
+  originalId: number; // Original ID from the API for linking
   title: string;
   type: 'project' | 'message';
   time: string;
   location?: string;
+  jobsiteId?: number; // For linking to project details
 }
 
 export default function Calendar() {
@@ -48,22 +51,7 @@ export default function Calendar() {
   const [events, setEvents] = useState<CalendarEventDisplay[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Force dummy data for now to match screenshot
-  useEffect(() => {
-    setEvents([
-      {
-        id: 'project-1',
-        title: 'Westside Project',
-        type: 'project',
-        time: '8:26 PM',
-        location: '123 Main St, Building A'
-      }
-    ]);
-    setIsLoading(false);
-  }, []);
-
-  /*
-  // Actual API fetch code (commented out for now)
+  // Fetch events on component mount and when date changes
   useEffect(() => {
     const fetchEvents = async () => {
       setIsLoading(true);
@@ -80,19 +68,23 @@ export default function Calendar() {
               // This is a jobsite/project
               const projectEvent: CalendarEventDisplay = {
                 id: `project-${item.id}`,
+                originalId: item.id,
                 title: item.name,
                 type: 'project',
                 time: item.time || format(new Date(item.startDate), 'h:mm a'),
-                location: item.address
+                location: item.address,
+                jobsiteId: item.id
               };
               displayEvents.push(projectEvent);
             } else if ('eventTitle' in item && item.calendarEvent) {
               // This is a message marked as calendar event
               const messageEvent: CalendarEventDisplay = {
                 id: `message-${item.id}`,
+                originalId: item.id,
                 title: item.eventTitle,
                 type: 'message',
-                time: format(new Date(item.timestamp), 'h:mm a')
+                time: format(new Date(item.timestamp), 'h:mm a'),
+                jobsiteId: item.jobsiteId
               };
               displayEvents.push(messageEvent);
             }
@@ -100,27 +92,31 @@ export default function Calendar() {
           
           setEvents(displayEvents);
         } else {
-          // Fallback data
+          // Fallback data for testing UI
           setEvents([
             {
               id: 'project-1',
+              originalId: 1,
               title: 'Westside Project',
               type: 'project',
               time: '8:26 PM',
-              location: '123 Main St, Building A'
+              location: '123 Main St, Building A',
+              jobsiteId: 1
             }
           ]);
         }
       } catch (error) {
         console.error('Error fetching events:', error);
-        // Fallback data
+        // Fallback data for testing UI
         setEvents([
           {
             id: 'project-1',
+            originalId: 1,
             title: 'Westside Project',
             type: 'project',
             time: '8:26 PM',
-            location: '123 Main St, Building A'
+            location: '123 Main St, Building A',
+            jobsiteId: 1
           }
         ]);
       } finally {
@@ -130,7 +126,6 @@ export default function Calendar() {
 
     fetchEvents();
   }, [currentDate]);
-  */
 
   const goToNextDay = () => {
     setCurrentDate(prev => addDays(prev, 1));
@@ -139,6 +134,13 @@ export default function Calendar() {
   const goToPreviousDay = () => {
     setCurrentDate(prev => subDays(prev, 1));
   };
+
+  // Filter events for the current date
+  const currentEvents = events.filter(event => {
+    // For now, just display the events we have since we're using dummy data
+    // In a real app, we would filter by date
+    return true;
+  });
 
   // Custom SVG for the empty calendar state
   const EmptyCalendarIcon = () => (
@@ -165,12 +167,12 @@ export default function Calendar() {
           <div className="flex justify-center items-center h-60">
             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
           </div>
-        ) : events.length > 0 ? (
+        ) : currentEvents.length > 0 ? (
           <div>
-            {events.map(event => (
+            {currentEvents.map(event => (
               <div 
                 key={event.id} 
-                className="bg-white rounded-lg shadow-sm overflow-hidden"
+                className="bg-white rounded-lg shadow-sm overflow-hidden mb-4"
               >
                 <div className="flex">
                   {/* Left blue bar */}
@@ -179,9 +181,17 @@ export default function Calendar() {
                   {/* Content */}
                   <div className="flex-grow p-4">
                     <div className="flex justify-between items-start mb-2">
-                      <h3 className="font-bold text-xl">{event.title}</h3>
+                      {event.type === 'project' ? (
+                        <Link href={`/projects/${event.jobsiteId}`}>
+                          <a className="font-bold text-xl hover:text-blue-700 transition-colors">
+                            {event.title}
+                          </a>
+                        </Link>
+                      ) : (
+                        <h3 className="font-bold text-xl">{event.title}</h3>
+                      )}
                       <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded">
-                        Project
+                        {event.type === 'project' ? 'Project' : 'Message'}
                       </span>
                     </div>
                     
