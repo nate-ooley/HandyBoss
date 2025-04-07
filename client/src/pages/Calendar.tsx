@@ -668,54 +668,55 @@ export default function Calendar() {
                         </div>
                         
                         {/* Mobile carousel controls - Fixed position buttons that stay in view */}
-                        <div className="fixed bottom-[72px] left-0 right-0 z-50 flex justify-center items-center md:hidden">
-                          <div className="flex justify-between items-center w-[220px]">
-                            <Button variant="outline" size="sm" onClick={goToPreviousDay} className="bg-white shadow-md h-12 w-12 rounded-full p-0">
-                              <MoveLeft className="h-5 w-5" />
+                        <div className="fixed bottom-[68px] left-0 right-0 z-50 flex justify-center items-center md:hidden">
+                          <div className="flex justify-between items-center w-[260px]">
+                            <Button variant="outline" size="sm" onClick={goToPreviousDay} className="bg-white shadow-md h-14 w-14 rounded-full p-0">
+                              <MoveLeft className="h-6 w-6" />
                             </Button>
                             
                             {/* Center calendar button - Opens date picker */}
-                          <Dialog open={datePickerOpen} onOpenChange={setDatePickerOpen}>
-                            <DialogTrigger asChild>
-                              <Button 
-                                className="bg-primary text-white shadow-lg h-12 w-12 rounded-full p-0 flex items-center justify-center animate-pulse hover:animate-none transition-all hover:scale-105"
-                              >
-                                <CalendarIcon className="h-5 w-5" />
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent className="sm:max-w-md p-0">
-                              <DialogHeader className="px-4 pt-4 pb-2">
-                                <DialogTitle>Select Date</DialogTitle>
-                              </DialogHeader>
-                              <div className="p-4 pt-0">
-                                <CalendarComponent
-                                  mode="single"
-                                  selected={selectedDate}
-                                  onSelect={setSelectedDate}
-                                  className="rounded-md border shadow"
-                                />
-                              </div>
-                              <DialogFooter className="px-4 pb-4">
+                            <Dialog open={datePickerOpen} onOpenChange={setDatePickerOpen}>
+                              <DialogTrigger asChild>
                                 <Button 
-                                  variant="outline" 
-                                  onClick={() => setDatePickerOpen(false)}
-                                  className="w-full sm:w-auto"
+                                  className="bg-primary text-white shadow-lg h-14 w-14 rounded-full p-0 flex items-center justify-center animate-pulse hover:animate-none transition-all hover:scale-105"
                                 >
-                                  Cancel
+                                  <CalendarIcon className="h-6 w-6" />
                                 </Button>
-                                <Button 
-                                  onClick={() => handleDateSelect(selectedDate)}
-                                  className="w-full sm:w-auto"
-                                  disabled={!selectedDate}
-                                >
-                                  Go to Date
-                                </Button>
-                              </DialogFooter>
-                            </DialogContent>
-                          </Dialog>
+                              </DialogTrigger>
+                              <DialogContent className="sm:max-w-md p-0" aria-describedby="date-picker-description">
+                                <span id="date-picker-description" className="sr-only">Select a date from the calendar</span>
+                                <DialogHeader className="px-4 pt-4 pb-2">
+                                  <DialogTitle>Select Date</DialogTitle>
+                                </DialogHeader>
+                                <div className="p-4 pt-0">
+                                  <CalendarComponent
+                                    mode="single"
+                                    selected={selectedDate}
+                                    onSelect={setSelectedDate}
+                                    className="rounded-md border shadow"
+                                  />
+                                </div>
+                                <DialogFooter className="px-4 pb-4">
+                                  <Button 
+                                    variant="outline" 
+                                    onClick={() => setDatePickerOpen(false)}
+                                    className="w-full sm:w-auto"
+                                  >
+                                    Cancel
+                                  </Button>
+                                  <Button 
+                                    onClick={() => handleDateSelect(selectedDate)}
+                                    className="w-full sm:w-auto"
+                                    disabled={!selectedDate}
+                                  >
+                                    Go to Date
+                                  </Button>
+                                </DialogFooter>
+                              </DialogContent>
+                            </Dialog>
                           
-                          <Button variant="outline" size="sm" onClick={goToNextDay} className="bg-white shadow-md h-12 w-12 rounded-full p-0">
-                            <MoveRight className="h-5 w-5" />
+                          <Button variant="outline" size="sm" onClick={goToNextDay} className="bg-white shadow-md h-14 w-14 rounded-full p-0">
+                            <MoveRight className="h-6 w-6" />
                           </Button>
                           </div>
                         </div>
@@ -723,7 +724,7 @@ export default function Calendar() {
                         {/* Fixed bottom right add project button */}
                         <div className="fixed bottom-6 right-4 z-50">
                           <Button 
-                            className="bg-green-500 hover:bg-green-600 text-white shadow-lg h-12 w-12 rounded-full p-0 transition-all hover:scale-105"
+                            className="bg-green-500 hover:bg-green-600 text-white shadow-lg h-14 w-14 rounded-full p-0 transition-all hover:scale-105"
                             onClick={() => window.location.href = "/projects/add"}
                           >
                             <span className="text-2xl font-bold">+</span>
