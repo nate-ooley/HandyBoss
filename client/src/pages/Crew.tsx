@@ -484,7 +484,7 @@ export const CrewPage = () => {
   return (
     <div className="flex h-screen">
       <div className="flex-1 overflow-y-auto bg-gray-50">
-        <div className="container mx-auto py-6">
+        <div className="container mx-auto py-8 px-6">
           {isAssignProjectsMode && selectedCrewMember ? (
             // Assign Projects Mode
             <>
@@ -966,78 +966,76 @@ export const CrewPage = () => {
                 </div>
               ) : viewMode === 'list' ? (
                 // List View
-                <div className="space-y-4">
+                <div className="space-y-6 mt-6 p-4">
                   {filteredCrewMembers.map((crewMember: CrewMember) => (
                     <div 
                       key={crewMember.id} 
-                      className={`bg-white rounded-lg shadow-sm hover:shadow transition-shadow 
+                      className={`bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow p-6
                         ${crewMember.status === 'on-leave' ? 'border-l-4 border-yellow-400' : 
                           crewMember.status === 'terminated' ? 'border-l-4 border-red-400' : 
                           'border-l-4 border-green-400'}`}
                     >
-                      <div className="p-4">
-                        <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-                          <div className="flex items-center">
-                            <Avatar className="h-12 w-12 mr-4">
-                              {crewMember.profileImage ? (
-                                <AvatarImage src={crewMember.profileImage} alt={crewMember.name} />
-                              ) : (
-                                <AvatarFallback>
-                                  {crewMember.name.split(' ').map(n => n[0]).join('')}
-                                </AvatarFallback>
+                      <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+                        <div className="flex items-center">
+                          <Avatar className="h-12 w-12 mr-4">
+                            {crewMember.profileImage ? (
+                              <AvatarImage src={crewMember.profileImage} alt={crewMember.name} />
+                            ) : (
+                              <AvatarFallback>
+                                {crewMember.name.split(' ').map(n => n[0]).join('')}
+                              </AvatarFallback>
+                            )}
+                          </Avatar>
+                          
+                          <div>
+                            <h3 className="text-lg font-semibold">{crewMember.name}</h3>
+                            <div className="flex flex-col sm:flex-row sm:items-center text-sm text-gray-500">
+                              <span className="mr-3">{crewMember.role}</span>
+                              
+                              {crewMember.specialization && (
+                                <span className="mr-3 hidden md:inline">• {crewMember.specialization}</span>
                               )}
-                            </Avatar>
-                            
-                            <div>
-                              <h3 className="text-lg font-semibold">{crewMember.name}</h3>
-                              <div className="flex flex-col sm:flex-row sm:items-center text-sm text-gray-500">
-                                <span className="mr-3">{crewMember.role}</span>
-                                
-                                {crewMember.specialization && (
-                                  <span className="mr-3 hidden md:inline">• {crewMember.specialization}</span>
-                                )}
-                                
-                                {crewMember.jobsiteId && (
-                                  <div className="flex items-center mt-1 sm:mt-0">
-                                    <MapPin className="h-3 w-3 text-gray-400 mr-1" />
-                                    <span>{getJobsiteName(crewMember.jobsiteId)}</span>
-                                  </div>
-                                )}
-                                
-                                {crewMember.experienceYears && crewMember.experienceYears > 0 && (
-                                  <div className="flex items-center text-sm text-gray-500">
-                                    <Star className="h-3 w-3 text-gray-400 mr-1" />
-                                    <span>{crewMember.experienceYears} years experience</span>
-                                  </div>
-                                )}
-                              </div>
+                              
+                              {crewMember.jobsiteId && (
+                                <div className="flex items-center mt-1 sm:mt-0">
+                                  <MapPin className="h-3 w-3 text-gray-400 mr-1" />
+                                  <span>{getJobsiteName(crewMember.jobsiteId)}</span>
+                                </div>
+                              )}
+                              
+                              {crewMember.experienceYears && crewMember.experienceYears > 0 && (
+                                <div className="flex items-center text-sm text-gray-500">
+                                  <Star className="h-3 w-3 text-gray-400 mr-1" />
+                                  <span>{crewMember.experienceYears} years experience</span>
+                                </div>
+                              )}
                             </div>
                           </div>
-                          
-                          <div className="flex items-center space-x-2 mt-4 md:mt-0">
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => setLocation(`/crew/${crewMember.id}`)}
-                            >
-                              View Profile
-                            </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              onClick={() => handleEditClick(crewMember)}
-                            >
-                              <Edit2 className="h-4 w-4" />
-                            </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              className="text-red-500 hover:text-red-700 hover:bg-red-50" 
-                              onClick={() => handleDeleteClick(crewMember)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
+                        </div>
+                        
+                        <div className="flex items-center space-x-2 mt-4 md:mt-0">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => setLocation(`/crew/${crewMember.id}`)}
+                          >
+                            View Profile
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => handleEditClick(crewMember)}
+                          >
+                            <Edit2 className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            className="text-red-500 hover:text-red-700 hover:bg-red-50" 
+                            onClick={() => handleDeleteClick(crewMember)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
                       </div>
                     </div>
@@ -1045,9 +1043,9 @@ export const CrewPage = () => {
                 </div>
               ) : (
                 // Grid View
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 p-6 mt-6">
                   {filteredCrewMembers.map((crewMember: CrewMember) => (
-                    <Card key={crewMember.id} className="overflow-hidden hover:shadow-md transition-shadow">
+                    <Card key={crewMember.id} className="overflow-hidden hover:shadow-md transition-shadow p-1">
                       <div 
                         className={`h-2 w-full
                           ${crewMember.status === 'active' ? 'bg-green-500' : 

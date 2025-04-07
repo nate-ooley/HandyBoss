@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import express, { type Request, Response, NextFunction } from "express";
 // Use main routes
 import { registerRoutes } from "./routes";
@@ -62,14 +63,11 @@ app.use((req, res, next) => {
     serveStatic(app);
   }
 
-  // ALWAYS serve the app on port 5000
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
-  const port = 5000;
+  // Changed port to 3001 and removed reusePort option
+  const port = 3001;
   server.listen({
     port,
-    host: "0.0.0.0",
-    reusePort: true,
+    host: "localhost", // Changed from 0.0.0.0 to localhost for macOS compatibility
   }, () => {
     log(`serving on port ${port}`);
   });
