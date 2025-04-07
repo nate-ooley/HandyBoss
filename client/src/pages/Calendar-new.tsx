@@ -75,7 +75,7 @@ export default function Calendar() {
               type: 'conversation', 
               date: new Date(), 
               time: '10:30 AM',
-              description: 'I'll be 20 minutes late to the site today' 
+              description: "I'll be 20 minutes late to the site today" 
             },
             { 
               id: 3, 
@@ -106,7 +106,7 @@ export default function Calendar() {
             type: 'conversation', 
             date: new Date(), 
             time: '10:30 AM',
-            description: 'I'll be 20 minutes late to the site today' 
+            description: "I'll be 20 minutes late to the site today" 
           },
           { 
             id: 3, 
