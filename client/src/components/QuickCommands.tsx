@@ -13,25 +13,25 @@ export const QuickCommands: React.FC = () => {
       text: 'Material Delivery', 
       icon: <Truck className="mr-2 h-5 w-5" />, 
       action: 'material-delivery', 
-      color: 'bg-success text-white' 
+      color: 'bg-green-500 text-white hover:bg-green-600' 
     },
     { 
       text: 'Equipment Issue', 
       icon: <Drill className="mr-2 h-5 w-5" />, 
       action: 'equipment-issue', 
-      color: 'bg-warning text-white' 
+      color: 'bg-yellow-500 text-white hover:bg-yellow-600' 
     },
     { 
       text: 'Weather Update', 
       icon: <CloudRain className="mr-2 h-5 w-5" />, 
       action: 'weather-update', 
-      color: 'bg-secondary text-white' 
+      color: 'bg-blue-500 text-white hover:bg-blue-600' 
     },
     { 
       text: 'Safety Incident', 
       icon: <AlertTriangle className="mr-2 h-5 w-5" />, 
       action: 'safety-incident', 
-      color: 'bg-danger text-white' 
+      color: 'bg-red-500 text-white hover:bg-red-600' 
     }
   ];
 
@@ -55,6 +55,7 @@ export const QuickCommands: React.FC = () => {
             key={cmd.action}
             className={`py-3 px-4 rounded-xl flex items-center justify-center ${cmd.color}`}
             onClick={() => handleCommand(cmd.text)}
+            variant="ghost"
           >
             {cmd.icon}
             <span className="whitespace-nowrap">{cmd.text}</span>
