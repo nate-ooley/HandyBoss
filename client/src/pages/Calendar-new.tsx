@@ -65,7 +65,7 @@ export default function Calendar() {
               title: 'Westside Project', 
               type: 'project', 
               date: new Date(), 
-              time: '8:22 PM', 
+              time: '8:26 PM', 
               location: '123 Main St, Building A' 
             }
           ];
@@ -80,7 +80,7 @@ export default function Calendar() {
             title: 'Westside Project', 
             type: 'project', 
             date: new Date(), 
-            time: '8:22 PM', 
+            time: '8:26 PM', 
             location: '123 Main St, Building A' 
           }
         ];
@@ -108,12 +108,22 @@ export default function Calendar() {
     event.date.getFullYear() === currentDate.getFullYear()
   );
 
+  // In the real app, this would be a separate component
+  const EmptyCalendarIcon = () => (
+    <svg width="72" height="72" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="12" y="18" width="48" height="48" rx="4" stroke="#DDDDDD" strokeWidth="2" />
+      <path d="M12 26H60" stroke="#DDDDDD" strokeWidth="2" />
+      <path d="M24 12V20" stroke="#DDDDDD" strokeWidth="2" />
+      <path d="M48 12V20" stroke="#DDDDDD" strokeWidth="2" />
+    </svg>
+  );
+
   return (
     <div className="container mx-auto px-4 pb-24">
-      <h1 className="text-3xl font-bold mb-2">Calendar</h1>
+      <h1 className="text-2xl font-bold mb-1">Calendar</h1>
       
       {/* Date display */}
-      <h2 className="text-xl font-medium mb-4">
+      <h2 className="text-xl font-medium mb-6">
         {format(currentDate, 'EEE, MMM do')}
       </h2>
       
@@ -124,31 +134,37 @@ export default function Calendar() {
             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
           </div>
         ) : currentEvents.length > 0 ? (
-          <div className="space-y-4">
+          <div>
             {currentEvents.map(event => (
               <div 
                 key={event.id} 
-                className="bg-white rounded-xl border-l-4 border-blue-400 shadow-md overflow-hidden"
+                className="bg-white rounded-lg shadow-sm overflow-hidden"
               >
-                <div className="p-4">
-                  <div className="flex justify-between items-start mb-2">
-                    <h3 className="font-semibold text-lg">{event.title}</h3>
-                    <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded">
-                      Project
-                    </span>
-                  </div>
+                <div className="flex">
+                  {/* Left blue bar */}
+                  <div className="w-1.5 bg-blue-400 flex-shrink-0"></div>
                   
-                  <div className="flex items-center text-gray-600 mb-1">
-                    <Clock className="h-4 w-4 mr-2" />
-                    <span>{event.time}</span>
-                  </div>
-                  
-                  {event.location && (
-                    <div className="flex items-center text-gray-600">
-                      <MapPin className="h-4 w-4 mr-2" />
-                      <span>{event.location}</span>
+                  {/* Content */}
+                  <div className="flex-grow p-4">
+                    <div className="flex justify-between items-start mb-2">
+                      <h3 className="font-bold text-xl">{event.title}</h3>
+                      <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded">
+                        Project
+                      </span>
                     </div>
-                  )}
+                    
+                    <div className="flex items-center text-gray-600 mb-2">
+                      <Clock className="h-4 w-4 mr-2" />
+                      <span>{event.time}</span>
+                    </div>
+                    
+                    {event.location && (
+                      <div className="flex items-center text-gray-600">
+                        <MapPin className="h-4 w-4 mr-2" />
+                        <span>{event.location}</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
@@ -156,9 +172,9 @@ export default function Calendar() {
         ) : (
           <div className="flex flex-col items-center justify-center h-60 text-center">
             <div className="text-gray-300 mb-4">
-              <CalendarIcon className="h-20 w-20 mx-auto" />
+              <EmptyCalendarIcon />
             </div>
-            <p className="text-lg text-gray-600 font-medium">No events today</p>
+            <p className="text-lg text-gray-700 font-medium">No events today</p>
             <p className="text-sm text-gray-500 mt-1">Try selecting a different date</p>
           </div>
         )}
@@ -168,29 +184,29 @@ export default function Calendar() {
       <div className="fixed bottom-20 left-0 right-0 z-20 flex justify-center items-center">
         <div className="flex items-center space-x-6">
           {/* Left arrow button */}
-          <div className="bg-white border border-gray-200 h-12 w-12 rounded-full shadow-md flex items-center justify-center">
+          <div className="bg-white border border-gray-200 h-12 w-12 rounded-full shadow-sm flex items-center justify-center">
             <button 
               onClick={goToPreviousDay} 
               aria-label="Previous day" 
               className="flex items-center justify-center w-full h-full"
             >
-              <ChevronLeft className="h-6 w-6 text-gray-600" />
+              <ChevronLeft className="h-5 w-5 text-gray-600" />
             </button>
           </div>
           
           {/* Center calendar button */}
-          <div className="bg-red-600 h-14 w-14 rounded-full shadow-md flex items-center justify-center">
+          <div className="bg-red-600 h-14 w-14 rounded-full shadow-sm flex items-center justify-center">
             <CalendarIcon className="h-6 w-6 text-white" />
           </div>
           
           {/* Right arrow button */}
-          <div className="bg-white border border-gray-200 h-12 w-12 rounded-full shadow-md flex items-center justify-center">
+          <div className="bg-white border border-gray-200 h-12 w-12 rounded-full shadow-sm flex items-center justify-center">
             <button 
               onClick={goToNextDay} 
               aria-label="Next day" 
               className="flex items-center justify-center w-full h-full"
             >
-              <ChevronRight className="h-6 w-6 text-gray-600" />
+              <ChevronRight className="h-5 w-5 text-gray-600" />
             </button>
           </div>
         </div>
