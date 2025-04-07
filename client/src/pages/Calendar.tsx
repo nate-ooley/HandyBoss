@@ -667,20 +667,28 @@ export default function Calendar() {
                           </div>
                         </div>
                         
-                        {/* Mobile carousel controls - Fixed position buttons that stay in view */}
-                        <div className="fixed bottom-[68px] left-0 right-0 z-50 flex justify-center items-center md:hidden">
-                          <div className="flex justify-between items-center w-[260px]">
-                            <Button variant="outline" size="sm" onClick={goToPreviousDay} className="bg-white shadow-md h-14 w-14 rounded-full p-0">
-                              <MoveLeft className="h-6 w-6" />
+                        {/* Mobile carousel controls - Fixed position buttons that stay in view, matching iPhone design */}
+                        <div className="fixed bottom-[100px] left-0 right-0 z-50 flex justify-center items-center md:hidden">
+                          <div className="flex justify-center items-center space-x-4">
+                            <Button variant="outline" size="sm" onClick={goToPreviousDay} className="bg-white shadow-md h-14 w-14 rounded-full p-0 flex items-center justify-center">
+                              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-6 w-6">
+                                <path d="M19 12H5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                <path d="M12 19L5 12L12 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                              </svg>
                             </Button>
                             
                             {/* Center calendar button - Opens date picker */}
                             <Dialog open={datePickerOpen} onOpenChange={setDatePickerOpen}>
                               <DialogTrigger asChild>
                                 <Button 
-                                  className="bg-primary text-white shadow-lg h-14 w-14 rounded-full p-0 flex items-center justify-center animate-pulse hover:animate-none transition-all hover:scale-105"
+                                  className="bg-red-600 text-white shadow-lg h-14 w-14 rounded-full p-0 flex items-center justify-center"
                                 >
-                                  <CalendarIcon className="h-6 w-6" />
+                                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-6 w-6">
+                                    <path d="M19 4H5C3.89543 4 3 4.89543 3 6V20C3 21.1046 3.89543 22 5 22H19C20.1046 22 21 21.1046 21 20V6C21 4.89543 20.1046 4 19 4Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                    <path d="M16 2V6" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                    <path d="M8 2V6" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                    <path d="M3 10H21" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                  </svg>
                                 </Button>
                               </DialogTrigger>
                               <DialogContent className="sm:max-w-md p-0" aria-describedby="date-picker-description">
@@ -715,8 +723,11 @@ export default function Calendar() {
                               </DialogContent>
                             </Dialog>
                           
-                          <Button variant="outline" size="sm" onClick={goToNextDay} className="bg-white shadow-md h-14 w-14 rounded-full p-0">
-                            <MoveRight className="h-6 w-6" />
+                          <Button variant="outline" size="sm" onClick={goToNextDay} className="bg-white shadow-md h-14 w-14 rounded-full p-0 flex items-center justify-center">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-6 w-6">
+                              <path d="M5 12H19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                              <path d="M12 5L19 12L12 19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
                           </Button>
                           </div>
                         </div>
