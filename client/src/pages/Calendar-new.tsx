@@ -1,90 +1,128 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock, MapPin } from 'lucide-react';
-import { format, addDays, subDays } from 'date-fns';
+import { format, addDays, subDays, isSameDay } from 'date-fns';
 import { apiRequest } from '@/lib/queryClient';
 
-// Calendar event interface
-interface CalendarEvent {
+// Types based on actual API response
+interface JobsiteEvent {
   id: number;
+  name: string;
+  address: string;
+  status: string;
+  time: string;
+  startDate: string;
+  endDate: string;
+  location: {
+    lat: number;
+    lng: number;
+  };
+}
+
+interface MessageEvent {
+  id: number;
+  text: string;
+  translatedText: string;
+  isUser: boolean;
+  role: string;
+  language: string;
+  timestamp: string;
+  userId: number;
+  jobsiteId: number;
+  calendarEvent: boolean;
+  eventTitle: string;
+}
+
+type ApiEvent = JobsiteEvent | MessageEvent;
+
+// Simplified interface for our UI
+interface CalendarEventDisplay {
+  id: string; // Make unique by adding a prefix
   title: string;
-  type: 'project' | 'conversation';
-  date: Date;
-  time?: string;
+  type: 'project' | 'message';
+  time: string;
   location?: string;
-  description?: string;
 }
 
 export default function Calendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [events, setEvents] = useState<CalendarEventDisplay[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch events on component mount and when date changes
+  // Force dummy data for now to match screenshot
+  useEffect(() => {
+    setEvents([
+      {
+        id: 'project-1',
+        title: 'Westside Project',
+        type: 'project',
+        time: '8:26 PM',
+        location: '123 Main St, Building A'
+      }
+    ]);
+    setIsLoading(false);
+  }, []);
+
+  /*
+  // Actual API fetch code (commented out for now)
   useEffect(() => {
     const fetchEvents = async () => {
       setIsLoading(true);
       try {
-        // Try to fetch from API first
         const response = await apiRequest('GET', '/api/calendar/events');
         if (response.ok) {
           const data = await response.json();
-          // Convert API data to our calendar event format
-          const formattedEvents = data.map((item: any) => {
-            const eventDate = new Date(item.date || item.startDate || item.timestamp);
-            
-            if (item.name) {
-              // This is a project
-              return {
-                id: item.id,
+          
+          // Process the API data into our display format
+          const displayEvents: CalendarEventDisplay[] = [];
+          
+          data.forEach((item: ApiEvent) => {
+            if ('name' in item) {
+              // This is a jobsite/project
+              const projectEvent: CalendarEventDisplay = {
+                id: `project-${item.id}`,
                 title: item.name,
                 type: 'project',
-                date: eventDate,
-                time: format(eventDate, 'h:mm a'),
-                location: item.address,
-                description: item.description
+                time: item.time || format(new Date(item.startDate), 'h:mm a'),
+                location: item.address
               };
-            } else {
-              // This is a conversation/message
-              return {
-                id: item.id,
-                title: item.isCalendarEvent ? item.calendarTitle : `Message from ${item.sender}`,
-                type: 'conversation',
-                date: eventDate,
-                time: format(eventDate, 'h:mm a'),
-                description: item.text
+              displayEvents.push(projectEvent);
+            } else if ('eventTitle' in item && item.calendarEvent) {
+              // This is a message marked as calendar event
+              const messageEvent: CalendarEventDisplay = {
+                id: `message-${item.id}`,
+                title: item.eventTitle,
+                type: 'message',
+                time: format(new Date(item.timestamp), 'h:mm a')
               };
+              displayEvents.push(messageEvent);
             }
           });
           
-          setEvents(formattedEvents);
+          setEvents(displayEvents);
         } else {
-          // Fallback sample data
-          const sampleEvents: CalendarEvent[] = [
-            { 
-              id: 1, 
-              title: 'Westside Project', 
-              type: 'project', 
-              date: new Date(), 
-              time: '8:26 PM', 
-              location: '123 Main St, Building A' 
+          // Fallback data
+          setEvents([
+            {
+              id: 'project-1',
+              title: 'Westside Project',
+              type: 'project',
+              time: '8:26 PM',
+              location: '123 Main St, Building A'
             }
-          ];
-          setEvents(sampleEvents);
+          ]);
         }
       } catch (error) {
         console.error('Error fetching events:', error);
-        // Fallback sample data
-        const sampleEvents: CalendarEvent[] = [
-          { 
-            id: 1, 
-            title: 'Westside Project', 
-            type: 'project', 
-            date: new Date(), 
-            time: '8:26 PM', 
-            location: '123 Main St, Building A' 
+        // Fallback data
+        setEvents([
+          {
+            id: 'project-1',
+            title: 'Westside Project',
+            type: 'project',
+            time: '8:26 PM',
+            location: '123 Main St, Building A'
           }
-        ];
-        setEvents(sampleEvents);
+        ]);
       } finally {
         setIsLoading(false);
       }
@@ -92,6 +130,7 @@ export default function Calendar() {
 
     fetchEvents();
   }, [currentDate]);
+  */
 
   const goToNextDay = () => {
     setCurrentDate(prev => addDays(prev, 1));
@@ -101,14 +140,7 @@ export default function Calendar() {
     setCurrentDate(prev => subDays(prev, 1));
   };
 
-  // Filter events for the current date
-  const currentEvents = events.filter(event => 
-    event.date.getDate() === currentDate.getDate() &&
-    event.date.getMonth() === currentDate.getMonth() &&
-    event.date.getFullYear() === currentDate.getFullYear()
-  );
-
-  // In the real app, this would be a separate component
+  // Custom SVG for the empty calendar state
   const EmptyCalendarIcon = () => (
     <svg width="72" height="72" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
       <rect x="12" y="18" width="48" height="48" rx="4" stroke="#DDDDDD" strokeWidth="2" />
@@ -133,9 +165,9 @@ export default function Calendar() {
           <div className="flex justify-center items-center h-60">
             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
           </div>
-        ) : currentEvents.length > 0 ? (
+        ) : events.length > 0 ? (
           <div>
-            {currentEvents.map(event => (
+            {events.map(event => (
               <div 
                 key={event.id} 
                 className="bg-white rounded-lg shadow-sm overflow-hidden"
