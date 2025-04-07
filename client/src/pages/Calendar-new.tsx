@@ -182,10 +182,8 @@ export default function Calendar() {
                   <div className="flex-grow p-4">
                     <div className="flex justify-between items-start mb-2">
                       {event.type === 'project' ? (
-                        <Link href={`/projects/${event.jobsiteId}`}>
-                          <a className="font-bold text-xl hover:text-blue-700 transition-colors">
-                            {event.title}
-                          </a>
+                        <Link href={`/projects/${event.jobsiteId}`} className="font-bold text-xl hover:text-blue-700 transition-colors">
+                          {event.title}
                         </Link>
                       ) : (
                         <h3 className="font-bold text-xl">{event.title}</h3>
