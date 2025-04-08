@@ -62,9 +62,9 @@ const BossManCharacter: React.FC<BossManCharacterProps> = ({
         </div>
         
         {message && showSpeechBubble && (
-          <div className="absolute top-0 left-full ml-2 bg-white border border-gray-300 rounded-lg p-3 shadow-md max-w-xs">
-            <div className="absolute left-0 top-4 transform -translate-x-1/2 rotate-45 w-2 h-2 bg-white border-l border-b border-gray-300"></div>
-            <p className="text-sm">{message}</p>
+          <div className="absolute top-0 left-full ml-2 message-bubble border border-gray-300 shadow-md max-w-xs">
+            <div className="absolute left-0 top-4 transform -translate-x-1/2 rotate-45 w-2 h-2 bg-[hsl(var(--light))] border-l border-b border-gray-300"></div>
+            <p className="text-sm font-medium">{message}</p>
           </div>
         )}
       </div>

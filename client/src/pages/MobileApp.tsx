@@ -76,7 +76,7 @@ const MobileApp: React.FC = () => {
           <span role="img" aria-label="Translator">🌐</span> 
           <span className="ml-2">Voice Translation</span>
         </h2>
-        <p className="text-sm text-muted-foreground mb-3">
+        <p className="text-sm text-foreground font-medium mb-3">
           Communicate with your workers in real-time. You speak English, they hear Spanish; they speak Spanish, you hear English.
         </p>
         <a 

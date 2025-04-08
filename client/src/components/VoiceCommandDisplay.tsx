@@ -23,11 +23,11 @@ export const VoiceCommandDisplay: React.FC<VoiceCommandDisplayProps> = ({
   const bossMood = moodMap[mood] || 'angry';
 
   return (
-    <div className="m-4 p-4 border border-primary/10 bg-primary/5 rounded-xl relative shadow-md">
+    <div className="m-4 p-4 border border-primary/10 bg-white rounded-xl relative shadow-md">
       <div className="flex items-start space-x-4">
         <BossManImage size="md" mood={bossMood} />
-        <div className="bg-white p-4 rounded-xl flex-1 shadow-sm border border-gray-100">
-          <p className="text-dark font-medium">"{command}"</p>
+        <div className="message-bubble flex-1 shadow-md">
+          <p className="text-foreground font-bold">"{command}"</p>
         </div>
       </div>
     </div>

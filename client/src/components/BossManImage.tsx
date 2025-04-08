@@ -51,9 +51,9 @@ export const BossManImage: React.FC<BossManImageProps> = ({
   return (
     <div className={`relative ${className}`}>
       {withSpeechBubble && speechText && (
-        <div className="absolute -top-16 right-0 bg-white rounded-lg p-3 shadow-md text-sm max-w-[200px] z-10 relative">
+        <div className="absolute -top-16 right-0 message-bubble shadow-md text-sm max-w-[200px] z-10 relative">
           {speechText}
-          <div className="absolute bottom-[-10px] right-[20px] w-0 h-0 border-l-[10px] border-r-[10px] border-t-[10px] border-l-transparent border-r-transparent border-t-white"></div>
+          <div className="absolute bottom-[-10px] right-[20px] w-0 h-0 border-l-[10px] border-r-[10px] border-t-[10px] border-l-transparent border-r-transparent border-t-[hsl(var(--light))]"></div>
         </div>
       )}
       
