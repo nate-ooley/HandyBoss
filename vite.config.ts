@@ -4,6 +4,9 @@ import themePlugin from "@replit/vite-plugin-shadcn-theme-json";
 import path from "path";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 
+// Load environment variables
+const port = process.env.PORT ? parseInt(process.env.PORT) : 3002;
+
 export default defineConfig({
   plugins: [
     react(),
@@ -29,5 +32,14 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
+  },
+  // Add server configuration to use the PORT environment variable
+  server: {
+    port: port,
+    strictPort: false,
+    hmr: {
+      port: port,
+      overlay: false
+    },
   },
 });

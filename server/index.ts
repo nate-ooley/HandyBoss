@@ -64,7 +64,7 @@ app.use((req, res, next) => {
   }
 
   // Changed port to 3001 and removed reusePort option
-  const port = 3001;
+  const port = process.env.PORT || 3001;
   server.listen({
     port,
     host: "localhost", // Changed from 0.0.0.0 to localhost for macOS compatibility

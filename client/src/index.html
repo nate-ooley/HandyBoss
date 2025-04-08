@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HandyBoss - AI-Powered Construction Management</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <script>
+      // Google Maps initialization
+      window.googleMapsLoaded = false;
+      
+      // Called when Google Maps API loads successfully
+      function googleMapsCallback() {
+        console.log('Google Maps API loaded successfully');
+        window.googleMapsLoaded = true;
+        window.dispatchEvent(new Event('google-maps-loaded'));
+      }
+      
+      // Called when Google Maps API fails to load
+      function googleMapsErrorCallback(error) {
+        console.error('Google Maps API failed to load:', error);
+        window.dispatchEvent(new CustomEvent('google-maps-error', { 
+          detail: { error: error || new Error('Google Maps API failed to load') } 
+        }));
+      }
+      
+      // Handle various checks for the Maps API
+      function checkGoogleMapsLoaded() {
+        if (window.google && window.google.maps) {
+          console.log('Google Maps API detected');
+          if (!window.googleMapsLoaded) {
+            console.log('Dispatch google-maps-loaded event');
+            window.googleMapsLoaded = true;
+            window.dispatchEvent(new Event('google-maps-loaded'));
+          }
+          return true;
+        }
+        return false;
+      }
+      
+      // Monitor API loading status
+      window.addEventListener('DOMContentLoaded', function() {
+        // Check on page load
+        checkGoogleMapsLoaded();
+        
+        // Set a timeout to check again
+        setTimeout(function() {
+          if (!checkGoogleMapsLoaded()) {
+            console.warn('Google Maps API not loaded after timeout, attempting fallback');
+            // Fallback loading mechanism will be handled by the app
+          }
+        }, 5000);
+      });
+    </script>
+
+    <!-- Google Maps API with explicit callback -->
+    <script 
+      src="https://maps.googleapis.com/maps/api/js?key=%VITE_GOOGLE_MAPS_API_KEY%&libraries=places&callback=googleMapsCallback" 
+      async 
+      defer
+      onerror="googleMapsErrorCallback(new Error('Script loading error'))"
+    ></script>
+  </head>
+  <body class="bg-background text-foreground antialiased">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html> 

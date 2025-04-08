@@ -1,8 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useLocation, useParams } from "wouter";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { AlertCircle, ArrowLeft, Edit2, Grid3X3, List, MapPin, Search, Shield, Languages, Star, Trash2, X } from "lucide-react";
+import { AlertCircle, ArrowLeft, Edit2, Grid3X3, Languages, List, MapPin, Search, Shield, Star, Trash2, X, Map } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 import {
@@ -35,6 +35,8 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
+import CrewMap from "@/components/CrewMap";
 
 
 interface CrewFormData {
@@ -51,6 +53,8 @@ interface CrewFormData {
   emergencyContact: string;
   notes: string;
   profileImage: string | null;
+  avatarChoice: number;
+  locationSharing: boolean;
 }
 
 interface CrewMember {
@@ -70,6 +74,10 @@ interface CrewMember {
   profileImage?: string | null;
   lastCheckIn?: string;
   locationName?: string;
+  avatarChoice?: number;
+  currentLatitude?: number;
+  currentLongitude?: number;
+  locationSharing?: boolean;
 }
 
 interface Jobsite {
@@ -77,6 +85,10 @@ interface Jobsite {
   name: string;
   location: string;
   status: string;
+  address?: string;
+  progress?: number;
+  latitude?: number;
+  longitude?: number;
 }
 
 export const CrewPage = () => {
@@ -101,6 +113,9 @@ export const CrewPage = () => {
   const [newCertification, setNewCertification] = useState("");
   const [newLanguage, setNewLanguage] = useState("");
 
+  // Add state for map view
+  const [showMap, setShowMap] = useState(false);
+
   // Initial form data
   const getInitialFormData = (): CrewFormData => ({
     name: "",
@@ -115,7 +130,9 @@ export const CrewPage = () => {
     languages: [],
     emergencyContact: "",
     notes: "",
-    profileImage: null
+    profileImage: null,
+    avatarChoice: 0,
+    locationSharing: false
   });
 
   const [formData, setFormData] = useState<CrewFormData>(getInitialFormData());
@@ -175,6 +192,8 @@ export const CrewPage = () => {
   useEffect(() => {
     if (assignedProjects && assignedProjects.length > 0) {
       setTempAssignedProjectIds(assignedProjects.map((p: any) => p.id));
+    } else {
+      setTempAssignedProjectIds([]);
     }
   }, [assignedProjects]);
 
@@ -310,63 +329,65 @@ export const CrewPage = () => {
     }
   });
 
+  // Toggle location sharing mutation
+  const toggleLocationSharingMutation = useMutation({
+    mutationFn: (data: {id: number, locationSharing: boolean}) => 
+      apiRequest("PATCH", `/api/crew/${data.id}`, { locationSharing: data.locationSharing })
+        .then((res) => res.json()),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/crew'] });
+      toast({
+        title: "Success",
+        description: "Location sharing preference updated",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to update location sharing: " + error,
+        variant: "destructive",
+      });
+    }
+  });
+
   // Form event handlers
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
     
-    if (type === 'number') {
-      setFormData({
-        ...formData,
-        [name]: value === '' ? null : Number(value)
-      });
-    } else {
-      setFormData({
-        ...formData,
-        [name]: value
-      });
-    }
+    setFormData({
+      ...formData,
+      [name]: type === 'number' ? (value === '' ? null : Number(value)) : value
+    });
   };
 
   const handleSelectChange = (name: string, value: string | number | null) => {
-    setFormData({
-      ...formData,
+    setFormData(prev => ({
+      ...prev,
       [name]: value
-    });
+    }));
   };
 
-  const handleAddCertification = () => {
-    if (newCertification.trim() && !formData.certifications.includes(newCertification.trim())) {
-      setFormData({
-        ...formData,
-        certifications: [...formData.certifications, newCertification.trim()]
-      });
-      setNewCertification("");
+  const handleAddItem = (field: 'certifications' | 'languages', value: string, setter: React.Dispatch<React.SetStateAction<string>>) => {
+    if (value.trim() && !formData[field].includes(value.trim())) {
+      setFormData(prev => ({
+        ...prev,
+        [field]: [...prev[field], value.trim()]
+      }));
+      setter("");
     }
   };
 
-  const handleRemoveCertification = (cert: string) => {
-    setFormData({
-      ...formData,
-      certifications: formData.certifications.filter(c => c !== cert)
-    });
+  const handleRemoveItem = (field: 'certifications' | 'languages', value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: prev[field].filter(item => item !== value)
+    }));
   };
 
-  const handleAddLanguage = () => {
-    if (newLanguage.trim() && !formData.languages.includes(newLanguage.trim())) {
-      setFormData({
-        ...formData,
-        languages: [...formData.languages, newLanguage.trim()]
-      });
-      setNewLanguage("");
-    }
-  };
-
-  const handleRemoveLanguage = (lang: string) => {
-    setFormData({
-      ...formData,
-      languages: formData.languages.filter(l => l !== lang)
-    });
-  };
+  const handleAddCertification = () => handleAddItem('certifications', newCertification, setNewCertification);
+  const handleRemoveCertification = (cert: string) => handleRemoveItem('certifications', cert);
+  const handleAddLanguage = () => handleAddItem('languages', newLanguage, setNewLanguage);
+  const handleRemoveLanguage = (lang: string) => handleRemoveItem('languages', lang);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -405,7 +426,9 @@ export const CrewPage = () => {
       languages: crewMember.languages || [],
       emergencyContact: crewMember.emergencyContact || "",
       notes: crewMember.notes || "",
-      profileImage: crewMember.profileImage || null
+      profileImage: crewMember.profileImage || null,
+      avatarChoice: crewMember.avatarChoice || 0,
+      locationSharing: crewMember.locationSharing || false
     });
     setIsEditDialogOpen(true);
   };
@@ -425,29 +448,54 @@ export const CrewPage = () => {
     }
   };
 
-  // Helper to get jobsite name by id
-  const getJobsiteName = (id: number | null | undefined) => {
-    if (!id) return "Not Assigned";
-    const jobsite = jobsites.find((j: Jobsite) => j.id === id);
-    return jobsite ? jobsite.name : "Unknown Jobsite";
-  };
+  // Helper to get jobsite name by id - memoized to improve performance
+  const getJobsiteName = useMemo(() => {
+    // Create an object for faster lookups instead of using find each time
+    const jobsiteMap: Record<number, string> = {};
+    jobsites.forEach((jobsite: Jobsite) => {
+      jobsiteMap[jobsite.id] = jobsite.name;
+    });
+    
+    return (id: number | null | undefined) => {
+      if (!id) return "Not Assigned";
+      return jobsiteMap[id] || "Unknown Jobsite";
+    };
+  }, [jobsites]);
 
   // Filter crew members based on search, status, and jobsite
-  const filteredCrewMembers = crewMembers.filter((crew: CrewMember) => {
-    // Search filter
-    const matchesSearch = searchQuery === "" || 
-      crew.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      crew.role.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (crew.specialization && crew.specialization.toLowerCase().includes(searchQuery.toLowerCase()));
+  const filteredCrewMembers = useMemo(() => {
+    const trimmedQuery = searchQuery.toLowerCase().trim();
     
-    // Status filter
-    const matchesStatus = !statusFilter || crew.status === statusFilter;
-    
-    // Jobsite filter
-    const matchesJobsite = !jobsiteFilter || crew.jobsiteId === jobsiteFilter;
-    
-    return matchesSearch && matchesStatus && matchesJobsite;
-  });
+    return crewMembers.filter((crew: CrewMember) => {
+      // Skip filtering if no filters are active
+      if (!trimmedQuery && !statusFilter && !jobsiteFilter) {
+        return true;
+      }
+      
+      // Search filter
+      const matchesSearch = !trimmedQuery || 
+        crew.name.toLowerCase().includes(trimmedQuery) ||
+        crew.role.toLowerCase().includes(trimmedQuery) ||
+        (crew.specialization && crew.specialization.toLowerCase().includes(trimmedQuery));
+      
+      // Status filter
+      const matchesStatus = !statusFilter || crew.status === statusFilter;
+      
+      // Jobsite filter
+      const matchesJobsite = !jobsiteFilter || crew.jobsiteId === jobsiteFilter;
+      
+      return matchesSearch && matchesStatus && matchesJobsite;
+    });
+  }, [crewMembers, searchQuery, statusFilter, jobsiteFilter]);
+
+  // Filter crew members with location data
+  const crewWithLocation = useMemo(() => {
+    return crewMembers.filter((crew: CrewMember) => 
+      crew.locationSharing && 
+      typeof crew.currentLatitude === 'number' && 
+      typeof crew.currentLongitude === 'number'
+    );
+  }, [crewMembers]);
 
   // Check if we should show profile view or assign projects mode
   useEffect(() => {
@@ -631,7 +679,20 @@ export const CrewPage = () => {
                         )}
                       </Avatar>
                       
-                      <h3 className="text-xl font-semibold mb-1">{selectedCrewMember.name}</h3>
+                      <div className="flex items-center mb-1">
+                        <div className="w-12 h-12 flex items-center justify-center mr-3 rounded-full bg-gray-100 border border-gray-200">
+                          {typeof selectedCrewMember.avatarChoice === 'number' ? (
+                            <span className="text-sm">#{selectedCrewMember.avatarChoice + 1}</span>
+                          ) : (
+                            <span className="text-sm">#1</span>
+                          )}
+                        </div>
+                        <div>
+                          <h3 className="text-xl font-semibold">
+                            {selectedCrewMember.name}
+                          </h3>
+                        </div>
+                      </div>
                       <p className="text-gray-500 mb-4">{selectedCrewMember.role}</p>
                       
                       <div className="w-full">
@@ -653,6 +714,17 @@ export const CrewPage = () => {
                               <span>{selectedCrewMember.specialization}</span>
                             </div>
                           )}
+                          
+                          <div className="flex items-center">
+                            <span className="font-medium w-1/3">Personal Avatar:</span>
+                            <div className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 border border-gray-200">
+                              {typeof selectedCrewMember.avatarChoice === 'number' ? (
+                                <span className="text-sm">#{selectedCrewMember.avatarChoice + 1}</span>
+                              ) : (
+                                <span className="text-sm">#1</span>
+                              )}
+                            </div>
+                          </div>
                           
                           {selectedCrewMember.experienceYears && selectedCrewMember.experienceYears > 0 && (
                             <div className="flex items-center">
@@ -679,6 +751,20 @@ export const CrewPage = () => {
                               <span>{selectedCrewMember.locationName}</span>
                             </div>
                           )}
+                          
+                          {/* Add location sharing toggle */}
+                          <div className="flex items-center justify-between">
+                            <span className="font-medium">Location Sharing:</span>
+                            <Switch
+                              checked={selectedCrewMember.locationSharing || false}
+                              onCheckedChange={(checked) => {
+                                toggleLocationSharingMutation.mutate({
+                                  id: selectedCrewMember.id,
+                                  locationSharing: checked
+                                });
+                              }}
+                            />
+                          </div>
                         </div>
                       </div>
                     </CardContent>
@@ -750,6 +836,14 @@ export const CrewPage = () => {
                                 <Badge key={idx} variant="secondary" className="flex items-center gap-1 py-1">
                                   <Shield className="h-3 w-3" />
                                   <span>{cert}</span>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    onClick={() => handleRemoveCertification(cert)}
+                                    className="h-4 w-4 p-0 ml-1"
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </Button>
                                 </Badge>
                               ))}
                             </div>
@@ -765,6 +859,14 @@ export const CrewPage = () => {
                                 <Badge key={idx} variant="secondary" className="flex items-center gap-1 py-1">
                                   <Languages className="h-3 w-3" />
                                   <span>{lang}</span>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    onClick={() => handleRemoveLanguage(lang)}
+                                    className="h-4 w-4 p-0 ml-1"
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </Button>
                                 </Badge>
                               ))}
                             </div>
@@ -816,8 +918,8 @@ export const CrewPage = () => {
                             >
                               <div className="flex justify-between items-start">
                                 <div>
-                                  <h4 className="font-medium">{project.name}</h4>
-                                  <p className="text-sm text-gray-500">{project.address}</p>
+                                  <h4 className="font-medium text-black">{project.name}</h4>
+                                  <p className="text-sm text-gray-700">{project.address}</p>
                                 </div>
                                 <Badge className={
                                   project.status === 'active' ? 'bg-green-100 text-green-800' :
@@ -847,7 +949,7 @@ export const CrewPage = () => {
                         </div>
                       ) : (
                         <div className="py-8 text-center">
-                          <p className="text-gray-500 mb-4">No assigned projects found</p>
+                          <p className="text-gray-700 mb-4">No assigned projects found</p>
                           <Button 
                             variant="outline" 
                             size="sm"
@@ -863,265 +965,324 @@ export const CrewPage = () => {
               </div>
             </>
           ) : (
-            // List View
+            // List View - Add Map toggle and map view
             <>
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
-                <h1 className="text-3xl font-bold mb-4 md:mb-0">Crew Management</h1>
-                <Button onClick={() => {
-                  setFormData(getInitialFormData());
-                  setIsAddDialogOpen(true);
-                }}>
-                  Add Crew Member
-                </Button>
-              </div>
-              
-              <div className="flex flex-col lg:flex-row gap-4 mb-6">
-                <div className="flex-1 relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
-                  <Input 
-                    placeholder="Search crew members..." 
-                    className="pl-10"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                </div>
-                
-                <div className="flex flex-col md:flex-row gap-4">
-                  <Select
-                    value={statusFilter || "all"}
-                    onValueChange={(value) => setStatusFilter(value !== "all" ? value : null)}
-                  >
-                    <SelectTrigger className="w-[200px]">
-                      <SelectValue placeholder="Filter by status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Statuses</SelectItem>
-                      <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="on-leave">On Leave</SelectItem>
-                      <SelectItem value="terminated">Terminated</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  
-                  <Select
-                    value={jobsiteFilter?.toString() || "all"}
-                    onValueChange={(value) => setJobsiteFilter(value !== "all" ? parseInt(value) : null)}
-                  >
-                    <SelectTrigger className="w-[200px]">
-                      <SelectValue placeholder="Filter by jobsite" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Jobsites</SelectItem>
-                      {jobsites.map((jobsite: Jobsite) => (
-                        <SelectItem key={jobsite.id} value={jobsite.id.toString()}>
-                          {jobsite.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  
-                  <div className="hidden md:flex mr-4 bg-gray-100 rounded-lg p-1">
-                    <Button 
-                      size="sm"
-                      variant={viewMode === 'list' ? "default" : "ghost"}
-                      onClick={() => setViewMode('list')}
-                      className="rounded-l-md"
-                    >
-                      <List className="h-4 w-4 mr-1" />
-                      List
-                    </Button>
-                    <Button 
-                      size="sm"
-                      variant={viewMode === 'grid' ? "default" : "ghost"}
-                      onClick={() => setViewMode('grid')}
-                      className="rounded-r-md"
-                    >
-                      <Grid3X3 className="h-4 w-4 mr-1" />
-                      Grid
-                    </Button>
+                <h1 className="text-3xl font-bold text-black mb-4 md:mb-0">Crew Management</h1>
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      checked={showMap}
+                      onCheckedChange={setShowMap}
+                      id="map-toggle"
+                    />
+                    <Label htmlFor="map-toggle" className="cursor-pointer">
+                      <Map className="h-4 w-4 mr-1 inline-block" />
+                      Show Map
+                    </Label>
                   </div>
-                </div>
-              </div>
-              
-              {isLoadingCrewMembers ? (
-                <div className="flex justify-center items-center py-12">
-                  <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
-                </div>
-              ) : filteredCrewMembers.length === 0 ? (
-                <div className="bg-white rounded-lg shadow p-6 text-center">
-                  <AlertCircle className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-                  <h3 className="text-lg font-medium mb-2">No crew members found</h3>
-                  <p className="text-gray-500 mb-4">
-                    {searchQuery || statusFilter || jobsiteFilter 
-                      ? "Try adjusting your filters to see more results."
-                      : "Add your first crew member to get started."}
-                  </p>
-                  <Button 
-                    onClick={() => {
-                      setFormData(getInitialFormData());
-                      setIsAddDialogOpen(true);
-                    }}
-                  >
+                  <Button onClick={() => {
+                    setFormData(getInitialFormData());
+                    setIsAddDialogOpen(true);
+                  }}>
                     Add Crew Member
                   </Button>
                 </div>
-              ) : viewMode === 'list' ? (
-                // List View
-                <div className="space-y-6 mt-6 p-4">
-                  {filteredCrewMembers.map((crewMember: CrewMember) => (
-                    <div 
-                      key={crewMember.id} 
-                      className={`bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow p-6
-                        ${crewMember.status === 'on-leave' ? 'border-l-4 border-yellow-400' : 
-                          crewMember.status === 'terminated' ? 'border-l-4 border-red-400' : 
-                          'border-l-4 border-green-400'}`}
-                    >
-                      <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-                        <div className="flex items-center">
-                          <Avatar className="h-12 w-12 mr-4">
-                            {crewMember.profileImage ? (
-                              <AvatarImage src={crewMember.profileImage} alt={crewMember.name} />
-                            ) : (
-                              <AvatarFallback>
-                                {crewMember.name.split(' ').map(n => n[0]).join('')}
-                              </AvatarFallback>
-                            )}
-                          </Avatar>
-                          
-                          <div>
-                            <h3 className="text-lg font-semibold">{crewMember.name}</h3>
-                            <div className="flex flex-col sm:flex-row sm:items-center text-sm text-gray-500">
-                              <span className="mr-3">{crewMember.role}</span>
+              </div>
+              
+              {showMap ? (
+                // Map View
+                <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+                  <h2 className="font-semibold text-lg mb-4">Crew Location Map</h2>
+                  <div className="h-[600px] w-full">
+                    <CrewMap crewMembers={crewWithLocation} height="600px" />
+                  </div>
+                  {crewWithLocation.length === 0 && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-80">
+                      <div className="text-center p-6">
+                        <p className="text-gray-800 font-medium mb-2">No crew members are sharing location data</p>
+                        <p className="text-gray-600 text-sm">
+                          Enable location sharing for crew members to see them on the map
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <>
+                  <div className="flex flex-col lg:flex-row gap-4 mb-6">
+                    <div className="flex-1 relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                      <Input 
+                        placeholder="Search crew members..." 
+                        className="pl-10"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                      />
+                    </div>
+                    
+                    <div className="flex flex-col md:flex-row gap-4">
+                      <Select
+                        value={statusFilter || "all"}
+                        onValueChange={(value) => setStatusFilter(value !== "all" ? value : null)}
+                      >
+                        <SelectTrigger className="w-[200px]">
+                          <SelectValue placeholder="Filter by status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Statuses</SelectItem>
+                          <SelectItem value="active">Active</SelectItem>
+                          <SelectItem value="on-leave">On Leave</SelectItem>
+                          <SelectItem value="terminated">Terminated</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      
+                      <Select
+                        value={jobsiteFilter?.toString() || "all"}
+                        onValueChange={(value) => setJobsiteFilter(value !== "all" ? parseInt(value) : null)}
+                      >
+                        <SelectTrigger className="w-[200px]">
+                          <SelectValue placeholder="Filter by jobsite" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Jobsites</SelectItem>
+                          {jobsites.map((jobsite: Jobsite) => (
+                            <SelectItem key={jobsite.id} value={jobsite.id.toString()}>
+                              {jobsite.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      
+                      <div className="hidden md:flex mr-4 bg-gray-100 rounded-lg p-1">
+                        <Button 
+                          size="sm"
+                          variant={viewMode === 'list' ? "default" : "ghost"}
+                          onClick={() => setViewMode('list')}
+                          className="rounded-l-md"
+                        >
+                          <List className="h-4 w-4 mr-1" />
+                          List
+                        </Button>
+                        <Button 
+                          size="sm"
+                          variant={viewMode === 'grid' ? "default" : "ghost"}
+                          onClick={() => setViewMode('grid')}
+                          className="rounded-r-md"
+                        >
+                          <Grid3X3 className="h-4 w-4 mr-1" />
+                          Grid
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {isLoadingCrewMembers ? (
+                    <div className="flex justify-center items-center py-12">
+                      <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+                    </div>
+                  ) : filteredCrewMembers.length === 0 ? (
+                    <div className="bg-white rounded-lg shadow p-6 text-center">
+                      <AlertCircle className="h-12 w-12 mx-auto text-gray-600 mb-4" />
+                      <h3 className="text-lg font-medium mb-2">No crew members found</h3>
+                      <p className="text-gray-700 mb-4">
+                        {searchQuery || statusFilter || jobsiteFilter 
+                          ? "Try adjusting your filters to see more results."
+                          : "Add your first crew member to get started."}
+                      </p>
+                      <Button 
+                        onClick={() => {
+                          setFormData(getInitialFormData());
+                          setIsAddDialogOpen(true);
+                        }}
+                      >
+                        Add Crew Member
+                      </Button>
+                    </div>
+                  ) : viewMode === 'list' ? (
+                    // List View
+                    <div className="space-y-6 mt-6 p-4">
+                      {filteredCrewMembers.map((crewMember: CrewMember) => (
+                        <div 
+                          key={crewMember.id} 
+                          className={`bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow p-6
+                            ${crewMember.status === 'on-leave' ? 'border-l-4 border-yellow-400' : 
+                              crewMember.status === 'terminated' ? 'border-l-4 border-red-400' : 
+                              'border-l-4 border-green-400'}`}
+                          onClick={() => setLocation(`/crew/${crewMember.id}`)}
+                          style={{ cursor: 'pointer' }}
+                        >
+                          <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+                            <div className="flex items-center">
+                              <Avatar className="h-12 w-12 mr-4">
+                                {crewMember.profileImage ? (
+                                  <AvatarImage src={crewMember.profileImage} alt={crewMember.name} />
+                                ) : (
+                                  <AvatarFallback>
+                                    {crewMember.name.split(' ').map(n => n[0]).join('')}
+                                  </AvatarFallback>
+                                )}
+                              </Avatar>
                               
+                              <div className="flex">
+                                <div className="w-12 h-12 flex items-center justify-center mr-3 rounded-full bg-gray-100 border border-gray-200">
+                                  {typeof crewMember.avatarChoice === 'number' ? (
+                                    <span className="text-sm">#{crewMember.avatarChoice + 1}</span>
+                                  ) : (
+                                    <span className="text-sm">#1</span>
+                                  )}
+                                </div>
+                                <div>
+                                  <h3 className="text-lg font-semibold text-black">
+                                    {crewMember.name}
+                                  </h3>
+                                  <div className="flex flex-col sm:flex-row sm:items-center text-sm text-gray-700">
+                                    <span className="mr-3">{crewMember.role}</span>
+                                    
+                                    {crewMember.specialization && (
+                                      <span className="mr-3 hidden md:inline">• {crewMember.specialization}</span>
+                                    )}
+                                    
+                                    {crewMember.jobsiteId && (
+                                      <div className="flex items-center mt-1 sm:mt-0">
+                                        <MapPin className="h-3 w-3 text-gray-600 mr-1" />
+                                        <span>{getJobsiteName(crewMember.jobsiteId)}</span>
+                                      </div>
+                                    )}
+                                    
+                                    {crewMember.experienceYears && crewMember.experienceYears > 0 && (
+                                      <div className="flex items-center text-sm text-gray-700">
+                                        <Star className="h-3 w-3 text-gray-600 mr-1" />
+                                        <span>{crewMember.experienceYears} years experience</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-center space-x-2 mt-4 md:mt-0">
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => setLocation(`/crew/${crewMember.id}`)}
+                              >
+                                View Profile
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                onClick={() => handleEditClick(crewMember)}
+                              >
+                                <Edit2 className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                className="text-red-500 hover:text-red-700 hover:bg-red-50" 
+                                onClick={() => handleDeleteClick(crewMember)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    // Grid View
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 p-6 mt-6">
+                      {filteredCrewMembers.map((crewMember: CrewMember) => (
+                        <Card key={crewMember.id} className="overflow-hidden hover:shadow-md transition-shadow">
+                          <div 
+                            className={`h-2 w-full
+                              ${crewMember.status === 'active' ? 'bg-green-500' : 
+                                crewMember.status === 'on-leave' ? 'bg-yellow-500' : 
+                                'bg-red-500'}`}
+                          />
+                          <CardHeader className="pb-2 pt-4">
+                            <div className="flex justify-between items-start">
+                              <div className="flex items-center">
+                                <Avatar className="h-12 w-12 mr-3">
+                                  {crewMember.profileImage ? (
+                                    <AvatarImage src={crewMember.profileImage} alt={crewMember.name} />
+                                  ) : (
+                                    <AvatarFallback>
+                                      {crewMember.name.split(' ').map(n => n[0]).join('')}
+                                    </AvatarFallback>
+                                  )}
+                                </Avatar>
+                                <div className="flex">
+                                  <div className="w-12 h-12 flex items-center justify-center mr-3 rounded-full bg-gray-100 border border-gray-200">
+                                    {typeof crewMember.avatarChoice === 'number' ? (
+                                      <span className="text-sm">#{crewMember.avatarChoice + 1}</span>
+                                    ) : (
+                                      <span className="text-sm">#1</span>
+                                    )}
+                                  </div>
+                                  <div>
+                                    <CardTitle className="text-lg text-black">
+                                      {crewMember.name}
+                                    </CardTitle>
+                                    <CardDescription className="text-gray-700">{crewMember.role}</CardDescription>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </CardHeader>
+                          <CardContent className="pb-3">
+                            <div className="space-y-2 text-sm text-gray-700">
                               {crewMember.specialization && (
-                                <span className="mr-3 hidden md:inline">• {crewMember.specialization}</span>
+                                <div>{crewMember.specialization}</div>
                               )}
                               
                               {crewMember.jobsiteId && (
-                                <div className="flex items-center mt-1 sm:mt-0">
-                                  <MapPin className="h-3 w-3 text-gray-400 mr-1" />
+                                <div className="flex items-center">
+                                  <MapPin className="h-3 w-3 text-gray-600 mr-1" />
                                   <span>{getJobsiteName(crewMember.jobsiteId)}</span>
                                 </div>
                               )}
                               
-                              {crewMember.experienceYears && crewMember.experienceYears > 0 && (
-                                <div className="flex items-center text-sm text-gray-500">
-                                  <Star className="h-3 w-3 text-gray-400 mr-1" />
-                                  <span>{crewMember.experienceYears} years experience</span>
+                              {crewMember.languages && crewMember.languages.length > 0 && (
+                                <div className="flex items-center">
+                                  <Languages className="h-3 w-3 text-gray-600 mr-1" />
+                                  <span>{crewMember.languages.join(', ')}</span>
                                 </div>
                               )}
                             </div>
-                          </div>
-                        </div>
-                        
-                        <div className="flex items-center space-x-2 mt-4 md:mt-0">
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => setLocation(`/crew/${crewMember.id}`)}
-                          >
-                            View Profile
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={() => handleEditClick(crewMember)}
-                          >
-                            <Edit2 className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            className="text-red-500 hover:text-red-700 hover:bg-red-50" 
-                            onClick={() => handleDeleteClick(crewMember)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
+                          </CardContent>
+                          <CardFooter className="flex justify-between pt-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              className="text-xs"
+                              onClick={() => setLocation(`/crew/${crewMember.id}`)}
+                            >
+                              View Profile
+                            </Button>
+                            <div className="flex space-x-1">
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                onClick={() => handleEditClick(crewMember)}
+                              >
+                                <Edit2 className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                className="text-red-500 hover:text-red-700 hover:bg-red-50" 
+                                onClick={() => handleDeleteClick(crewMember)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </CardFooter>
+                        </Card>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              ) : (
-                // Grid View
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 p-6 mt-6">
-                  {filteredCrewMembers.map((crewMember: CrewMember) => (
-                    <Card key={crewMember.id} className="overflow-hidden hover:shadow-md transition-shadow p-1">
-                      <div 
-                        className={`h-2 w-full
-                          ${crewMember.status === 'active' ? 'bg-green-500' : 
-                            crewMember.status === 'on-leave' ? 'bg-yellow-500' : 
-                            'bg-red-500'}`}
-                      />
-                      <CardHeader className="pb-2">
-                        <div className="flex justify-between items-start">
-                          <div className="flex items-center">
-                            <Avatar className="h-12 w-12 mr-3">
-                              {crewMember.profileImage ? (
-                                <AvatarImage src={crewMember.profileImage} alt={crewMember.name} />
-                              ) : (
-                                <AvatarFallback>
-                                  {crewMember.name.split(' ').map(n => n[0]).join('')}
-                                </AvatarFallback>
-                              )}
-                            </Avatar>
-                            <div>
-                              <CardTitle className="text-lg">{crewMember.name}</CardTitle>
-                              <CardDescription>{crewMember.role}</CardDescription>
-                            </div>
-                          </div>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="pb-3">
-                        <div className="space-y-2 text-sm">
-                          {crewMember.specialization && (
-                            <div>{crewMember.specialization}</div>
-                          )}
-                          
-                          {crewMember.jobsiteId && (
-                            <div className="flex items-center">
-                              <MapPin className="h-3 w-3 text-gray-400 mr-1" />
-                              <span>{getJobsiteName(crewMember.jobsiteId)}</span>
-                            </div>
-                          )}
-                          
-                          {crewMember.languages && crewMember.languages.length > 0 && (
-                            <div className="flex items-center">
-                              <Languages className="h-3 w-3 text-gray-400 mr-1" />
-                              <span>{crewMember.languages.join(', ')}</span>
-                            </div>
-                          )}
-                        </div>
-                      </CardContent>
-                      <CardFooter className="flex justify-between pt-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          className="text-xs"
-                          onClick={() => setLocation(`/crew/${crewMember.id}`)}
-                        >
-                          View Profile
-                        </Button>
-                        <div className="flex space-x-1">
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={() => handleEditClick(crewMember)}
-                          >
-                            <Edit2 className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            className="text-red-500 hover:text-red-700 hover:bg-red-50" 
-                            onClick={() => handleDeleteClick(crewMember)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </CardFooter>
-                    </Card>
-                  ))}
-                </div>
+                  )}
+                </>
               )}
             </>
           )}
@@ -1132,8 +1293,8 @@ export const CrewPage = () => {
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Add New Crew Member</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-black text-xl">Add New Crew Member</DialogTitle>
+            <DialogDescription className="text-gray-700">
               Add a new member to your construction crew. Fill out the required information.
             </DialogDescription>
           </DialogHeader>
@@ -1275,6 +1436,40 @@ export const CrewPage = () => {
                 </div>
                 
                 <div className="space-y-2">
+                  <div className="flex items-center justify-between mb-2">
+                    <Label htmlFor="locationSharingAdd">Location Sharing</Label>
+                    <Switch
+                      id="locationSharingAdd"
+                      checked={formData.locationSharing}
+                      onCheckedChange={(checked) => 
+                        setFormData({...formData, locationSharing: checked})
+                      }
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500">When enabled, this crew member's location will be visible on the map</p>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="avatarChoice">Personal Avatar</Label>
+                  <div className="flex flex-wrap gap-4 mt-2">
+                    {[0, 1, 2, 3, 4, 5, 6].map((avatarIndex) => (
+                      <div 
+                        key={avatarIndex}
+                        className={`w-14 h-14 rounded-full flex items-center justify-center cursor-pointer border-2 transition-all ${
+                          formData.avatarChoice === avatarIndex 
+                            ? 'border-primary bg-primary/10' 
+                            : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                        onClick={() => setFormData({...formData, avatarChoice: avatarIndex})}
+                      >
+                        <span className="text-sm">#{avatarIndex+1}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-xs text-gray-700 mt-2">Select an avatar that will appear next to your name</p>
+                </div>
+                
+                <div className="space-y-2">
                   <Label>Certifications</Label>
                   <div className="flex gap-2">
                     <Input
@@ -1387,8 +1582,8 @@ export const CrewPage = () => {
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Edit Crew Member</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-black text-xl">Edit Crew Member</DialogTitle>
+            <DialogDescription className="text-gray-700">
               Update information for {selectedCrewMember?.name}.
             </DialogDescription>
           </DialogHeader>
@@ -1396,7 +1591,6 @@ export const CrewPage = () => {
           <form onSubmit={handleSubmit}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4 md:col-span-2">
-                {/* Same form fields as add dialog */}
                 <div className="space-y-2">
                   <Label htmlFor="name">Full Name <span className="text-red-500">*</span></Label>
                   <Input
@@ -1440,7 +1634,6 @@ export const CrewPage = () => {
                   </div>
                 </div>
                 
-                {/* Remaining form fields identical to add dialog */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="phone">Phone Number</Label>
@@ -1531,7 +1724,40 @@ export const CrewPage = () => {
                   </div>
                 </div>
                 
-                {/* Other fields omitted for brevity but would be the same as add dialog */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between mb-2">
+                    <Label htmlFor="locationSharing">Location Sharing</Label>
+                    <Switch
+                      id="locationSharing"
+                      checked={formData.locationSharing}
+                      onCheckedChange={(checked) => 
+                        setFormData({...formData, locationSharing: checked})
+                      }
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500">When enabled, this crew member's location will be visible on the map</p>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="avatarChoice">Personal Avatar</Label>
+                  <div className="flex flex-wrap gap-4 mt-2">
+                    {[0, 1, 2, 3, 4, 5, 6].map((avatarIndex) => (
+                      <div 
+                        key={avatarIndex}
+                        className={`w-14 h-14 rounded-full flex items-center justify-center cursor-pointer border-2 transition-all ${
+                          formData.avatarChoice === avatarIndex 
+                            ? 'border-primary bg-primary/10' 
+                            : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                        onClick={() => setFormData({...formData, avatarChoice: avatarIndex})}
+                      >
+                        <span className="text-sm">#{avatarIndex+1}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-xs text-gray-700 mt-2">Select an avatar that will appear next to your name</p>
+                </div>
+                
                 <div className="space-y-2">
                   <Label>Certifications</Label>
                   <div className="flex gap-2">
