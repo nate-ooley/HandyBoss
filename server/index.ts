@@ -1,9 +1,13 @@
 import 'dotenv/config';
 import express, { type Request, Response, NextFunction } from "express";
+import { createServer } from "node:http";
 // Use main routes
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { initializeStorage } from './db/config';
+
+// Set a fixed port with fallback mechanism
+const PORT = 3300; // Using a less common port to avoid conflicts
 
 const app = express();
 app.use(express.json());
@@ -63,12 +67,37 @@ app.use((req, res, next) => {
     serveStatic(app);
   }
 
-  // Changed port to 3001 and removed reusePort option
-  const port = process.env.PORT || 3001;
-  server.listen({
-    port,
-    host: "localhost", // Changed from 0.0.0.0 to localhost for macOS compatibility
-  }, () => {
-    log(`serving on port ${port}`);
-  });
+  // Start the server with reliable port handling
+  let currentPort = PORT;
+  let maxRetries = 5;
+  let serverStarted = false;
+
+  // Try to start server with retries
+  while (!serverStarted && maxRetries > 0) {
+    try {
+      server.listen({
+        port: currentPort,
+        host: "localhost",
+      });
+      serverStarted = true;
+      log(`Server running at http://localhost:${currentPort}`, 'express');
+      
+      // Store the port in a file for client to access
+      process.env.APP_PORT = currentPort.toString();
+    } catch (error: any) {
+      if (error.code === 'EADDRINUSE') {
+        log(`Port ${currentPort} is in use, trying ${currentPort + 1}...`, 'express');
+        currentPort++;
+        maxRetries--;
+      } else {
+        log(`Error starting server: ${error.message}`, 'express');
+        maxRetries = 0; // stop retrying on non-port errors
+      }
+    }
+  }
+
+  if (!serverStarted) {
+    log('Failed to start server after multiple attempts. Please check if multiple instances are running.', 'express');
+    process.exit(1);
+  }
 })();

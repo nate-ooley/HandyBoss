@@ -3,6 +3,31 @@ import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from '@react-google-map
 import { useLocation } from 'wouter';
 import { GOOGLE_MAPS_API_KEY, DEFAULT_MAP_CENTER } from '@/lib/constants';
 
+// Map fallback component when Google Maps fails to load
+const MapLoadingFallback = ({ error, height, width }: { error?: string, height?: string, width?: string }) => (
+  <div 
+    style={{ 
+      width: width || '100%', 
+      height: height || '500px', 
+      display: 'flex', 
+      flexDirection: 'column',
+      justifyContent: 'center', 
+      alignItems: 'center',
+      backgroundColor: '#f5f5f5',
+      border: '1px solid #ddd',
+      borderRadius: '8px',
+      padding: '20px'
+    }}
+  >
+    <div style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '10px' }}>
+      Map temporarily unavailable
+    </div>
+    <div style={{ textAlign: 'center', maxWidth: '80%', color: '#666' }}>
+      {error || 'There was an issue loading the map. Please try again later.'}
+    </div>
+  </div>
+);
+
 // Define the shape of each project with location data
 interface MapProject {
   id: number;
@@ -339,66 +364,38 @@ export const ProjectsMap = ({
     );
   };
 
-  // Show error if map fails to load
-  if (mapError) {
-    return (
-      <div className="h-full w-full flex flex-col items-center justify-center bg-gray-100 p-4 text-center">
-        <p className="text-red-500 mb-2">❌ {mapError}</p>
-        <p className="text-sm text-gray-600 mb-4">
-          Please check your Google Maps API key configuration
-        </p>
-        <div className="text-left bg-gray-200 p-4 rounded-md text-xs overflow-auto w-full max-w-md">
-          <pre>{JSON.stringify(debugInfo, null, 2)}</pre>
-        </div>
-      </div>
-    );
+  // Return early with fallback if there's a load error
+  if (loadError) {
+    console.error('Google Maps failed to load:', loadError);
+    return <MapLoadingFallback 
+      error={`Error loading map: ${loadError.message || 'Google Maps unavailable'}`} 
+      height={height} 
+      width={width} 
+    />;
   }
 
-  // Show loading state
-  if (!isLoaded || !window.google || !window.google.maps) {
-    // Check directly if Google Maps is available
-    const mapsAvailable = !!(window.google && window.google.maps);
-    
-    return (
-      <div className="h-full w-full flex flex-col items-center justify-center bg-gray-100 p-4">
-        <div className="flex items-center mb-4">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mr-3"></div>
-          <span>Loading map...</span>
-        </div>
-        
-        <div className="text-xs text-gray-500">
-          Maps API loaded: {mapsAvailable ? 'Yes' : 'No'}
-        </div>
-      </div>
-    );
-  }
-
-  // Check if we have any projects with valid coordinates
-  const validProjects = projects.filter(project => 
-    typeof project.latitude === 'number' && typeof project.longitude === 'number'
+  // Check if there are any projects with valid coordinates
+  const validProjects = projects.filter(p => 
+    typeof p.latitude === 'number' && typeof p.longitude === 'number' && 
+    p.latitude !== null && p.longitude !== null
   );
-  
-  console.log(`[ProjectsMap] Valid projects with coordinates: ${validProjects.length} out of ${projects.length}`);
-  
-  if (validProjects.length === 0) {
-    return (
-      <div className="h-full w-full flex items-center justify-center bg-gray-100 text-center p-4">
-        <div>
-          <p className="text-red-500 font-semibold mb-2">No location data available for projects</p>
-          <p className="text-sm text-gray-600 mb-4">Projects need latitude and longitude coordinates to be displayed on the map</p>
-          <div className="text-left bg-gray-200 p-4 rounded-md text-xs overflow-auto w-full max-w-md">
-            <p className="font-semibold mb-2">Debug Info:</p>
-            <ul>
-              {projects.map(project => (
-                <li key={project.id}>
-                  {project.name}: {project.latitude ? '✓' : '✗'} lat, {project.longitude ? '✓' : '✗'} lng
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      </div>
-    );
+
+  // Show fallback if there are no valid project coordinates
+  if (validProjects.length === 0 && projects.length > 0) {
+    return <MapLoadingFallback 
+      error="No valid project locations to display on map" 
+      height={height} 
+      width={width} 
+    />;
+  }
+
+  // Show loading state if Google Maps is not yet loaded
+  if (!isLoaded) {
+    return <MapLoadingFallback 
+      error="Loading map..." 
+      height={height} 
+      width={width} 
+    />;
   }
 
   return (

@@ -1,7 +1,17 @@
+import { log } from './vite';
 import OpenAI from "openai";
 
-// Initialize the OpenAI client
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+// Initialize the OpenAI client with API key
+if (!process.env.OPENAI_API_KEY) {
+  throw new Error("Missing required environment variable: OPENAI_API_KEY");
+}
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+// Use the latest GPT model for best performance
+const CHAT_MODEL = "gpt-4o-2024-05-13";
 
 // Simple translation mappings for fallback
 const simpleDictionary = {

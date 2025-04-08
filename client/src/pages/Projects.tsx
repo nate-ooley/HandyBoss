@@ -604,8 +604,9 @@ Longitude: ${result.longitude}`);
             <h3 className="font-medium text-sm">Manual Coordinate Entry</h3>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs mb-1 block">Latitude</label>
+                <label htmlFor="manual-latitude" className="text-xs mb-1 block">Latitude</label>
                 <input
+                  id="manual-latitude"
                   type="text"
                   value={manualCoords.lat}
                   onChange={(e) => setManualCoords(prev => ({ ...prev, lat: e.target.value }))}
@@ -614,8 +615,9 @@ Longitude: ${result.longitude}`);
                 />
               </div>
               <div>
-                <label className="text-xs mb-1 block">Longitude</label>
+                <label htmlFor="manual-longitude" className="text-xs mb-1 block">Longitude</label>
                 <input
+                  id="manual-longitude"
                   type="text"
                   value={manualCoords.lng}
                   onChange={(e) => setManualCoords(prev => ({ ...prev, lng: e.target.value }))}

@@ -5,13 +5,18 @@
   "license": "MIT",
   "scripts": {
     "dev": "tsx server/index.ts",
-    "build": "vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
-    "start": "NODE_ENV=production node dist/index.js",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "start:gemma": "node scripts/start-gemma.js",
+    "download:gemma": "node scripts/download-gemma.js",
     "check": "tsc",
     "db:push": "drizzle-kit push"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.37.0",
+    "@aws-sdk/client-s3": "^3.509.0",
+    "@aws-sdk/s3-request-presigner": "^3.509.0",
+    "@headlessui/react": "^1.7.18",
     "@hookform/resolvers": "^3.9.1",
     "@jridgewell/trace-mapping": "^0.3.25",
     "@neondatabase/serverless": "^0.10.4",

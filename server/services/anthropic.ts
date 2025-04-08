@@ -1,14 +1,32 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { log } from '../vite';
+import { anthropicFallback } from './openai';
+import { 
+  isLocalLLMAvailable, 
+  processCommandWithLocalLLM, 
+  translateWithLocalLLM,
+  analyzeConversationWithLocalLLM
+} from './localLLM';
 
-// Initialize Anthropic client with API key
-if (!process.env.ANTHROPIC_API_KEY) {
-  throw new Error('Missing required environment variable: ANTHROPIC_API_KEY');
+// Initialize Anthropic client with API key if available
+let anthropic: Anthropic | null = null;
+try {
+  if (!process.env.ANTHROPIC_API_KEY) {
+    log('Warning: Missing ANTHROPIC_API_KEY environment variable. Anthropic features will use fallbacks.', 'anthropic');
+  } else {
+    anthropic = new Anthropic({
+      apiKey: process.env.ANTHROPIC_API_KEY,
+    });
+    log('Anthropic client initialized successfully', 'anthropic');
+  }
+} catch (error) {
+  log(`Error initializing Anthropic client: ${error}`, 'anthropic');
 }
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
+// Check if Anthropic is available before using it
+const isAnthropicAvailable = (): boolean => {
+  return !!anthropic;
+};
 
 // the newest Anthropic model is "claude-3-7-sonnet-20250219" which was released February 24, 2025
 const MODEL = 'claude-3-7-sonnet-20250219';
@@ -45,12 +63,35 @@ function getContentText(content: any): string {
 
 /**
  * Process a construction-related voice command and extract structured information
+ * This function will try:
+ * 1. Local LLM (if available)
+ * 2. Anthropic (if available)
+ * 3. OpenAI fallback
+ * 4. Basic pattern matching as final fallback
  * 
  * @param voiceCommand The text from the voice command to process
  * @returns Structured information about the command
  */
 export async function processVoiceCommand(voiceCommand: string): Promise<any> {
+  // Try local LLM first if available
   try {
+    const llmAvailable = await isLocalLLMAvailable();
+    if (llmAvailable) {
+      log('Using local LLM for voice command processing', 'localLLM');
+      return await processCommandWithLocalLLM(voiceCommand);
+    }
+  } catch (localError) {
+    log(`Local LLM error: ${localError}. Falling back to Anthropic.`, 'localLLM');
+  }
+  
+  // Fall back to Anthropic if local LLM is unavailable
+  try {
+    // Check if Anthropic client is available
+    if (!isAnthropicAvailable()) {
+      log('Anthropic client not available, using OpenAI fallback', 'anthropic');
+      return await anthropicFallback(voiceCommand, 'command');
+    }
+    
     const userPrompt = `
     Analyze this construction site voice command and extract the key information in JSON format:
     
@@ -67,7 +108,8 @@ export async function processVoiceCommand(voiceCommand: string): Promise<any> {
     - requiresResponse: Boolean indicating if this command needs confirmation/response
     `;
 
-    const response = await anthropic.messages.create({
+    // We know anthropic is not null here due to isAnthropicAvailable check
+    const response = await anthropic!.messages.create({
       model: MODEL,
       max_tokens: 1024,
       system: CONSTRUCTION_SYSTEM_PROMPT,
@@ -88,9 +130,57 @@ export async function processVoiceCommand(voiceCommand: string): Promise<any> {
       }
       throw new Error('Failed to parse response from Anthropic API');
     }
-  } catch (error) {
+  } catch (error: any) {
+    // Log the error
     log(`Anthropic API error: ${error}`, 'anthropic');
-    throw error;
+
+    // Check if error is due to credit issues
+    const isCreditsError = error?.message?.includes('credit balance is too low') || 
+                        error?.error?.message?.includes('credit balance is too low');
+
+    if (isCreditsError) {
+      log('Anthropic credits depleted, using OpenAI fallback', 'anthropic');
+      try {
+        // Use OpenAI as fallback
+        return await anthropicFallback(voiceCommand, 'command');
+      } catch (fallbackError) {
+        log(`OpenAI fallback failed: ${fallbackError}`, 'anthropic');
+        // If OpenAI also fails, use the basic fallback
+        return {
+          intent: voiceCommand.toLowerCase().includes('schedule') ? 'schedule' :
+                voiceCommand.toLowerCase().includes('report') ? 'report' :
+                voiceCommand.toLowerCase().includes('alert') || voiceCommand.toLowerCase().includes('emergency') ? 'alert' :
+                voiceCommand.toLowerCase().includes('request') || voiceCommand.toLowerCase().includes('need') ? 'request' : 'information',
+          action: voiceCommand,
+          entities: [],
+          priority: voiceCommand.toLowerCase().includes('urgent') || voiceCommand.toLowerCase().includes('emergency') ? 'critical' :
+                  voiceCommand.toLowerCase().includes('important') ? 'high' : 'medium',
+          jobsiteRelevant: true,
+          requiresResponse: voiceCommand.endsWith('?')
+        };
+      }
+    }
+
+    // Try OpenAI fallback for other errors too
+    try {
+      log('Trying OpenAI fallback due to Anthropic error', 'anthropic');
+      return await anthropicFallback(voiceCommand, 'command');
+    } catch (fallbackError) {
+      log(`OpenAI fallback failed: ${fallbackError}`, 'anthropic');
+      // If OpenAI also fails, use the basic fallback
+      return {
+        intent: voiceCommand.toLowerCase().includes('schedule') ? 'schedule' :
+              voiceCommand.toLowerCase().includes('report') ? 'report' :
+              voiceCommand.toLowerCase().includes('alert') || voiceCommand.toLowerCase().includes('emergency') ? 'alert' :
+              voiceCommand.toLowerCase().includes('request') || voiceCommand.toLowerCase().includes('need') ? 'request' : 'information',
+        action: voiceCommand,
+        entities: [],
+        priority: voiceCommand.toLowerCase().includes('urgent') || voiceCommand.toLowerCase().includes('emergency') ? 'critical' :
+                voiceCommand.toLowerCase().includes('important') ? 'high' : 'medium',
+        jobsiteRelevant: true,
+        requiresResponse: voiceCommand.endsWith('?')
+      };
+    }
   }
 }
 
@@ -101,7 +191,25 @@ export async function processVoiceCommand(voiceCommand: string): Promise<any> {
  * @returns Structured information about the conversation
  */
 export async function analyzeConstructionConversation(text: string): Promise<any> {
+  // Try local LLM first if available
   try {
+    const llmAvailable = await isLocalLLMAvailable();
+    if (llmAvailable) {
+      log('Using local LLM for conversation analysis', 'localLLM');
+      return await analyzeConversationWithLocalLLM(text);
+    }
+  } catch (localError) {
+    log(`Local LLM error for conversation analysis: ${localError}. Falling back to Anthropic.`, 'localLLM');
+  }
+  
+  // Fall back to Anthropic if local LLM is unavailable
+  try {
+    // Check if Anthropic client is available
+    if (!isAnthropicAvailable()) {
+      log('Anthropic client not available, using fallback for analysis', 'anthropic');
+      return await anthropicFallback(text, 'analysis');
+    }
+    
     const userPrompt = `
     Analyze this construction site conversation and extract the key information in JSON format:
     
@@ -118,7 +226,8 @@ export async function analyzeConstructionConversation(text: string): Promise<any
     - followupNeeded: Boolean indicating if this conversation requires follow-up
     `;
 
-    const response = await anthropic.messages.create({
+    // We know anthropic is not null here due to isAnthropicAvailable check
+    const response = await anthropic!.messages.create({
       model: MODEL,
       max_tokens: 1024,
       system: CONSTRUCTION_SYSTEM_PROMPT,
@@ -139,8 +248,35 @@ export async function analyzeConstructionConversation(text: string): Promise<any
       }
       throw new Error('Failed to parse response from Anthropic API');
     }
-  } catch (error) {
+  } catch (error: any) {
     log(`Anthropic API error: ${error}`, 'anthropic');
+    
+    // Check if error is due to credit issues
+    const isCreditsError = error?.message?.includes('credit balance is too low') || 
+                           error?.error?.message?.includes('credit balance is too low');
+    
+    if (isCreditsError || !isAnthropicAvailable()) {
+      log('Anthropic unavailable, using OpenAI fallback for analysis', 'anthropic');
+      try {
+        // Use OpenAI as fallback for analysis
+        return await anthropicFallback(text, 'analysis');
+      } catch (fallbackError) {
+        log(`OpenAI fallback analysis failed: ${fallbackError}`, 'anthropic');
+        // Return basic structure if everything fails
+        return {
+          topics: ["conversation analysis unavailable - API limit reached"],
+          decisions: [],
+          actions: [],
+          issues: [],
+          materials: [],
+          scheduling: null,
+          safety: null,
+          followupNeeded: true
+        };
+      }
+    }
+    
+    // Re-throw other errors
     throw error;
   }
 }
@@ -153,7 +289,24 @@ export async function analyzeConstructionConversation(text: string): Promise<any
  * @returns Translated text
  */
 export async function translateConstructionText(text: string, targetLanguage: 'en' | 'es'): Promise<string> {
+  // Try local LLM first if available
   try {
+    const llmAvailable = await isLocalLLMAvailable();
+    if (llmAvailable) {
+      log('Using local LLM for translation', 'localLLM');
+      return await translateWithLocalLLM(text, targetLanguage);
+    }
+  } catch (localError) {
+    log(`Local LLM error for translation: ${localError}. Falling back to Anthropic.`, 'localLLM');
+  }
+  
+  try {
+    // Check if Anthropic client is available
+    if (!isAnthropicAvailable()) {
+      log('Anthropic client not available, using fallback for translation', 'anthropic');
+      return await anthropicFallback(text, 'translate', { targetLanguage });
+    }
+    
     const targetLanguageName = targetLanguage === 'en' ? 'English' : 'Spanish';
     
     const systemPrompt = `
@@ -169,7 +322,8 @@ export async function translateConstructionText(text: string, targetLanguage: 'e
 
     const userPrompt = `Translate the following construction-related text to ${targetLanguageName}:\n\n"${text}"`;
 
-    const response = await anthropic.messages.create({
+    // We know anthropic is not null here due to isAnthropicAvailable check
+    const response = await anthropic!.messages.create({
       model: MODEL,
       max_tokens: 1024,
       system: systemPrompt,
@@ -178,8 +332,25 @@ export async function translateConstructionText(text: string, targetLanguage: 'e
 
     const contentText = getContentText(response.content[0]);
     return contentText.trim();
-  } catch (error) {
+  } catch (error: any) {
     log(`Anthropic translation error: ${error}`, 'anthropic');
+    
+    // Check if error is due to credit issues
+    const isCreditsError = error?.message?.includes('credit balance is too low') || 
+                           error?.error?.message?.includes('credit balance is too low');
+    
+    if (isCreditsError || !isAnthropicAvailable()) {
+      log('Anthropic unavailable, using OpenAI fallback for translation', 'anthropic');
+      try {
+        // Use OpenAI as fallback for translation
+        return await anthropicFallback(text, 'translate', { targetLanguage });
+      } catch (fallbackError) {
+        log(`OpenAI fallback translation failed: ${fallbackError}`, 'anthropic');
+        // Fall back to letting the user know translation failed
+        return `${text} [Translation unavailable - API limit reached]`;
+      }
+    }
+    
     throw error;
   }
 }
@@ -191,7 +362,24 @@ export async function translateConstructionText(text: string, targetLanguage: 'e
  * @returns Structured command object
  */
 export async function createCommandFromSpeech(text: string): Promise<any> {
+  // Try local LLM first if available
   try {
+    const llmAvailable = await isLocalLLMAvailable();
+    if (llmAvailable) {
+      log('Using local LLM for command creation', 'localLLM');
+      return await processCommandWithLocalLLM(text);
+    }
+  } catch (localError) {
+    log(`Local LLM error for command creation: ${localError}. Falling back to Anthropic.`, 'localLLM');
+  }
+  
+  try {
+    // Check if Anthropic client is available
+    if (!isAnthropicAvailable()) {
+      log('Anthropic client not available, using fallback for command creation', 'anthropic');
+      return await anthropicFallback(text, 'command');
+    }
+    
     const systemPrompt = `
     You are a construction site voice assistant that converts natural language into structured commands.
     Identify the most likely command type from the user's speech and format it appropriately.
@@ -216,7 +404,8 @@ export async function createCommandFromSpeech(text: string): Promise<any> {
     All commands should include a "command_type" field.
     `;
 
-    const response = await anthropic.messages.create({
+    // We know anthropic is not null here due to isAnthropicAvailable check
+    const response = await anthropic!.messages.create({
       model: MODEL,
       max_tokens: 1024,
       system: systemPrompt,
@@ -237,8 +426,49 @@ export async function createCommandFromSpeech(text: string): Promise<any> {
       }
       throw new Error('Failed to parse response from Anthropic API');
     }
-  } catch (error) {
+  } catch (error: any) {
     log(`Anthropic API error: ${error}`, 'anthropic');
+    
+    // Check if error is due to credit issues
+    const isCreditsError = error?.message?.includes('credit balance is too low') || 
+                           error?.error?.message?.includes('credit balance is too low');
+    
+    if (isCreditsError || !isAnthropicAvailable()) {
+      log('Anthropic unavailable, using OpenAI fallback for command creation', 'anthropic');
+      try {
+        // Use OpenAI as fallback for command processing
+        return await anthropicFallback(text, 'command');
+      } catch (fallbackError) {
+        log(`OpenAI fallback for command creation failed: ${fallbackError}`, 'anthropic');
+        
+        // Create a basic command structure based on simple keyword analysis
+        let commandType = 'status_update'; // Default command type
+        
+        if (text.toLowerCase().includes('schedule') || text.toLowerCase().includes('plan')) {
+          commandType = 'schedule_task';
+        } else if (text.toLowerCase().includes('issue') || text.toLowerCase().includes('problem')) {
+          commandType = 'report_issue';
+        } else if (text.toLowerCase().includes('material') || text.toLowerCase().includes('need') || text.toLowerCase().includes('require')) {
+          commandType = 'request_materials';
+        } else if (text.toLowerCase().includes('danger') || text.toLowerCase().includes('safety') || text.toLowerCase().includes('hazard')) {
+          commandType = 'safety_alert';
+        } else if (text.toLowerCase().includes('weather') || text.toLowerCase().includes('rain') || text.toLowerCase().includes('forecast')) {
+          commandType = 'weather_update';
+        } else if (text.toLowerCase().includes('message') || text.toLowerCase().includes('tell') || text.toLowerCase().includes('notify')) {
+          commandType = 'team_message';
+        }
+        
+        return {
+          command_type: commandType,
+          content: text,
+          timestamp: new Date().toISOString(),
+          processed: false,
+          source: 'fallback'
+        };
+      }
+    }
+    
+    // Re-throw other errors
     throw error;
   }
 }
