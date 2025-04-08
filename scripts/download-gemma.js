@@ -26,7 +26,7 @@ dotenv.config();
 const config = {
   modelPath: process.env.LOCAL_LLM_PATH || './models/gemma-3',
   huggingfaceToken: process.env.HUGGINGFACE_TOKEN || '',
-  modelRepo: process.env.GEMMA_MODEL_REPO || 'TheBloke/Gemma-7B-it-GGUF',
+  modelRepo: process.env.GEMMA_MODEL_REPO || 'google/gemma-1.1-7b-it-gguf',
   quantizedVersion: process.env.USE_QUANTIZED_MODEL === 'true'
 };
 

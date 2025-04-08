@@ -9,7 +9,7 @@ const execPromise = promisify(exec);
 const LOCAL_LLM_CONFIG = {
   enabled: process.env.USE_LOCAL_LLM === 'true',
   modelPath: process.env.LOCAL_LLM_PATH || './models/gemma-3',
-  apiUrl: process.env.LOCAL_LLM_API || 'http://localhost:5000',
+  apiUrl: process.env.LOCAL_LLM_API || 'http://localhost:6789',
   useAPI: true, // If true, uses API, otherwise uses direct model loading
   maxTokens: 1024
 };
@@ -119,7 +119,9 @@ export async function processWithLocalLLM(
       }
 
       const data = await response.json();
-      return data.text || data.response || '';
+      
+      // Return text property or empty string if not available
+      return data.text || '';
     } else {
       // Direct model loading implementation
       log('Direct model loading not yet implemented', 'localLLM');

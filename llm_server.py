@@ -2,6 +2,7 @@ import os
 import sys
 import json
 import logging
+import socket
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -17,7 +18,29 @@ logger = logging.getLogger("llm-api")
 MODEL_PATH = "/Users/admin/Documents/BossMan/HandyBoss/models/gemma-3/tinyllama-1.1b-chat-v1.0.Q4_K_S.gguf"
 DEFAULT_MAX_TOKENS = 1024
 DEFAULT_TEMPERATURE = 0.3
-DEFAULT_PORT = 6789
+DEFAULT_PORT = int(os.environ.get("LOCAL_LLM_PORT", "6789"))
+
+# Function to check if a port is available
+def is_port_available(port):
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    result = False
+    try:
+        sock.bind(("0.0.0.0", port))
+        result = True
+    except:
+        pass
+    finally:
+        sock.close()
+    return result
+
+# Find an available port
+def find_available_port(start_port):
+    port = start_port
+    while port < start_port + 20:  # Try up to 20 ports
+        if is_port_available(port):
+            return port
+        port += 1
+    return None  # No available port found
 
 # Initialize FastAPI
 app = FastAPI(title="Local LLM API Server", 
@@ -120,5 +143,23 @@ async def generate(request: GenerationRequest):
         raise HTTPException(status_code=500, detail=f"Generation error: {str(e)}")
 
 if __name__ == "__main__":
-    uvicorn.run("llm_server:app", host="0.0.0.0", port=DEFAULT_PORT)
+    # Find an available port
+    port = DEFAULT_PORT
+    if not is_port_available(port):
+        logger.info(f"Port {port} is already in use, looking for another port...")
+        port = find_available_port(port + 1)
+        if port:
+            logger.info(f"Found available port: {port}")
+        else:
+            logger.error("No available ports found. Exiting.")
+            sys.exit(1)
+    else:
+        logger.info(f"Using default port: {port}")
+        
+    # Update the environment variable with the actual port being used
+    os.environ["LOCAL_LLM_PORT"] = str(port)
+    
+    # Start the server
+    logger.info(f"Starting LLM server on port {port}")
+    uvicorn.run("llm_server:app", host="0.0.0.0", port=port)
   
