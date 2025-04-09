@@ -54,12 +54,32 @@
     </script>
 
     <!-- Google Maps API with explicit callback -->
-    <script 
-      src="https://maps.googleapis.com/maps/api/js?key=%VITE_GOOGLE_MAPS_API_KEY%&libraries=places&callback=googleMapsCallback" 
-      async 
-      defer
-      onerror="googleMapsErrorCallback(new Error('Script loading error'))"
-    ></script>
+    <script>
+      // Dynamically load Google Maps API
+      window.loadGoogleMapsAPI = function() {
+        console.log('Dynamically loading Google Maps API');
+        if (window.google && window.google.maps) {
+          console.log('Google Maps already loaded, skipping');
+          return;
+        }
+        
+        const script = document.createElement('script');
+        // Use the direct API key since we know Vite will replace the environment variable here
+        script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyB49DXWfUcgdkipZs-9gUF7kp7C_UpsQlE&libraries=places&callback=googleMapsCallback`;
+        script.async = true;
+        script.defer = true;
+        script.onerror = function() {
+          googleMapsErrorCallback(new Error('Script loading error'));
+        };
+        document.head.appendChild(script);
+        console.log('Google Maps API script added to head');
+      };
+      
+      // Load Google Maps API on page load
+      window.addEventListener('DOMContentLoaded', function() {
+        window.loadGoogleMapsAPI();
+      });
+    </script>
   </head>
   <body class="bg-background text-foreground antialiased">
     <div id="root"></div>

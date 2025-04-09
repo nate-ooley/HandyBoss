@@ -89,16 +89,14 @@ export default function Projects() {
   const [selectedCrewMember, setSelectedCrewMember] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isGeocoding, setIsGeocoding] = useState(false);
-  const [activePort, setActivePort] = useState<number | null>(null);
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
   const params = useParams();
   const projectId = params.id ? parseInt(params.id) : null;
   const { toast } = useToast();
-  // Add state for coordinate entry
-  const [latitude, setLatitude] = useState<number | null>(null);
-  const [longitude, setLongitude] = useState<number | null>(null);
   
+  // Remove all port detection logic and use API directly through Vite's proxy
+
   // Create a more effective debounced invalidate function
   const debouncedInvalidateJobsitesRef = useRef<any>(null);
   const debouncedInvalidateJobsites = useCallback(() => {
@@ -127,9 +125,12 @@ export default function Projects() {
   });
   
   // Get the selected project
-  const selectedProject = projectId 
+  const currentProject = projectId 
     ? jobsites.find(jobsite => jobsite.id === projectId) 
     : null;
+    
+  // Add loading state for geocoding operations
+  const [isGeocodingLoading, setIsGeocodingLoading] = useState(false);
   
   // Fetch project details
   const { data: projectDetails } = useQuery({
@@ -194,7 +195,7 @@ export default function Projects() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/projects', projectId, 'crew'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/projects', selectedProject?.id, 'crew'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/projects', currentProject?.id, 'crew'] });
       setIsAddCrewDialogOpen(false);
       setSelectedCrewMember(null);
       setSearchQuery('');
@@ -277,11 +278,11 @@ export default function Projects() {
 
   // Remove crew member from project
   const removeCrewFromProject = async (crewMemberId: number) => {
-    if (!selectedProject) return;
+    if (!currentProject) return;
     
     try {
-      await apiRequest("DELETE", `/api/projects/${selectedProject.id}/crew/${crewMemberId}`);
-      queryClient.invalidateQueries({ queryKey: ['/api/projects', selectedProject.id, 'crew'] });
+      await apiRequest("DELETE", `/api/projects/${currentProject.id}/crew/${crewMemberId}`);
+      queryClient.invalidateQueries({ queryKey: ['/api/projects', currentProject.id, 'crew'] });
       // Use debounced invalidation for jobsites to prevent rapid refetching
       debouncedInvalidateJobsites();
       toast({
@@ -299,12 +300,12 @@ export default function Projects() {
   
   // Handle adding crew member to project
   const handleAddCrewToProject = () => {
-    if (!selectedProject || !selectedCrewMember || isAddingCrewMember) return;
+    if (!currentProject || !selectedCrewMember || isAddingCrewMember) return;
     
     try {
       setIsAddingCrewMember(true);
       addCrewToProjectMutation.mutate({
-        projectId: selectedProject.id,
+        projectId: currentProject.id,
         crewMemberId: selectedCrewMember,
         role: "crew-member" // Default role
       });
@@ -401,14 +402,7 @@ export default function Projects() {
     return projects;
   }, [jobsites, calculateProgress]);
 
-  // Function to attempt connection to available ports
-  const checkServerHealth = useCallback(async () => {
-    const port = await getServerPort();
-    console.log('Using server port:', port);
-    setActivePort(port);
-  }, []);
-
-  // Create a debounced function to geocode addresses
+  // Function to geocode project address
   const geocodeProjectAddress = async (projectId: number, address: string) => {
     if (!address || address.trim() === '') {
       console.warn('No address provided for geocoding');
@@ -423,8 +417,7 @@ export default function Projects() {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000);
       
-      const port = activePort || 3301;
-      const response = await fetch(`http://localhost:${port}/api/projects/${projectId}/geocode`, {
+      const response = await fetch(`/api/projects/${projectId}/geocode`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -459,7 +452,7 @@ export default function Projects() {
     }
   };
 
-  // Create debounced version that won't trigger too many API calls
+  // Create a debounced function to geocode addresses
   const debouncedGeocodeProjectAddress = useMemo(
     () => debounce(geocodeProjectAddress, 1000),
     [queryClient]
@@ -474,21 +467,9 @@ export default function Projects() {
     };
   }, [debouncedGeocodeProjectAddress]);
 
-  // Check server health on component mount
-  useEffect(() => {
-    checkServerHealth();
-    
-    // Clean up debounced functions on unmount
-    return () => {
-      if (debouncedGeocodeProjectAddress && debouncedGeocodeProjectAddress.cancel) {
-        debouncedGeocodeProjectAddress.cancel();
-      }
-    };
-  }, [checkServerHealth, debouncedGeocodeProjectAddress]);
-
   // Enhanced geocodeProjectAddress function with proper loading states
   const enhancedGeocodeProjectAddress = async () => {
-    if (!selectedProject?.address) {
+    if (!currentProject?.address) {
       toast({
         title: "No Address",
         description: "This project doesn't have an address to geocode.",
@@ -505,7 +486,7 @@ export default function Projects() {
     
     try {
       // Use our improved function with the current project
-      const result = await geocodeProjectAddress(selectedProject.id, selectedProject.address);
+      const result = await geocodeProjectAddress(currentProject.id, currentProject.address);
       
       if (result.success) {
         toast({
@@ -791,12 +772,28 @@ Longitude: ${result.longitude}`);
   }
 
   // PROJECT DETAIL VIEW
-  if (selectedProject) {
+  if (currentProject) {
     // Add state for debug mode
     const [showDebugger, setShowDebugger] = useState(false);
     // Add loading state for geocoding
     const [isGeocodingLoading, setIsGeocodingLoading] = useState(false);
 
+    // Map the projectDetails data if it exists
+    const mapProjects = useMemo(() => {
+      if (currentProject) {
+        return [{
+          id: currentProject.id,
+          name: currentProject.name,
+          address: currentProject.address,
+          status: currentProject.status,
+          latitude: currentProject.latitude,
+          longitude: currentProject.longitude,
+          progress: currentProject.progress || 0
+        }];
+      }
+      return [];
+    }, [currentProject]);
+    
     return (
       <div className="flex min-h-screen bg-background">
         <div className="flex-1 flex flex-col">
@@ -829,23 +826,23 @@ Longitude: ${result.longitude}`);
               <div className="flex flex-col sm:flex-row sm:items-center justify-between">
                 <div className="flex-1">
                   <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-primary">
-                    {selectedProject.name}
+                    {currentProject.name}
                   </h1>
                   <div className="flex items-center mt-1 sm:mt-2 text-sm text-gray-500">
                     <MapPin className="h-4 w-4 mr-1" />
-                    <span className="truncate max-w-[250px] sm:max-w-md">{selectedProject.address}</span>
+                    <span className="truncate max-w-[250px] sm:max-w-md">{currentProject.address}</span>
                   </div>
                 </div>
                 <div className="mt-2 sm:mt-0">
                   <Badge 
                     className={`px-3 py-1 sm:px-4 sm:py-1.5 text-sm sm:text-base ${
-                      selectedProject.status === 'active' ? 'bg-green-100 text-green-800' : 
-                      selectedProject.status === 'completed' ? 'bg-blue-100 text-blue-800' : 
-                      selectedProject.status === 'scheduled' ? 'bg-amber-100 text-amber-800' :
+                      currentProject.status === 'active' ? 'bg-green-100 text-green-800' : 
+                      currentProject.status === 'completed' ? 'bg-blue-100 text-blue-800' : 
+                      currentProject.status === 'scheduled' ? 'bg-amber-100 text-amber-800' :
                       'bg-red-100 text-red-800'
                     }`}
                   >
-                    {selectedProject.status.charAt(0).toUpperCase() + selectedProject.status.slice(1)}
+                    {currentProject.status.charAt(0).toUpperCase() + currentProject.status.slice(1)}
                   </Badge>
                 </div>
               </div>
@@ -855,7 +852,7 @@ Longitude: ${result.longitude}`);
           {/* Show debug panel if enabled */}
           {showDebugger && (
             <MapDebugInfo 
-              project={selectedProject}
+              project={currentProject}
               onClose={() => setShowDebugger(false)}
             />
           )}
@@ -872,18 +869,10 @@ Longitude: ${result.longitude}`);
                       {/* Project location map */}
                       <div className="sm:col-span-2 mb-3">
                         <h4 className="text-xs sm:text-sm font-medium text-gray-500 mb-2">Location</h4>
-                        {selectedProject.latitude != null && selectedProject.longitude != null ? (
+                        {currentProject.latitude != null && currentProject.longitude != null ? (
                           <div className="h-48 sm:h-64 w-full">
                             <ProjectsMap 
-                              projects={[{
-                                id: selectedProject.id,
-                                name: selectedProject.name,
-                                address: selectedProject.address,
-                                status: selectedProject.status,
-                                latitude: selectedProject.latitude,
-                                longitude: selectedProject.longitude,
-                                progress: selectedProject.progress || calculateProgress(selectedProject)
-                              }]}
+                              projects={mapProjects} 
                               height="100%" 
                               zoom={15}
                             />
@@ -896,10 +885,10 @@ Longitude: ${result.longitude}`);
                               <p className="text-sm text-gray-500 mb-6">Add coordinates to view this project on the map</p>
                               <button
                                 onClick={enhancedGeocodeProjectAddress}
-                                disabled={isLoading}
+                                disabled={isGeocodingLoading}
                                 className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                               >
-                                {isLoading ? (
+                                {isGeocodingLoading ? (
                                   <>
                                     <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
                                     Getting Coordinates...
@@ -923,25 +912,25 @@ Longitude: ${result.longitude}`);
                         <h4 className="text-xs sm:text-sm font-medium text-gray-500">Status</h4>
                         <p className="text-sm sm:text-base flex items-center">
                           <span className={`h-2 w-2 rounded-full mr-2 ${
-                            selectedProject.status === 'active' ? 'bg-green-500' : 
-                            selectedProject.status === 'completed' ? 'bg-blue-500' : 
-                            selectedProject.status === 'scheduled' ? 'bg-amber-500' :
+                            currentProject.status === 'active' ? 'bg-green-500' : 
+                            currentProject.status === 'completed' ? 'bg-blue-500' : 
+                            currentProject.status === 'scheduled' ? 'bg-amber-500' :
                             'bg-red-500'
                           }`}></span>
-                          {selectedProject.status.charAt(0).toUpperCase() + selectedProject.status.slice(1)}
+                          {currentProject.status.charAt(0).toUpperCase() + currentProject.status.slice(1)}
                         </p>
                       </div>
                       
                       <div>
                         <h4 className="text-xs sm:text-sm font-medium text-gray-500">Address</h4>
-                        <p className="text-sm sm:text-base break-words">{selectedProject.address}</p>
+                        <p className="text-sm sm:text-base break-words">{currentProject.address}</p>
                       </div>
                       
                       <div>
                         <h4 className="text-xs sm:text-sm font-medium text-gray-500">Start Date</h4>
                         <p className="text-sm sm:text-base flex items-center">
                           <Calendar className="h-3.5 w-3.5 mr-1.5 text-gray-400" />
-                          {formatDate(selectedProject.startDate)}
+                          {formatDate(currentProject.startDate)}
                         </p>
                       </div>
                       
@@ -949,14 +938,14 @@ Longitude: ${result.longitude}`);
                         <h4 className="text-xs sm:text-sm font-medium text-gray-500">End Date</h4>
                         <p className="text-sm sm:text-base flex items-center">
                           <Calendar className="h-3.5 w-3.5 mr-1.5 text-gray-400" />
-                          {formatDate(selectedProject.endDate)}
+                          {formatDate(currentProject.endDate)}
                         </p>
                       </div>
                       
-                      {selectedProject.description && (
+                      {currentProject.description && (
                         <div className="sm:col-span-2">
                           <h4 className="text-xs sm:text-sm font-medium text-gray-500">Description</h4>
-                          <p className="text-sm sm:text-base break-words">{selectedProject.description}</p>
+                          <p className="text-sm sm:text-base break-words">{currentProject.description}</p>
                         </div>
                       )}
                       
@@ -965,9 +954,9 @@ Longitude: ${result.longitude}`);
                         <div className="w-full">
                           <div className="flex justify-between text-xs mb-1">
                             <span className="font-medium">Completion</span>
-                            <span className="font-bold text-primary">{selectedProject.progress || calculateProgress(selectedProject)}%</span>
+                            <span className="font-bold text-primary">{currentProject.progress || calculateProgress(currentProject)}%</span>
                           </div>
-                          <Progress value={selectedProject.progress || calculateProgress(selectedProject)} className="h-3" />
+                          <Progress value={currentProject.progress || calculateProgress(currentProject)} className="h-3" />
                         </div>
                       </div>
                     </div>
@@ -975,7 +964,7 @@ Longitude: ${result.longitude}`);
                 </Card>
                 
                 {/* Project AI Assistant Card */}
-                {selectedProject && <ProjectAIAssistant projectId={selectedProject.id} userId={1} />}
+                {currentProject && <ProjectAIAssistant projectId={currentProject.id} userId={1} />}
                 
                 <Card className="shadow-sm">
                   <CardHeader className="pb-2 p-4 sm:p-6">
@@ -983,7 +972,7 @@ Longitude: ${result.longitude}`);
                   </CardHeader>
                   <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0">
                     {/* Project communications section */}
-                    <ProjectMessages projectId={selectedProject.id} />
+                    <ProjectMessages projectId={currentProject.id} />
                   </CardContent>
                 </Card>
                 
@@ -1811,70 +1800,3 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, progress }) => {
     </Card>
   );
 };
-
-// Modify the port detection logic to prevent excessive requests
-const getServerPort = useCallback(async (): Promise<number> => {
-  // Define these ports directly to avoid undefined references
-  const PORTS_TO_CHECK = [3301, 3302, 3303];
-  
-  // Define the checkPort function with proper typing
-  const checkPort = async (port: number): Promise<boolean> => {
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 500);
-      
-      const response = await fetch(`http://localhost:${port}/health`, {
-        method: 'GET',
-        signal: controller.signal
-      });
-      
-      clearTimeout(timeoutId);
-      return response.ok;
-    } catch (error) {
-      return false;
-    }
-  };
-  
-  // Try each port
-  for (const port of PORTS_TO_CHECK) {
-    if (await checkPort(port)) {
-      console.log(`Found active server on port ${port}`);
-      return port;
-    }
-  }
-  
-  // Default to first port if none respond
-  console.log('No server ports responded, defaulting to 3301');
-  return PORTS_TO_CHECK[0];
-}, []);
-
-// Create a debounced version to avoid excessive calls
-const debouncedGetServerPort = useMemo(
-  () => debounce(getServerPort, 5000, { leading: true, trailing: false }),
-  [getServerPort]
-);
-
-// Add proper cleanup to the React Query fetch to prevent memory leaks
-useEffect(() => {
-  // This effect runs on mount to get the initial active port
-  let isMounted = true;
-  
-  const initializePort = async () => {
-    if (!isMounted) return;
-    try {
-      const port = await debouncedGetServerPort();
-      if (!isMounted) return;
-      console.log(`Using server on port: ${port}`);
-      setActivePort(port);
-    } catch (error) {
-      console.error("Error detecting server port:", error);
-    }
-  };
-
-  initializePort();
-  
-  // Cleanup function to prevent memory leaks
-  return () => {
-    isMounted = false;
-  };
-}, [debouncedGetServerPort]);

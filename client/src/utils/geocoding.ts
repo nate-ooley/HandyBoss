@@ -1,7 +1,8 @@
 /**
  * Utility functions for geocoding addresses to coordinates
  */
-import { GOOGLE_MAPS_API_KEY } from '@/lib/constants';
+import { GOOGLE_MAPS_API_KEY, USE_NOMINATIM_FALLBACK } from '@/lib/constants';
+import axios from 'axios';
 
 // Define Google Maps Geocoder response types
 interface GeocodeResult {
@@ -21,109 +22,238 @@ type GeocodeStatus =
   | 'INVALID_REQUEST'
   | 'UNKNOWN_ERROR';
 
+// Define a more detailed response interface for geocoding
+export interface GeocodeResponse {
+  success: boolean;
+  coordinates?: {
+    lat: number;
+    lng: number;
+  };
+  error?: string;
+  source?: 'google' | 'nominatim' | 'cache';
+}
+
+// In-memory cache for geocoding results
+const geocodeCache: Record<string, GeocodeResponse> = {};
+
+// Cache duration in milliseconds (24 hours)
+const CACHE_DURATION = 24 * 60 * 60 * 1000;
+
+// Cache timestamp tracking
+const cacheTimestamps: Record<string, number> = {};
+
 /**
- * Convert an address string to latitude and longitude coordinates
+ * Check if a cached entry is still valid
  */
-export const geocodeAddress = async (address: string): Promise<{latitude: number, longitude: number} | null> => {
+function isCacheValid(key: string): boolean {
+  const timestamp = cacheTimestamps[key];
+  if (!timestamp) return false;
+  
+  const now = Date.now();
+  return (now - timestamp) < CACHE_DURATION;
+}
+
+/**
+ * Add an entry to the geocoding cache
+ */
+function addToCache(address: string, response: GeocodeResponse): void {
+  const normalizedAddress = address.trim().toLowerCase();
+  geocodeCache[normalizedAddress] = response;
+  cacheTimestamps[normalizedAddress] = Date.now();
+}
+
+/**
+ * Get a cached geocoding result if available
+ */
+function getFromCache(address: string): GeocodeResponse | null {
+  const normalizedAddress = address.trim().toLowerCase();
+  
+  if (geocodeCache[normalizedAddress] && isCacheValid(normalizedAddress)) {
+    console.log(`Using cached geocoding result for "${address}"`);
+    return { 
+      ...geocodeCache[normalizedAddress],
+      source: 'cache'
+    };
+  }
+  
+  return null;
+}
+
+/**
+ * Fallback geocoding with Nominatim (OpenStreetMap)
+ */
+async function geocodeWithNominatim(address: string, normalizedAddress: string): Promise<GeocodeResponse> {
+  try {
+    console.log(`Geocoding "${address}" with Nominatim API`);
+    
+    // Use OpenStreetMap's Nominatim service as fallback
+    const encodedAddress = encodeURIComponent(address);
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/search?format=json&q=${encodedAddress}&limit=1`,
+      {
+        headers: {
+          'User-Agent': 'HandyBoss/1.0'
+        }
+      }
+    );
+    
+    if (!response.ok) {
+      const errorResponse: GeocodeResponse = {
+        success: false,
+        error: `Nominatim API error: ${response.status} ${response.statusText}`,
+        source: 'nominatim'
+      };
+      return errorResponse;
+    }
+    
+    const data = await response.json();
+    
+    if (data && data.length > 0) {
+      const result = data[0];
+      const coordinates = {
+        lat: parseFloat(result.lat),
+        lng: parseFloat(result.lon)
+      };
+      
+      // Cache the successful result
+      const successResponse: GeocodeResponse = {
+        success: true,
+        coordinates,
+        source: 'nominatim'
+      };
+      
+      // Store in cache
+      addToCache(address, successResponse);
+      
+      console.log(`Successfully geocoded "${address}" to:`, coordinates);
+      return successResponse;
+    } else {
+      console.warn(`Nominatim geocoding failed for "${address}": No results`);
+      const errorResponse: GeocodeResponse = {
+        success: false,
+        error: 'No results found with Nominatim',
+        source: 'nominatim'
+      };
+      return errorResponse;
+    }
+  } catch (error: any) {
+    console.error(`Nominatim geocoding error for "${address}":`, error);
+    const errorResponse: GeocodeResponse = {
+      success: false,
+      error: `Nominatim geocoding failed: ${error.message}`,
+      source: 'nominatim'
+    };
+    return errorResponse;
+  }
+}
+
+/**
+ * Geocode an address using either Google Maps API or Nominatim (OpenStreetMap) as fallback
+ * This implementation includes caching to reduce API calls
+ */
+export async function geocodeAddress(address: string): Promise<GeocodeResponse> {
+  // Normalize the address for caching (lowercase, trim whitespace)
+  const normalizedAddress = address.trim().toLowerCase();
+  
+  // Check cache first to avoid unnecessary API calls
+  const cachedResult = getFromCache(address);
+  if (cachedResult) {
+    return cachedResult;
+  }
+  
   if (!address || address.trim() === '') {
-    console.warn('Empty address provided to geocoder');
-    return null;
+    console.warn('Attempted to geocode empty address');
+    const errorResponse: GeocodeResponse = {
+      success: false,
+      error: 'Address is empty'
+    };
+    return errorResponse;
   }
 
   try {
-    // Check if window and google are defined (browser environment)
-    if (typeof window !== 'undefined' && window.google && window.google.maps && window.google.maps.Geocoder) {
-      console.log('Using Google Maps Geocoder API');
-      const geocoder = new window.google.maps.Geocoder();
+    // Check if Google Maps is available
+    if (typeof window !== 'undefined' && window.google && window.google.maps) {
+      console.log(`Geocoding "${address}" with Google Maps API`);
       
-      return new Promise((resolve, reject) => {
-        geocoder.geocode({ address }, (results: GeocodeResult[] | null, status: GeocodeStatus) => {
+      return new Promise((resolve) => {
+        const geocoder = new window.google.maps.Geocoder();
+        
+        geocoder.geocode({ address }, (results: any, status: any) => {
           if (status === 'OK' && results && results.length > 0) {
             const location = results[0].geometry.location;
-            console.log('Geocoded address:', address, 'to', location.lat(), location.lng());
-            resolve({
-              latitude: location.lat(),
-              longitude: location.lng()
-            });
+            const coordinates = {
+              lat: location.lat(),
+              lng: location.lng()
+            };
+            
+            // Cache the successful result
+            const successResponse: GeocodeResponse = {
+              success: true,
+              coordinates,
+              source: 'google'
+            };
+            
+            addToCache(address, successResponse);
+            
+            console.log(`Successfully geocoded "${address}" to:`, coordinates);
+            resolve(successResponse);
           } else {
-            console.warn('Geocoding failed:', status, 'for address:', address);
-            // For certain error types, we should reject so the app can handle it
-            if (status === 'OVER_QUERY_LIMIT' || status === 'REQUEST_DENIED' || status === 'INVALID_REQUEST') {
-              reject(new Error(`Geocoding failed: ${status}`));
+            console.warn(`Google geocoding failed for "${address}": ${status}`);
+            
+            // If Nominatim fallback is enabled, try that next
+            if (USE_NOMINATIM_FALLBACK) {
+              geocodeWithNominatim(address, normalizedAddress)
+                .then(resolve)
+                .catch((error) => {
+                  const errorResponse: GeocodeResponse = {
+                    success: false,
+                    error: `Failed to geocode address with both Google and Nominatim: ${error.message}`
+                  };
+                  resolve(errorResponse);
+                });
             } else {
-              // For other cases like ZERO_RESULTS, return null
-              resolve(null);
+              const errorResponse: GeocodeResponse = {
+                success: false,
+                error: `Google geocoding failed: ${status}`
+              };
+              resolve(errorResponse);
             }
           }
         });
       });
-    } 
-    // Fallback to a free geocoding API
-    else {
-      console.log('Fallback to Nominatim API - Google Maps not available');
-      // Using Nominatim (OpenStreetMap) API - free but has rate limits
-      const encodedAddress = encodeURIComponent(address);
-      const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodedAddress}&limit=1`);
-      
-      if (!response.ok) {
-        console.error('Nominatim API request failed:', response.status, response.statusText);
-        return null;
-      }
-      
-      const data = await response.json();
-      
-      if (data && data.length > 0) {
-        console.log('Geocoded address using Nominatim:', address, 'to', data[0].lat, data[0].lon);
-        return {
-          latitude: parseFloat(data[0].lat),
-          longitude: parseFloat(data[0].lon)
+    } else {
+      // Google Maps not available, use Nominatim fallback
+      if (USE_NOMINATIM_FALLBACK) {
+        console.log(`Google Maps not available, using Nominatim for "${address}"`);
+        return geocodeWithNominatim(address, normalizedAddress);
+      } else {
+        const errorResponse: GeocodeResponse = {
+          success: false,
+          error: 'Google Maps not available and Nominatim fallback is disabled'
         };
+        return errorResponse;
       }
-      console.warn('No results found for address:', address);
-      return null;
     }
-  } catch (error) {
-    console.error('Error geocoding address:', address, error);
-    return null;
+  } catch (error: any) {
+    console.error(`Geocoding error for "${address}":`, error);
+    const errorResponse: GeocodeResponse = {
+      success: false,
+      error: error.message || 'Unknown geocoding error'
+    };
+    return errorResponse;
   }
-};
+}
 
 /**
- * Cache for geocoding results to avoid repeated API calls
+ * For backward compatibility - will be deprecated
  */
-const geocodingCache = new Map<string, {latitude: number, longitude: number}>();
-
-/**
- * Convert an address string to coordinates with caching
- */
-export const geocodeAddressWithCache = async (address: string): Promise<{latitude: number, longitude: number} | null> => {
-  if (!address || address.trim() === '') {
-    console.warn('Empty address provided to geocoder cache');
-    return null;
+export async function geocodeAddressWithCache(address: string): Promise<{ latitude: number; longitude: number } | null> {
+  const result = await geocodeAddress(address);
+  if (result.success && result.coordinates) {
+    return {
+      latitude: result.coordinates.lat,
+      longitude: result.coordinates.lng
+    };
   }
-  
-  const normalizedAddress = address.trim().toLowerCase();
-  
-  // Check if we have a cached result
-  if (geocodingCache.has(normalizedAddress)) {
-    const cachedResult = geocodingCache.get(normalizedAddress);
-    console.log('Using cached geocoding result for:', address);
-    return cachedResult || null;
-  }
-  
-  try {
-    console.log('Geocoding address:', address);
-    const result = await geocodeAddress(address);
-    
-    // Cache the result if valid
-    if (result) {
-      geocodingCache.set(normalizedAddress, result);
-      console.log('Cached geocoding result for:', address);
-    }
-    
-    return result;
-  } catch (error) {
-    console.error('Error in geocoding with cache:', error);
-    return null;
-  }
-}; 
+  return null;
+} 

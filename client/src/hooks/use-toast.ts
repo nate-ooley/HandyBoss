@@ -1,20 +1,29 @@
 // Inspired by react-hot-toast library
 import * as React from "react"
+import { useState, useCallback } from 'react';
 
 import type {
   ToastActionElement,
   ToastProps,
 } from "@/components/ui/toast"
 
-const TOAST_LIMIT = 5
-const TOAST_REMOVE_DELAY = 1000000
+const TOAST_LIMIT = 1
+const TOAST_REMOVE_DELAY = 1000
 
-type ToasterToast = ToastProps & {
+export type ToastVariant = 'default' | 'destructive'
+
+export interface ToasterToast {
   id: string
-  title?: React.ReactNode
-  description?: React.ReactNode
+  title: string
+  description?: string
   action?: ToastActionElement
+  variant?: ToastVariant
+  duration?: number
+  open: boolean
+  onOpenChange: (open: boolean) => void
 }
+
+type ToastInput = Omit<ToasterToast, "id" | "open" | "onOpenChange">
 
 const actionTypes = {
   ADD_TOAST: "ADD_TOAST",
@@ -72,7 +81,7 @@ const addToRemoveQueue = (toastId: string) => {
   toastTimeouts.set(toastId, timeout)
 }
 
-export const reducer = (state: State, action: Action): State => {
+const reducer = (state: State, action: Action): State => {
   switch (action.type) {
     case "ADD_TOAST":
       return {
@@ -91,8 +100,6 @@ export const reducer = (state: State, action: Action): State => {
     case "DISMISS_TOAST": {
       const { toastId } = action
 
-      // ! Side effects ! - This could be extracted into a dismissToast() action,
-      // but I'll keep it here for simplicity
       if (toastId) {
         addToRemoveQueue(toastId)
       } else {
@@ -138,9 +145,7 @@ function dispatch(action: Action) {
   })
 }
 
-type Toast = Omit<ToasterToast, "id">
-
-function toast({ ...props }: Toast) {
+function toast({ ...props }: ToastInput) {
   const id = genId()
 
   const update = (props: ToasterToast) =>
@@ -156,7 +161,7 @@ function toast({ ...props }: Toast) {
       ...props,
       id,
       open: true,
-      onOpenChange: (open) => {
+      onOpenChange: (open: boolean) => {
         if (!open) dismiss()
       },
     },
@@ -169,7 +174,13 @@ function toast({ ...props }: Toast) {
   }
 }
 
-function useToast() {
+interface ToastAPI {
+  toasts: ToasterToast[]
+  toast: (props: ToastInput) => { id: string; dismiss: () => void; update: (props: ToasterToast) => void }
+  dismiss: (toastId?: string) => void
+}
+
+export function useToast(): ToastAPI {
   const [state, setState] = React.useState<State>(memoryState)
 
   React.useEffect(() => {
@@ -189,4 +200,4 @@ function useToast() {
   }
 }
 
-export { useToast, toast }
+export type { ToastInput }
