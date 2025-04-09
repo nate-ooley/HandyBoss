@@ -1,9 +1,8 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useLocation, useParams } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-
 import { Badge } from '@/components/ui/badge';
 import { 
   Calendar, Clock, MapPin, Users, Package, Wrench, ChevronRight, 
@@ -24,6 +23,10 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import ProjectsMap from "@/components/ProjectsMap";
 import { geocodeAddressWithCache } from '@/utils/geocoding';
+import { DEFAULT_MAP_CENTER } from '@/lib/constants';
+import { debounce } from 'lodash';
+import { GEOCODE_BATCH_SIZE } from '../lib/constants';
+import { GeocodeResponse } from '@/utils/geocoding';
 
 // Types
 interface Jobsite {
@@ -85,29 +88,56 @@ export default function Projects() {
   const [isAddingCrewMember, setIsAddingCrewMember] = useState(false);
   const [selectedCrewMember, setSelectedCrewMember] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isGeocoding, setIsGeocoding] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [activePort, setActivePort] = useState<number | null>(null);
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
   const params = useParams();
   const projectId = params.id ? parseInt(params.id) : null;
   const { toast } = useToast();
-  // Add state for coordinate entry
-  const [latitude, setLatitude] = useState<number | null>(null);
-  const [longitude, setLongitude] = useState<number | null>(null);
+  
+  // Create a more effective debounced invalidate function
+  const debouncedInvalidateJobsitesRef = useRef<any>(null);
+  const debouncedInvalidateJobsites = useCallback(() => {
+    if (debouncedInvalidateJobsitesRef.current) {
+      clearTimeout(debouncedInvalidateJobsitesRef.current);
+    }
+    
+    debouncedInvalidateJobsitesRef.current = setTimeout(() => {
+      queryClient.invalidateQueries({ queryKey: ['/api/jobsites'] });
+      debouncedInvalidateJobsitesRef.current = null;
+    }, 300);
+  }, [queryClient]);
 
   // Fetch jobsites data
-  const { data: jobsites = [], isLoading: isLoadingJobsites } = useQuery<Jobsite[]>({
+  const { data: jobsites = [] } = useQuery<Jobsite[]>({
     queryKey: ['/api/jobsites'],
-    staleTime: 30000,
+    queryFn: async () => {
+      const response = await apiRequest('GET', '/api/jobsites');
+      if (!response.ok) {
+        throw new Error('Failed to fetch jobsites');
+      }
+      return response.json();
+    },
   });
-  
+
   // Get the selected project
   const selectedProject = projectId 
     ? jobsites.find(jobsite => jobsite.id === projectId) 
     : null;
-    
-  // Fetch crew members
-  const { data: allCrewMembers = [], isLoading: isLoadingCrew } = useQuery<CrewMember[]>({
-    queryKey: ['/api/crew'],
+
+  // Fetch project details
+  const { data: projectDetails } = useQuery({
+    queryKey: ['/api/projects', projectId],
+    queryFn: async () => {
+      if (!projectId) return null;
+      const response = await apiRequest("GET", `/api/projects/${projectId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch project details');
+      }
+      return response.json();
+    },
     enabled: !!projectId,
   });
   
@@ -119,6 +149,19 @@ export default function Projects() {
       const response = await apiRequest("GET", `/api/projects/${projectId}/crew`);
       const data = await response.json();
       return data;
+    },
+    enabled: !!projectId,
+  });
+  
+  // Fetch crew members
+  const { data: allCrewMembers = [], isLoading: isLoadingCrew } = useQuery<CrewMember[]>({
+    queryKey: ['/api/crew'],
+    queryFn: async () => {
+      const response = await apiRequest('GET', '/api/crew');
+      if (!response.ok) {
+        throw new Error('Failed to fetch crew members');
+      }
+      return response.json();
     },
     enabled: !!projectId,
   });
@@ -147,8 +190,10 @@ export default function Projects() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/projects', projectId, 'crew'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/projects', selectedProject?.id, 'crew'] });
       setIsAddCrewDialogOpen(false);
       setSelectedCrewMember(null);
+      setSearchQuery('');
       toast({
         title: "Success",
         description: "Crew member added to project successfully",
@@ -163,7 +208,7 @@ export default function Projects() {
     }
   });
 
-  // Add update project mutation
+  // Add update project mutation with debounced invalidation
   const updateProjectMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number, data: Partial<Jobsite> }) => {
       const response = await apiRequest("PATCH", `/api/jobsites/${id}`, data);
@@ -184,7 +229,8 @@ export default function Projects() {
     },
     onSuccess: (data, variables) => {
       console.log(`Successfully updated project ${variables.id}`, data);
-      queryClient.invalidateQueries({ queryKey: ['/api/jobsites'] });
+      // Use debounced invalidation instead of immediate
+      debouncedInvalidateJobsites();
     },
     onError: (error: any) => {
       console.error("Failed to update project coordinates:", error);
@@ -227,11 +273,13 @@ export default function Projects() {
 
   // Remove crew member from project
   const removeCrewFromProject = async (crewMemberId: number) => {
-    if (!projectId) return;
+    if (!selectedProject) return;
     
     try {
-      await apiRequest("DELETE", `/api/projects/${projectId}/crew/${crewMemberId}`);
-      queryClient.invalidateQueries({ queryKey: ['/api/projects', projectId, 'crew'] });
+      await apiRequest("DELETE", `/api/projects/${selectedProject.id}/crew/${crewMemberId}`);
+      queryClient.invalidateQueries({ queryKey: ['/api/projects', selectedProject.id, 'crew'] });
+      // Use debounced invalidation for jobsites to prevent rapid refetching
+      debouncedInvalidateJobsites();
       toast({
         title: "Success",
         description: "Crew member removed from project",
@@ -247,12 +295,12 @@ export default function Projects() {
   
   // Handle adding crew member to project
   const handleAddCrewToProject = () => {
-    if (!projectId || !selectedCrewMember || isAddingCrewMember) return;
+    if (!selectedProject || !selectedCrewMember || isAddingCrewMember) return;
     
     try {
       setIsAddingCrewMember(true);
       addCrewToProjectMutation.mutate({
-        projectId,
+        projectId: selectedProject.id,
         crewMemberId: selectedCrewMember,
         role: "crew-member" // Default role
       });
@@ -276,36 +324,166 @@ export default function Projects() {
   );
 
   // Add state for map view
-  const [showMap, setShowMap] = useState(false);
+  const [showMap, setShowMap] = useState(true);
   
   // Update the projectsWithLocation to use geocoding
   const projectsWithLocation = useMemo(() => {
+    console.log('Generating projectsWithLocation with jobsites:', jobsites.length);
     const projects: MapProject[] = [];
     
     // Process projects with coordinates
-    jobsites.forEach((project) => {
-      // Make sure latitude and longitude are valid numbers
-      const latitude = typeof project.latitude === 'number' ? project.latitude : null;
-      const longitude = typeof project.longitude === 'number' ? project.longitude : null;
+    jobsites.forEach((project, index) => {
+      // Check if it has latitude and longitude
+      let latitude = typeof project.latitude === 'number' ? project.latitude : null;
+      let longitude = typeof project.longitude === 'number' ? project.longitude : null;
       
-      if (latitude !== null && longitude !== null) {
-        projects.push({
-          id: project.id,
-          name: project.name,
-          address: project.address,
-          status: project.status,
-          latitude: latitude,
-          longitude: longitude,
-          progress: calculateProgress(project)
-        });
+      // If there's a location object but no direct lat/lng fields, use those
+      if ((!latitude || !longitude) && project.location?.lat && project.location?.lng) {
+        latitude = project.location.lat;
+        longitude = project.location.lng;
+        console.log(`Project ${project.id}: Using location object coordinates:`, latitude, longitude);
       }
+      
+      // If still no coordinates, create a visual pattern of pins centered around Port Charlotte
+      // This helps visualize the projects before they're properly geocoded
+      if (latitude === null || longitude === null) {
+        // Create a circular pattern around the center point
+        const radius = 0.01; // About 1km
+        const angle = (index * 40) % 360; // Distribute projects in a circle
+        const rad = angle * Math.PI / 180;
+        
+        latitude = DEFAULT_MAP_CENTER.lat + radius * Math.cos(rad);
+        longitude = DEFAULT_MAP_CENTER.lng + radius * Math.sin(rad);
+        
+        console.log(`Project ${project.id}: Using pattern coordinates:`, latitude, longitude);
+        
+        // Queue geocoding in background
+        if (project.address) {
+          console.log(`Project ${project.id}: Starting background geocoding for address:`, project.address);
+          
+          // Don't await - let it happen asynchronously
+          geocodeAddressWithCache(project.address).then(coords => {
+            if (coords) {
+              console.log(`Project ${project.id}: Geocoded coordinates:`, coords);
+              updateProjectMutation.mutate({
+                id: project.id,
+                data: {
+                  latitude: coords.latitude,
+                  longitude: coords.longitude
+                }
+              });
+            } else {
+              console.log(`Project ${project.id}: Geocoding failed, keeping temporary coordinates`);
+            }
+          }).catch(error => {
+            console.error(`Project ${project.id}: Geocoding error:`, error);
+          });
+        }
+      }
+      
+      // Always add the project to the map, regardless of coordinate source
+      projects.push({
+        id: project.id,
+        name: project.name,
+        address: project.address,
+        status: project.status,
+        latitude: latitude!,   // We know this is no longer null
+        longitude: longitude!, // We know this is no longer null
+        progress: calculateProgress(project)
+      });
     });
     
+    console.log(`Created ${projects.length} map projects with coordinates`);
     return projects;
   }, [jobsites, calculateProgress]);
 
-  // Add a single function to geocode the current project address with user notification
-  const geocodeProjectAddress = async () => {
+  // Function to attempt connection to available ports
+  const checkServerHealth = useCallback(async () => {
+    const port = await getServerPort();
+    console.log('Using server port:', port);
+    setActivePort(port);
+  }, []);
+
+  // Create a debounced function to geocode addresses
+  const geocodeProjectAddress = async (projectId: number, address: string) => {
+    if (!address || address.trim() === '') {
+      console.warn('No address provided for geocoding');
+      return { success: false, error: 'No address provided' };
+    }
+    
+    console.log(`Geocoding project ${projectId} with address: ${address}`);
+    setIsGeocoding(true);
+    
+    try {
+      // Use AbortController to implement timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      
+      const port = activePort || 3301;
+      const response = await fetch(`http://localhost:${port}/api/projects/${projectId}/geocode`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ address }),
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        throw new Error(`Server returned ${response.status}`);
+      }
+      
+      const result = await response.json();
+      console.log('Geocoding result:', result);
+      
+      // Only invalidate if we got coordinates
+      if (result && result.success) {
+        // Wait a bit before invalidating to prevent race conditions
+        setTimeout(() => {
+          queryClient.invalidateQueries({ queryKey: ['/api/jobsites'] });
+        }, 500);
+      }
+      
+      return result;
+    } catch (error) {
+      console.error('Error geocoding address:', error);
+      return { success: false, error: String(error) };
+    } finally {
+      setIsGeocoding(false);
+    }
+  };
+
+  // Create debounced version that won't trigger too many API calls
+  const debouncedGeocodeProjectAddress = useMemo(
+    () => debounce(geocodeProjectAddress, 1000),
+    [queryClient]
+  );
+
+  // Cleanup debounced function on unmount
+  useEffect(() => {
+    return () => {
+      if (debouncedGeocodeProjectAddress && debouncedGeocodeProjectAddress.cancel) {
+        debouncedGeocodeProjectAddress.cancel();
+      }
+    };
+  }, [debouncedGeocodeProjectAddress]);
+
+  // Check server health on component mount
+  useEffect(() => {
+    checkServerHealth();
+    
+    // Clean up debounced functions on unmount
+    return () => {
+      if (debouncedGeocodeProjectAddress && debouncedGeocodeProjectAddress.cancel) {
+        debouncedGeocodeProjectAddress.cancel();
+      }
+    };
+  }, [checkServerHealth, debouncedGeocodeProjectAddress]);
+
+  // Enhanced geocodeProjectAddress function with proper loading states
+  const enhancedGeocodeProjectAddress = async () => {
     if (!selectedProject?.address) {
       toast({
         title: "No Address",
@@ -315,86 +493,39 @@ export default function Projects() {
       return;
     }
     
+    setIsGeocodingLoading(true);
     toast({
       title: "Geocoding Address",
       description: "Converting address to coordinates...",
     });
     
-    const coordinates = await geocodeAddressWithCache(selectedProject.address);
-    
-    if (coordinates) {
-      try {
-        const response = await apiRequest("PATCH", `/api/jobsites/${selectedProject.id}`, {
-          latitude: coordinates.latitude,
-          longitude: coordinates.longitude
-        });
-        
-        if (response.ok) {
-          toast({
-            title: "Success",
-            description: "Location coordinates have been added.",
-          });
-          
-          // Invalidate queries to refresh data
-          queryClient.invalidateQueries({ queryKey: ['/api/jobsites'] });
-        } else {
-          toast({
-            title: "Error",
-            description: "Failed to save coordinates.",
-            variant: "destructive",
-          });
-        }
-      } catch (error) {
-        console.error("Error saving coordinates:", error);
+    try {
+      // Use our improved function with the current project
+      const result = await geocodeProjectAddress(selectedProject.id, selectedProject.address);
+      
+      if (result.success) {
         toast({
-          title: "Error",
-          description: "An unexpected error occurred.",
+          title: "Success",
+          description: "Location coordinates have been added.",
+        });
+      } else {
+        toast({
+          title: "Geocoding Failed",
+          description: "Unable to find coordinates for this address. Try adding coordinates manually using the Debug Tools.",
           variant: "destructive",
         });
       }
-    } else {
+    } catch (error) {
+      console.error("Error geocoding:", error);
       toast({
-        title: "Geocoding Failed",
-        description: "Unable to find coordinates for this address.",
+        title: "Error",
+        description: "An unexpected error occurred.",
         variant: "destructive",
       });
+    } finally {
+      setIsGeocodingLoading(false);
     }
   };
-
-  // When entering the projects list view, auto-geocode projects only on initial load
-  useEffect(() => {
-    // Skip if we're viewing a single project
-    if (projectId) return;
-    
-    // Only run once when jobsites are loaded
-    if (jobsites.length > 0) {
-      // Use a flag in localStorage to track if we've already done the initial geocoding
-      const hasGeocodedKey = 'projectsGeocodedInitially';
-      const hasGeocodedInitially = localStorage.getItem(hasGeocodedKey);
-      
-      if (!hasGeocodedInitially) {
-        console.log('Performing initial geocoding of project addresses');
-        // Geocode each project with missing coordinates silently
-        jobsites.forEach(async (project) => {
-          if (!project.latitude || !project.longitude) {
-            const coordinates = await geocodeAddressWithCache(project.address);
-            if (coordinates) {
-              updateProjectMutation.mutate({
-                id: project.id,
-                data: {
-                  latitude: coordinates.latitude,
-                  longitude: coordinates.longitude
-                }
-              });
-            }
-          }
-        });
-        
-        // Set the flag to avoid repeating this
-        localStorage.setItem(hasGeocodedKey, 'true');
-      }
-    }
-  }, [jobsites, projectId]);
 
   const handleProjectClick = (project: MapProject) => {
     setLocation(`/projects/${project.id}`);
@@ -659,6 +790,7 @@ Longitude: ${result.longitude}`);
   if (selectedProject) {
     // Add state for debug mode
     const [showDebugger, setShowDebugger] = useState(false);
+    const [isGeocodingLoading, setIsGeocodingLoading] = useState(false);
 
     return (
       <div className="flex min-h-screen bg-background">
@@ -752,14 +884,32 @@ Longitude: ${result.longitude}`);
                             />
                           </div>
                         ) : (
-                          <div className="flex flex-col items-center justify-center h-64 bg-gray-100 border border-gray-300 rounded-md p-4">
-                            <p className="text-gray-600 mb-4">No location data available for this project</p>
-                            <button
-                              onClick={geocodeProjectAddress}
-                              className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
-                            >
-                              Get Coordinates from Address
-                            </button>
+                          <div className="flex flex-col items-center justify-center h-64 bg-white border border-gray-300 rounded-md p-4">
+                            <div className="flex flex-col items-center text-center">
+                              <MapPin className="h-12 w-12 text-primary mb-4 opacity-50" />
+                              <p className="text-foreground font-medium mb-4">No location data available for this project</p>
+                              <p className="text-sm text-gray-500 mb-6">Add coordinates to view this project on the map</p>
+                              <button
+                                onClick={enhancedGeocodeProjectAddress}
+                                disabled={isLoading}
+                                className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                {isLoading ? (
+                                  <>
+                                    <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                                    Getting Coordinates...
+                                  </>
+                                ) : (
+                                  "Get Coordinates from Address"
+                                )}
+                              </button>
+                              <button
+                                onClick={() => setShowDebugger(true)}
+                                className="mt-2 px-4 py-2 bg-transparent text-primary border border-primary rounded-md hover:bg-primary/5 transition-colors"
+                              >
+                                Add Coordinates Manually
+                              </button>
+                            </div>
                           </div>
                         )}
                       </div>
@@ -820,7 +970,7 @@ Longitude: ${result.longitude}`);
                 </Card>
                 
                 {/* Project AI Assistant Card */}
-                {projectId && <ProjectAIAssistant projectId={projectId} userId={1} />}
+                {selectedProject && <ProjectAIAssistant projectId={selectedProject.id} userId={1} />}
                 
                 <Card className="shadow-sm">
                   <CardHeader className="pb-2 p-4 sm:p-6">
@@ -828,7 +978,7 @@ Longitude: ${result.longitude}`);
                   </CardHeader>
                   <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0">
                     {/* Project communications section */}
-                    <ProjectMessages projectId={projectId} />
+                    <ProjectMessages projectId={selectedProject.id} />
                   </CardContent>
                 </Card>
                 
@@ -1077,7 +1227,14 @@ Longitude: ${result.longitude}`);
                         const formData = new FormData(e.target as HTMLFormElement);
                         const formValues = Object.fromEntries(formData.entries());
                         
-                        const response = await apiRequest("POST", "/api/jobsites", formValues);
+                        // Add default latitude and longitude for Port Charlotte to ensure immediate map display
+                        const formDataWithCoordinates = {
+                          ...formValues,
+                          latitude: DEFAULT_MAP_CENTER.lat,
+                          longitude: DEFAULT_MAP_CENTER.lng
+                        };
+                        
+                        const response = await apiRequest("POST", "/api/jobsites", formDataWithCoordinates);
                         if (!response.ok) {
                           const errorData = await response.json();
                           throw new Error(errorData.message || 'Failed to create project');
@@ -1649,3 +1806,70 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, progress }) => {
     </Card>
   );
 };
+
+// Modify the port detection logic to prevent excessive requests
+const getServerPort = useCallback(async (): Promise<number> => {
+  // Define these ports directly to avoid undefined references
+  const PORTS_TO_CHECK = [3301, 3302, 3303];
+  
+  // Define the checkPort function with proper typing
+  const checkPort = async (port: number): Promise<boolean> => {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 500);
+      
+      const response = await fetch(`http://localhost:${port}/health`, {
+        method: 'GET',
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      return response.ok;
+    } catch (error) {
+      return false;
+    }
+  };
+  
+  // Try each port
+  for (const port of PORTS_TO_CHECK) {
+    if (await checkPort(port)) {
+      console.log(`Found active server on port ${port}`);
+      return port;
+    }
+  }
+  
+  // Default to first port if none respond
+  console.log('No server ports responded, defaulting to 3301');
+  return PORTS_TO_CHECK[0];
+}, []);
+
+// Create a debounced version to avoid excessive calls
+const debouncedGetServerPort = useMemo(
+  () => debounce(getServerPort, 5000, { leading: true, trailing: false }),
+  [getServerPort]
+);
+
+// Add proper cleanup to the React Query fetch to prevent memory leaks
+useEffect(() => {
+  // This effect runs on mount to get the initial active port
+  let isMounted = true;
+  
+  const initializePort = async () => {
+    if (!isMounted) return;
+    try {
+      const port = await debouncedGetServerPort();
+      if (!isMounted) return;
+      console.log(`Using server on port: ${port}`);
+      setActivePort(port);
+    } catch (error) {
+      console.error("Error detecting server port:", error);
+    }
+  };
+
+  initializePort();
+  
+  // Cleanup function to prevent memory leaks
+  return () => {
+    isMounted = false;
+  };
+}, [debouncedGetServerPort, setActivePort]);
