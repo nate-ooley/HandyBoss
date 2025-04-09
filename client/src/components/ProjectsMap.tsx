@@ -257,9 +257,9 @@ function ProjectsMap({
 
           // Simple marker with colored circle
           const markerIcon = {
-            path: window.google && window.google.maps && window.google.maps.SymbolPath
-              ? window.google.maps.SymbolPath.CIRCLE 
-              : 0, // Simple circle fallback if Google Maps API not loaded yet
+            path: typeof window !== 'undefined' && window.google && window.google.maps && window.google.maps.SymbolPath
+              ? window.google.maps.SymbolPath.CIRCLE
+              : 0, // Simple circle fallback
             fillColor: getMarkerColor(project.status),
             fillOpacity: 1,
             strokeWeight: 2,

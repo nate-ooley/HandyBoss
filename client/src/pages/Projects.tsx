@@ -89,13 +89,15 @@ export default function Projects() {
   const [selectedCrewMember, setSelectedCrewMember] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isGeocoding, setIsGeocoding] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [activePort, setActivePort] = useState<number | null>(null);
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
   const params = useParams();
   const projectId = params.id ? parseInt(params.id) : null;
   const { toast } = useToast();
+  // Add state for coordinate entry
+  const [latitude, setLatitude] = useState<number | null>(null);
+  const [longitude, setLongitude] = useState<number | null>(null);
   
   // Create a more effective debounced invalidate function
   const debouncedInvalidateJobsitesRef = useRef<any>(null);
@@ -110,23 +112,25 @@ export default function Projects() {
     }, 300);
   }, [queryClient]);
 
-  // Fetch jobsites data
-  const { data: jobsites = [] } = useQuery<Jobsite[]>({
+  // Fetch jobsites data with improved caching
+  const { data: jobsites = [], isLoading: isLoadingJobsites } = useQuery<Jobsite[]>({
     queryKey: ['/api/jobsites'],
     queryFn: async () => {
-      const response = await apiRequest('GET', '/api/jobsites');
-      if (!response.ok) {
-        throw new Error('Failed to fetch jobsites');
+      try {
+        const response = await apiRequest("GET", "/api/jobsites");
+        return await response.json();
+      } catch (error) {
+        console.error("Failed to fetch jobsites:", error);
+        return [];
       }
-      return response.json();
     },
   });
-
+  
   // Get the selected project
   const selectedProject = projectId 
     ? jobsites.find(jobsite => jobsite.id === projectId) 
     : null;
-
+  
   // Fetch project details
   const { data: projectDetails } = useQuery({
     queryKey: ['/api/projects', projectId],
@@ -790,6 +794,7 @@ Longitude: ${result.longitude}`);
   if (selectedProject) {
     // Add state for debug mode
     const [showDebugger, setShowDebugger] = useState(false);
+    // Add loading state for geocoding
     const [isGeocodingLoading, setIsGeocodingLoading] = useState(false);
 
     return (
@@ -1872,4 +1877,4 @@ useEffect(() => {
   return () => {
     isMounted = false;
   };
-}, [debouncedGetServerPort, setActivePort]);
+}, [debouncedGetServerPort]);
