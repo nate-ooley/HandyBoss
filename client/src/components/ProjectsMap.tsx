@@ -1,7 +1,12 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useMemo } from 'react';
 import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from '@react-google-maps/api';
 import { useLocation } from 'wouter';
-import { DEFAULT_MAP_CENTER } from '@/lib/constants';
+import { DEFAULT_MAP_CENTER, MAP_CONFIG } from '@/lib/constants';
+
+// Define libraries array outside the component with the correct type
+// const googleMapsLibraries = ['geometry'] as const; // Use 'as const' for stricter typing if needed, or adjust type below
+// Alternatively, explicitly type if the above causes issues:
+const googleMapsLibraries: Array<"places" | "drawing" | "geometry" | "visualization"> = ["geometry"];
 
 // Fallback component when Google Maps fails to load
 const MapLoadingFallback = ({ 
@@ -62,6 +67,10 @@ const mapOptions = {
   zoomControl: true,
   streetViewControl: false,
   mapTypeControl: true,
+  restriction: {
+    latLngBounds: MAP_CONFIG.defaultBounds,
+    strictBounds: false,
+  }
 };
 
 // Global type for Google Maps
@@ -77,82 +86,92 @@ function ProjectsMap({
   width = '100%',
   centerLat = DEFAULT_MAP_CENTER.lat,
   centerLng = DEFAULT_MAP_CENTER.lng,
-  zoom = 10,
+  zoom = MAP_CONFIG.defaultZoom,
   onMarkerClick,
   navigateToProject,
 }: ProjectsMapProps) {
   const [selectedProject, setSelectedProject] = useState<MapProject | null>(null);
   const [, setLocation] = useLocation();
   const mapRef = useRef<google.maps.Map | null>(null);
+  const listenerRef = useRef<google.maps.MapsEventListener | null>(null);
   
-  // Load Google Maps
+  // Log the raw projects data received
+  console.log("Raw projects received by ProjectsMap:", projects);
+
+  // Load Google Maps using the stable libraries array
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '',
+    libraries: googleMapsLibraries,
   });
 
-  // Filter projects with valid coordinates
-  const projectsWithCoordinates = projects.filter(project => 
-    project.latitude != null && 
-    project.longitude != null && 
-    !isNaN(Number(project.latitude)) && 
-    !isNaN(Number(project.longitude))
-  );
+  // Filter projects only after Google Maps is loaded and geometry library is available
+  const projectsWithCoordinates = useMemo(() => {
+    // Log when filtering starts and the state of isLoaded
+    console.log(`Filtering projects. isLoaded: ${isLoaded}, geometry available: ${!!(window.google && window.google.maps && window.google.maps.geometry)}`);
 
-  // Map loaded handler
+    // Explicitly check for Maps API and geometry library readiness
+    if (!isLoaded || !window.google || !window.google.maps || !window.google.maps.geometry) {
+      return []; // Return empty array if maps or geometry lib aren't ready
+    }
+
+    return projects.filter(project => {
+      // Log details for each project being filtered
+      console.log(`Filtering project ID: ${project.id}, Lat: ${project.latitude}, Lng: ${project.longitude}`);
+      
+      if (!project.latitude || !project.longitude) {
+        console.log(` -> Project ${project.id} excluded: Missing coordinates.`);
+        return false;
+      }
+      if (isNaN(Number(project.latitude)) || isNaN(Number(project.longitude))) {
+        console.log(` -> Project ${project.id} excluded: Invalid coordinates.`);
+        return false;
+      }
+
+      // Calculate distance from center point
+      // This code now safely runs only after 'isLoaded' and geometry check
+      const distance = window.google.maps.geometry.spherical.computeDistanceBetween(
+        new window.google.maps.LatLng(Number(project.latitude), Number(project.longitude)),
+        new window.google.maps.LatLng(DEFAULT_MAP_CENTER.lat, DEFAULT_MAP_CENTER.lng)
+      );
+
+      // Log distance calculation
+      console.log(` -> Project ${project.id} distance: ${distance.toFixed(2)}m, Max radius: ${MAP_CONFIG.maxRadius}m`);
+
+      // Only include projects within the maxRadius
+      const withinRadius = distance <= MAP_CONFIG.maxRadius;
+      if (!withinRadius) {
+        console.log(` -> Project ${project.id} excluded: Outside max radius.`);
+      }
+      return withinRadius;
+    });
+  }, [projects, isLoaded]);
+
   const onLoad = useCallback((map: google.maps.Map) => {
     mapRef.current = map;
     
-    // If we have projects with coordinates, fit the map to them
-    if (projectsWithCoordinates.length > 0) {
-      try {
-        // If single project, center on it
-        if (projectsWithCoordinates.length === 1) {
-          const project = projectsWithCoordinates[0];
-          if (project.latitude && project.longitude) {
-            map.setCenter({ 
-              lat: Number(project.latitude), 
-              lng: Number(project.longitude) 
-            });
-            map.setZoom(15);
-          }
-        } 
-        // If multiple projects, fit bounds
-        else if (projectsWithCoordinates.length > 1) {
-          const bounds = new window.google.maps.LatLngBounds();
-          
-          projectsWithCoordinates.forEach(project => {
-            if (project.latitude != null && project.longitude != null) {
-              bounds.extend({ 
-                lat: Number(project.latitude), 
-                lng: Number(project.longitude) 
-              });
-            }
-          });
-          
-          map.fitBounds(bounds);
-          
-          // Don't zoom in too far on small areas
-          window.google.maps.event.addListenerOnce(map, 'idle', () => {
-            const currentZoom = map.getZoom();
-            if (currentZoom && currentZoom > 15) {
-              map.setZoom(15);
-            }
-          });
-        }
-      } catch (error) {
-        console.error('Error setting map bounds:', error);
-        map.setCenter({ lat: centerLat, lng: centerLng });
-        map.setZoom(zoom);
+    // Set initial bounds
+    const bounds = new window.google.maps.LatLngBounds(
+      { lat: MAP_CONFIG.defaultBounds.south, lng: MAP_CONFIG.defaultBounds.west },
+      { lat: MAP_CONFIG.defaultBounds.north, lng: MAP_CONFIG.defaultBounds.east }
+    );
+    map.fitBounds(bounds);
+    
+    // Don't zoom in too far
+    listenerRef.current = window.google.maps.event.addListenerOnce(map, 'idle', () => {
+      if (map.getZoom()! > MAP_CONFIG.defaultZoom) {
+        map.setZoom(MAP_CONFIG.defaultZoom);
       }
-    } else {
-      // Default center if no projects
-      map.setCenter({ lat: centerLat, lng: centerLng });
-      map.setZoom(zoom);
-    }
-  }, [projectsWithCoordinates, centerLat, centerLng, zoom]);
+    });
+
+    // Do not return cleanup function here
+  }, []);
 
   // Map cleanup
   const onUnmount = useCallback(() => {
+    if (listenerRef.current) {
+      window.google.maps.event.removeListener(listenerRef.current);
+      listenerRef.current = null;
+    }
     mapRef.current = null;
   }, []);
 

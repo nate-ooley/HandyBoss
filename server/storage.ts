@@ -116,8 +116,12 @@ export class MemStorage implements IStorage {
     this.projectMemberCurrentId = 1;
     this.projectCommunicationCurrentId = 1;
 
-    // Initialize with sample data
-    this.initSampleData();
+    // Initialize with sample data if environment variable is set
+    if (process.env.INIT_SAMPLE_DATA === 'true') {
+      this.initSampleData();
+    } else {
+      console.log("[storage] Skipping sample data initialization.")
+    }
   }
 
   // User methods
@@ -585,357 +589,109 @@ export class MemStorage implements IStorage {
   
   // Initialize with sample data
   private initSampleData() {
-    // Sample user
+    console.log("[storage] Initializing with SIMPLIFIED sample data (User and Jobsites only)...");
+
+    // Sample user (Minimal required fields + fields from previous errors)
     const user: User = {
-      id: this.userCurrentId++,
+      id: this.userCurrentId++, 
       name: 'Mike Johnson',
-      role: 'Site Foreman',
       username: 'mike',
       password: 'password',
-      avatar: ''
+      role: 'Site Foreman', // Assuming required
+      avatar: null, 
+      email: 'mike@example.com', // Added based on errors
+      phone: '555-0101', // Added based on errors
+      notificationPreference: 'email', // Added based on errors
+      settings: {} // Added based on errors
     };
     this.users.set(user.id, user);
 
-    // Sample jobsites with calendar dates
-    const today = new Date();
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const nextWeek = new Date(today);
-    nextWeek.setDate(nextWeek.getDate() + 7);
-    const twoWeeksFromNow = new Date(today);
-    twoWeeksFromNow.setDate(twoWeeksFromNow.getDate() + 14);
+    // Sample jobsites (Minimal required fields + fields from previous errors)
+    const jobsitesData: Jobsite[] = [
+      {
+        id: this.jobsiteCurrentId++, 
+        name: "Downtown Port Charlotte Renovation",
+        address: "123 Marion Ave, Punta Gorda, FL 33950", // Required?
+        status: "active", // Required for map
+        time: "8:00 AM", // Required?
+        startDate: new Date("2024-07-01"), // Required Date | null?
+        endDate: new Date("2024-12-15"), // Required Date | null?
+        location: { lat: 26.9337, lng: -82.0493 }, // Required?
+        latitude: 26.9337, // Required for map
+        longitude: -82.0493, // Required for map
+        description: "Complete overhaul of downtown block.", // Required?
+        clientName: "City Development Corp", // Required?
+        progress: 65, // Required?
+        managerId: user.id, // Required?
+        updatedAt: new Date(), // Required?
+        crewMembers: [] // Required? Initialize as empty
+      },
+      {
+        id: this.jobsiteCurrentId++,
+        name: "North Port Retail Build-out",
+        address: "456 Toledo Blade Blvd, North Port, FL 34288", // Required?
+        status: "scheduled", // Required for map
+        time: "9:00 AM", // Required?
+        startDate: new Date("2024-08-15"), // Required Date | null?
+        endDate: null, // Required Date | null? Explicitly null
+        location: { lat: 27.0639, lng: -82.1618 }, // Required?
+        latitude: 27.0639, // Required for map
+        longitude: -82.1618, // Required for map
+        description: "Interior build-out for new retail space.", // Required?
+        clientName: "Sunshine Retailers", // Required?
+        progress: 0, // Required?
+        managerId: user.id, // Required?
+        updatedAt: new Date(), // Required?
+        crewMembers: [] // Required? Initialize as empty
+      },
+       {
+        id: this.jobsiteCurrentId++,
+        name: "Englewood Beach Condos",
+        address: "789 Beach Rd, Englewood, FL 34223", // Required?
+        status: "active", // Required for map
+        time: "10:00 AM", // Required?
+        startDate: new Date("2024-05-01"), // Required Date | null?
+        endDate: new Date("2024-11-30"), // Required Date | null?
+        location: { lat: 26.9498, lng: -82.3584 }, // Required?
+        latitude: 26.9498, // Required for map
+        longitude: -82.3584, // Required for map
+        description: "New luxury beachfront condo construction.", // Required?
+        clientName: "Coastal Living Inc.", // Required?
+        progress: 30, // Required?
+        managerId: user.id, // Required?
+        updatedAt: new Date(), // Required?
+        crewMembers: [] // Required? Initialize as empty
+      },
+    ];
     
-    const jobsite1: Jobsite = {
-      id: this.jobsiteCurrentId++,
-      name: 'Westside Project',
-      address: '123 Main St, Building A',
-      status: 'Delayed (20 min)',
-      time: '10:00 AM',
-      startDate: today.toISOString(),
-      endDate: tomorrow.toISOString(),
-      location: { lat: 34.0522, lng: -118.2437 }
-    };
-    this.jobsites.set(jobsite1.id, jobsite1);
+    this.jobsites = new Map();
+    jobsitesData.forEach(jobsite => {
+      this.jobsites.set(jobsite.id, jobsite);
+    });
 
-    const jobsite2: Jobsite = {
-      id: this.jobsiteCurrentId++,
-      name: 'Downtown Renovation',
-      address: '456 Center Ave, Floor 3',
-      status: 'Weather Alert: Update Client',
-      time: '1:00 PM',
-      startDate: nextWeek.toISOString(),
-      endDate: twoWeeksFromNow.toISOString(),
-      location: { lat: 34.0522, lng: -118.2437 }
-    };
-    this.jobsites.set(jobsite2.id, jobsite2);
+    // --- All other sample data creation is commented out --- 
 
-    const jobsite3: Jobsite = {
-      id: this.jobsiteCurrentId++,
-      name: 'Eastside Construction',
-      address: '789 East Blvd, Tower B',
-      status: 'On Time',
-      time: '3:30 PM',
-      startDate: tomorrow.toISOString(),
-      endDate: nextWeek.toISOString(),
-      location: { lat: 34.0522, lng: -118.2437 }
-    };
-    this.jobsites.set(jobsite3.id, jobsite3);
-
-    // Sample weather alert
-    const weatherAlert: WeatherAlert = {
-      id: this.weatherAlertCurrentId++,
-      title: 'Heavy Rain Warning',
-      location: 'Downtown Area',
-      duration: 'Expected until 3PM',
-      impact: 'All exterior work delayed - Client notified'
-    };
-    this.weatherAlerts.set(weatherAlert.id, weatherAlert);
-
-    // Sample commands
-    const commands = [
-      {
-        id: this.commandCurrentId++,
-        text: "I'll be 20 minutes late to the Westside project",
-        timestamp: new Date().toISOString(),
-        userId: user.id,
-        jobsiteId: jobsite1.id
-      },
-      {
-        id: this.commandCurrentId++,
-        text: "Need more concrete at Eastside construction",
-        timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
-        userId: user.id,
-        jobsiteId: jobsite3.id
-      },
-      {
-        id: this.commandCurrentId++,
-        text: "Safety harness inspection needed at Downtown site",
-        timestamp: new Date(Date.now() - 1000 * 60 * 60).toISOString(),
-        userId: user.id,
-        jobsiteId: jobsite2.id
-      }
-    ];
-    
-    commands.forEach(cmd => this.commands.set(cmd.id, cmd));
-    
-    // Sample chat messages with calendar events
-    const chatMessages = [
-      {
-        id: this.chatMessageCurrentId++,
-        text: "Team meeting scheduled for tomorrow morning at 8AM",
-        translatedText: "Reunión de equipo programada para mañana por la mañana a las 8 a.m.",
-        isUser: true,
-        role: "boss",
-        language: "en",
-        timestamp: new Date().toISOString(),
-        userId: user.id,
-        jobsiteId: jobsite1.id,
-        calendarEvent: true,
-        eventTitle: "Team Meeting - Westside Project"
-      },
-      {
-        id: this.chatMessageCurrentId++,
-        text: "Material delivery for Downtown Renovation arriving at 2PM",
-        translatedText: "Entrega de material para Downtown Renovation llegando a las 2PM",
-        isUser: true,
-        role: "boss",
-        language: "en",
-        timestamp: new Date(tomorrow).toISOString(),
-        userId: user.id,
-        jobsiteId: jobsite2.id,
-        calendarEvent: true,
-        eventTitle: "Material Delivery - Downtown"
-      },
-      {
-        id: this.chatMessageCurrentId++,
-        text: "Safety inspection for Eastside Construction next Monday at 10AM",
-        translatedText: "Inspección de seguridad para Eastside Construction el próximo lunes a las 10AM",
-        isUser: true,
-        role: "boss",
-        language: "en",
-        timestamp: nextWeek.toISOString(),
-        userId: user.id,
-        jobsiteId: jobsite3.id,
-        calendarEvent: true,
-        eventTitle: "Safety Inspection - Eastside"
-      }
-    ];
-    
-    chatMessages.forEach(msg => this.chatMessages.set(msg.id, msg));
-    
-    // Sample crew members
-    const crewMembers = [
-      {
-        id: this.crewMemberCurrentId++,
-        name: 'Carlos Rodriguez',
-        role: 'Lead Electrician',
-        phone: '555-1234',
-        email: 'carlos@construction.com',
-        jobsiteId: jobsite1.id,
-        specialization: 'Electrical',
-        experienceYears: 8,
-        status: 'active',
-        latitude: 34.052235,
-        longitude: -118.243683,
-        locationName: 'Westside Project - Building A',
-        lastCheckIn: new Date(),
-        profileImage: '/assets/crew1.png',
-        certifications: ['Master Electrician', 'Safety Certified'],
-        languages: ['en', 'es'],
-        emergencyContact: 'Maria Rodriguez: 555-9876',
-        notes: 'Specializes in commercial wiring systems',
-        createdAt: new Date(),
-        updatedAt: new Date()
-      },
-      {
-        id: this.crewMemberCurrentId++,
-        name: 'Sarah Johnson',
-        role: 'Project Manager',
-        phone: '555-5678',
-        email: 'sarah@construction.com',
-        jobsiteId: jobsite2.id,
-        specialization: 'Project Management',
-        experienceYears: 12,
-        status: 'active',
-        latitude: 34.045124,
-        longitude: -118.267294,
-        locationName: 'Downtown Renovation - Floor 3',
-        lastCheckIn: new Date(),
-        profileImage: '/assets/crew2.png',
-        certifications: ['PMP Certified', 'OSHA Certified'],
-        languages: ['en'],
-        emergencyContact: 'Michael Johnson: 555-4567',
-        notes: 'Manages all downtown projects',
-        createdAt: new Date(),
-        updatedAt: new Date()
-      },
-      {
-        id: this.crewMemberCurrentId++,
-        name: 'Miguel Sanchez',
-        role: 'Concrete Specialist',
-        phone: '555-3434',
-        email: 'miguel@construction.com',
-        jobsiteId: jobsite3.id,
-        specialization: 'Concrete/Foundation',
-        experienceYears: 15,
-        status: 'active',
-        latitude: 34.074442,
-        longitude: -118.243459,
-        locationName: 'Eastside Construction - Foundation Area',
-        lastCheckIn: new Date(),
-        profileImage: '/assets/crew3.png',
-        certifications: ['Concrete Specialist', 'Heavy Equipment Operator'],
-        languages: ['es', 'en'],
-        emergencyContact: 'Ana Sanchez: 555-7878',
-        notes: 'Expert in complex foundation work',
-        createdAt: new Date(),
-        updatedAt: new Date()
-      },
-      {
-        id: this.crewMemberCurrentId++,
-        name: 'James Williams',
-        role: 'Plumber',
-        phone: '555-8989',
-        email: 'james@construction.com',
-        jobsiteId: jobsite1.id,
-        specialization: 'Plumbing',
-        experienceYears: 7,
-        status: 'active',
-        latitude: 34.052789,
-        longitude: -118.242912,
-        locationName: 'Westside Project - Building A, Floor 2',
-        lastCheckIn: new Date(),
-        profileImage: '/assets/crew4.png',
-        certifications: ['Master Plumber', 'Gas Line Certified'],
-        languages: ['en'],
-        emergencyContact: 'Lisa Williams: 555-1111',
-        notes: 'Specializes in commercial plumbing systems',
-        createdAt: new Date(),
-        updatedAt: new Date()
-      },
-      {
-        id: this.crewMemberCurrentId++,
-        name: 'Elena Martinez',
-        role: 'HVAC Technician',
-        phone: '555-2222',
-        email: 'elena@construction.com',
-        jobsiteId: jobsite2.id,
-        specialization: 'HVAC',
-        experienceYears: 6,
-        status: 'active',
-        latitude: 34.046134,
-        longitude: -118.265912,
-        locationName: 'Downtown Renovation - Mechanical Room',
-        lastCheckIn: new Date(),
-        profileImage: '/assets/crew5.png',
-        certifications: ['HVAC Certified', 'Energy Efficiency Specialist'],
-        languages: ['en', 'es'],
-        emergencyContact: 'Roberto Martinez: 555-3333',
-        notes: 'Expert in energy-efficient HVAC systems',
-        createdAt: new Date(),
-        updatedAt: new Date()
-      }
-    ];
-    
-    crewMembers.forEach(member => this.crewMembers.set(member.id, member));
-    
-    // Sample project members (assigning crew members to projects)
-    const projectMembers = [
-      {
-        id: this.projectMemberCurrentId++,
-        projectId: jobsite1.id,
-        crewMemberId: crewMembers[0].id, // Carlos to Westside Project
-        role: 'electrician',
-        permissions: 'member',
-        assignedAt: new Date()
-      },
-      {
-        id: this.projectMemberCurrentId++,
-        projectId: jobsite1.id,
-        crewMemberId: crewMembers[3].id, // James to Westside Project
-        role: 'plumber',
-        permissions: 'member',
-        assignedAt: new Date()
-      },
-      {
-        id: this.projectMemberCurrentId++,
-        projectId: jobsite2.id,
-        crewMemberId: crewMembers[1].id, // Sarah to Downtown Renovation
-        role: 'manager',
-        permissions: 'admin',
-        assignedAt: new Date()
-      },
-      {
-        id: this.projectMemberCurrentId++,
-        projectId: jobsite2.id,
-        crewMemberId: crewMembers[4].id, // Elena to Downtown Renovation
-        role: 'hvac-tech',
-        permissions: 'member',
-        assignedAt: new Date()
-      },
-      {
-        id: this.projectMemberCurrentId++,
-        projectId: jobsite3.id,
-        crewMemberId: crewMembers[2].id, // Miguel to Eastside Construction
-        role: 'concrete-specialist',
-        permissions: 'member',
-        assignedAt: new Date()
-      }
-    ];
-    
-    projectMembers.forEach(member => this.projectMembers.set(member.id, member));
-    
-    // Sample project communications
-    const projectCommunications = [
-      {
-        id: this.projectCommunicationCurrentId++,
-        projectId: jobsite1.id,
-        senderId: user.id,
-        content: "Team, please ensure all electrical wiring is completed by end of day.",
-        translatedContent: "Equipo, asegúrese de que todo el cableado eléctrico esté terminado al final del día.",
-        language: "en",
-        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2), // 2 hours ago
-        readBy: [user.id],
-        reactions: { "👍": [crewMembers[0].id.toString()] }
-      },
-      {
-        id: this.projectCommunicationCurrentId++,
-        projectId: jobsite1.id,
-        senderId: crewMembers[0].id,
-        content: "Entendido, jefe. Estamos a tiempo con el cronograma de cableado.",
-        translatedContent: "Understood, boss. We're on schedule with the wiring timeline.",
-        language: "es",
-        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 1.5), // 1.5 hours ago
-        readBy: [user.id, crewMembers[0].id],
-        reactions: {}
-      },
-      {
-        id: this.projectCommunicationCurrentId++,
-        projectId: jobsite2.id,
-        senderId: user.id,
-        content: "Be aware of the weather warning. All exterior work is postponed until tomorrow.",
-        translatedContent: "Tenga en cuenta la advertencia meteorológica. Todo el trabajo exterior se pospone hasta mañana.",
-        language: "en",
-        timestamp: new Date(Date.now() - 1000 * 60 * 30), // 30 minutes ago
-        isAnnouncement: true,
-        readBy: [user.id, crewMembers[1].id],
-        reactions: { "👍": [crewMembers[1].id.toString(), crewMembers[4].id.toString()] }
-      },
-      {
-        id: this.projectCommunicationCurrentId++,
-        projectId: jobsite3.id,
-        senderId: crewMembers[2].id,
-        content: "Necesitamos más cemento para completar la fundación este de mañana.",
-        translatedContent: "We need more cement to complete the east foundation tomorrow.",
-        language: "es",
-        timestamp: new Date(Date.now() - 1000 * 60 * 15), // 15 minutes ago
-        readBy: [crewMembers[2].id],
-        reactions: {}
-      }
-    ];
-    
-    projectCommunications.forEach(comm => this.projectCommunications.set(comm.id, comm));
+    console.log(`[storage] SIMPLIFIED Sample data initialization complete. Users: ${this.users.size}, Jobsites: ${this.jobsites.size}`);
   }
 }
 
-export const storage = new MemStorage();
+// Determine storage implementation based on environment variables
+let storage: IStorage;
+const useMongoDB = process.env.USE_MONGO_DB === 'true';
+
+if (useMongoDB) {
+  // Dynamically import MongoDBStorage only if needed
+  import('./mongodbStorage').then(({ MongoDBStorage }) => {
+    storage = new MongoDBStorage();
+    console.log("[storage] Using MongoDB storage implementation");
+  }).catch(error => {
+    console.error("[storage] Failed to load MongoDBStorage, falling back to MemStorage:", error);
+    storage = new MemStorage();
+    console.log("[storage] Using in-memory storage implementation (fallback)");
+  });
+} else {
+  storage = new MemStorage();
+  console.log("[storage] Using in-memory storage implementation");
+}
+
+export { storage };

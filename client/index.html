@@ -2,40 +2,17 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
-    
-    <!-- Google Maps API debugging -->
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Handy Boss AI</title>
+    <!-- Remove Google Maps script tag if it exists here -->
+    <!-- Example of what to look for and remove: -->
+    <!-- <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=places&callback=initMap" async defer></script> -->
     <script>
-      // Debug info for Google Maps
-      window.mapsDebug = {
-        apiKey: 'AIzaSyB49DXWfUcgdkipZs-9gUF7kp7C_UpsQlE',
-        apiLoaded: false,
-        error: null
-      };
-      
-      // Handle successful API loading
-      window.initMap = function() {
-        console.log('Google Maps API loaded successfully in index.html!');
-        window.mapsDebug.apiLoaded = true;
-        
-        // Dispatch an event so components can respond to the loaded API
-        window.dispatchEvent(new Event('google-maps-loaded'));
-      };
-      
-      // Handle API key auth failure
-      window.gm_authFailure = function() {
-        console.error('Google Maps authentication failed');
-        window.mapsDebug.error = 'Authentication Failed';
-        alert('Google Maps API key authentication failed. Please check your API key configuration.');
-      };
+      // Optional: Define a dummy initMap if the script tag required it, 
+      // but it's better to remove the callback parameter from the script URL if removing the script.
+      // function initMap() { console.log('Google Maps API loaded successfully in index.html!'); }
     </script>
-    
-    <!-- Google Maps API with explicit API key - loaded immediately -->
-    <script 
-      src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB49DXWfUcgdkipZs-9gUF7kp7C_UpsQlE&callback=initMap&libraries=places" 
-      async 
-      defer
-    ></script>
   </head>
   <body>
     <div id="root"></div>

@@ -519,38 +519,38 @@ export class MongoStorage implements IStorage {
       
       // Create sample jobsites
       const jobsite1 = new Jobsite({
-        name: "Downtown Renovation",
-        location: "123 Main St, Downtown",
+        name: "Midway Plaza Renovation",
+        location: "19201 Midway Blvd, Port Charlotte, FL",
         status: "in-progress",
-        clientName: "City Development Corp",
-        description: "Major renovation of the downtown shopping district",
-        startDate: new Date("2025-03-15"),
-        endDate: new Date("2025-09-30"),
-        latitude: 40.7128,
-        longitude: -74.0060
+        clientName: "Midway Development Corp",
+        description: "Renovation of Midway Plaza shopping center",
+        startDate: new Date("2024-03-15"),
+        endDate: new Date("2024-09-30"),
+        latitude: 27.0016,
+        longitude: -82.1439
       });
       
       const jobsite2 = new Jobsite({
-        name: "Riverside Apartments",
-        location: "456 River Rd, Riverside",
+        name: "Port Charlotte Town Center",
+        location: "1441 Tamiami Trail, Port Charlotte, FL",
         status: "planned",
-        clientName: "River View Properties",
-        description: "New apartment complex with 200 units",
-        startDate: new Date("2025-06-01"),
-        latitude: 40.7589,
-        longitude: -73.9851
+        clientName: "Town Center Properties",
+        description: "Mall renovation and expansion project",
+        startDate: new Date("2024-06-01"),
+        latitude: 27.0023,
+        longitude: -82.1227
       });
       
       const jobsite3 = new Jobsite({
-        name: "Highland Office Park",
-        location: "789 Highland Ave, Highland",
+        name: "Harbor View Medical Center",
+        location: "3280 Tamiami Trail, Port Charlotte, FL",
         status: "completed",
-        clientName: "Highland Business Group",
-        description: "Office park with 5 buildings and landscaping",
-        startDate: new Date("2024-10-15"),
-        endDate: new Date("2025-03-01"),
-        latitude: 40.8224,
-        longitude: -73.9495
+        clientName: "Harbor Health Group",
+        description: "Medical center expansion and modernization",
+        startDate: new Date("2024-01-15"),
+        endDate: new Date("2024-03-01"),
+        latitude: 26.9798,
+        longitude: -82.0906
       });
       
       await Promise.all([
